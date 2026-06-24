@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/recovery"
+	"github.com/go-kratos/kratos/v2/transport/http"
 	adsv1 "github.com/npanel-dev/NPanel-backend/api/admin/ads/v1"
 	announcementv1 "github.com/npanel-dev/NPanel-backend/api/admin/announcement/v1"
 	applicationv1 "github.com/npanel-dev/NPanel-backend/api/admin/application/v1"
@@ -79,9 +82,6 @@ import (
 	publicticketservice "github.com/npanel-dev/NPanel-backend/internal/service/public/ticket"
 	publicuserservice "github.com/npanel-dev/NPanel-backend/internal/service/public/user"
 	serverservice "github.com/npanel-dev/NPanel-backend/internal/service/server"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/transport/http"
 )
 
 // NewHTTPServer new an HTTP server
@@ -105,8 +105,8 @@ func NewHTTPServer(c *conf.Server, appConf *conf.Application, authMiddleware *ap
 			middleware.Logging(logger), // Logging middleware，记录请求日志
 			authMiddleware.Auth(),      // 对齐旧项目认证语义
 		),
-		http.ErrorEncoder(CustomErrorEncoder), // 使用自定义错误编码器，所有错误返回HTTP 200
-		//http.RequestDecoder(CustomRequestDecoder),   // 兼容空 body 的验证码请求，与管理端行为对齐
+		http.ErrorEncoder(CustomErrorEncoder),       // 使用自定义错误编码器，所有错误返回HTTP 200
+		http.RequestDecoder(CustomRequestDecoder),   // 兼容旧管理端提交的空字符串数字字段
 		http.ResponseEncoder(CustomResponseEncoder), // 使用自定义响应编码器，解决 int64 序列化问题
 		http.StrictSlash(false),                     // 禁用尾部斜杠自动重定向，通过手动注册两个路由来支持
 		http.NotFoundHandler(newCORSAwareFallbackHandler(c.Cors, nethttp.StatusNotFound)),
