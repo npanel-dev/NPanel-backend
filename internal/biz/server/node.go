@@ -165,6 +165,7 @@ type Protocol struct {
 	SimnetFallbackHostHeader               string
 	SimnetFallbackTLSSNI                   string
 	SimnetInboundMaxStreamsPerSession      int32
+	SimnetInboundMaxUDPStreamsPerSession   int32
 	SimnetInboundMaxHandlerTasksPerSession int32
 	SimnetStreamEventChannelCapacity       int32
 	SimnetStreamDataChannelCapacity        int32
@@ -182,6 +183,7 @@ type Protocol struct {
 	SimnetClientMaxConcurrentStreams       int32
 	SimnetClientMaxStreamsPerSession       int32
 	SimnetClientSessionIdleTimeoutSecs     int32
+	SimnetClientMaxUDPSessions             int32
 
 	// OmniFlow 基础配置
 	OmniflowCarrier     string

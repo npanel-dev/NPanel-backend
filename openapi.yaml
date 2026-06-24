@@ -8837,6 +8837,12 @@ components:
                 simnetClientSessionIdleTimeoutSecs:
                     type: integer
                     format: int32
+                simnetInboundMaxUdpStreamsPerSession:
+                    type: integer
+                    format: int32
+                simnetClientMaxUdpSessions:
+                    type: integer
+                    format: int32
                 omniflowCarrier:
                     type: string
                     description: OmniFlow 基础配置
@@ -14284,6 +14290,12 @@ components:
                     type: integer
                     format: int32
                 simnetClientSessionIdleTimeoutSecs:
+                    type: integer
+                    format: int32
+                simnetInboundMaxUdpStreamsPerSession:
+                    type: integer
+                    format: int32
+                simnetClientMaxUdpSessions:
                     type: integer
                     format: int32
                 omniflowCarrier:

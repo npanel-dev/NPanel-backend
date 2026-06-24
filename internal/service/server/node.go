@@ -73,6 +73,9 @@ func applySimnetResourceDefaultsForResponse(protocol *serverBiz.Protocol) {
 	if protocol.SimnetInboundMaxStreamsPerSession <= 0 {
 		protocol.SimnetInboundMaxStreamsPerSession = 128
 	}
+	if protocol.SimnetInboundMaxUDPStreamsPerSession <= 0 {
+		protocol.SimnetInboundMaxUDPStreamsPerSession = 64
+	}
 	if protocol.SimnetInboundMaxHandlerTasksPerSession <= 0 {
 		protocol.SimnetInboundMaxHandlerTasksPerSession = 128
 	}
@@ -111,6 +114,9 @@ func applySimnetResourceDefaultsForResponse(protocol *serverBiz.Protocol) {
 	}
 	if protocol.SimnetClientSessionIdleTimeoutSecs <= 0 {
 		protocol.SimnetClientSessionIdleTimeoutSecs = 90
+	}
+	if protocol.SimnetClientMaxUDPSessions <= 0 {
+		protocol.SimnetClientMaxUDPSessions = 64
 	}
 }
 
@@ -439,6 +445,7 @@ func (s *ServerService) QueryServerProtocolConfig(ctx context.Context, req *v1.Q
 			SimnetFallbackHostHeader:               protocol.SimnetFallbackHostHeader,
 			SimnetFallbackTlsSni:                   protocol.SimnetFallbackTLSSNI,
 			SimnetInboundMaxStreamsPerSession:      protocol.SimnetInboundMaxStreamsPerSession,
+			SimnetInboundMaxUdpStreamsPerSession:   protocol.SimnetInboundMaxUDPStreamsPerSession,
 			SimnetInboundMaxHandlerTasksPerSession: protocol.SimnetInboundMaxHandlerTasksPerSession,
 			SimnetStreamEventChannelCapacity:       protocol.SimnetStreamEventChannelCapacity,
 			SimnetStreamDataChannelCapacity:        protocol.SimnetStreamDataChannelCapacity,
@@ -456,6 +463,7 @@ func (s *ServerService) QueryServerProtocolConfig(ctx context.Context, req *v1.Q
 			SimnetClientMaxConcurrentStreams:       protocol.SimnetClientMaxConcurrentStreams,
 			SimnetClientMaxStreamsPerSession:       protocol.SimnetClientMaxStreamsPerSession,
 			SimnetClientSessionIdleTimeoutSecs:     protocol.SimnetClientSessionIdleTimeoutSecs,
+			SimnetClientMaxUdpSessions:             protocol.SimnetClientMaxUDPSessions,
 			// OmniFlow
 			OmniflowCarrier:                    protocol.OmniflowCarrier,
 			OmniflowPath:                       protocol.OmniflowPath,

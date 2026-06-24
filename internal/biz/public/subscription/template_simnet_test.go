@@ -10,18 +10,20 @@ import (
 func TestBuildOmnxtProtocolLinksIncludesOnlySimnetClientBackpressure(t *testing.T) {
 	proxies := []map[string]interface{}{
 		{
-			"Type":                               "simnet",
-			"Name":                               "simnet-node",
-			"Server":                             "edge.example.com",
-			"Port":                               443,
-			"SimnetPath":                         "/simnet/session",
-			"SimnetCarrier":                      "h2",
-			"SimnetClientMaxConcurrentStreams":   48,
-			"SimnetClientMaxStreamsPerSession":   768,
-			"SimnetClientSessionIdleTimeoutSecs": 120,
-			"SimnetInboundMaxStreamsPerSession":  128,
-			"SimnetTargetDialTimeoutMs":          12000,
-			"SimnetSendWindow":                   4 * 1024 * 1024,
+			"Type":                                 "simnet",
+			"Name":                                 "simnet-node",
+			"Server":                               "edge.example.com",
+			"Port":                                 443,
+			"SimnetPath":                           "/simnet/session",
+			"SimnetCarrier":                        "h2",
+			"SimnetClientMaxConcurrentStreams":     48,
+			"SimnetClientMaxStreamsPerSession":     768,
+			"SimnetClientSessionIdleTimeoutSecs":   120,
+			"SimnetClientMaxUDPSessions":           24,
+			"SimnetInboundMaxStreamsPerSession":    128,
+			"SimnetInboundMaxUDPStreamsPerSession": 64,
+			"SimnetTargetDialTimeoutMs":            12000,
+			"SimnetSendWindow":                     4 * 1024 * 1024,
 		},
 		{
 			"Type":   "vless",
@@ -40,9 +42,11 @@ func TestBuildOmnxtProtocolLinksIncludesOnlySimnetClientBackpressure(t *testing.
 	assertQueryValue(t, values, "simnet_client_max_concurrent_streams", "48")
 	assertQueryValue(t, values, "simnet_client_max_streams_per_session", "768")
 	assertQueryValue(t, values, "simnet_client_session_idle_timeout_secs", "120")
+	assertQueryValue(t, values, "simnet_client_max_udp_sessions", "24")
 
 	for _, nodeOnlyKey := range []string{
 		"simnet_inbound_max_streams_per_session",
+		"simnet_inbound_max_udp_streams_per_session",
 		"simnet_target_dial_timeout_ms",
 		"simnet_send_window",
 	} {
@@ -69,6 +73,7 @@ func TestBuildOmnxtProtocolLinksDefaultsSimnetClientBackpressure(t *testing.T) {
 	assertQueryValue(t, values, "simnet_client_max_concurrent_streams", "32")
 	assertQueryValue(t, values, "simnet_client_max_streams_per_session", "512")
 	assertQueryValue(t, values, "simnet_client_session_idle_timeout_secs", "90")
+	assertQueryValue(t, values, "simnet_client_max_udp_sessions", "64")
 }
 
 func decodeSimnetLinkPayload(t *testing.T, link string) url.Values {

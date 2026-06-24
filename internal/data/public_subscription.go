@@ -280,6 +280,7 @@ func (r *publicSubscriptionRepo) GetAvailableNodes(ctx context.Context, userSubs
 			SimnetClientMaxConcurrentStreams:   int(matched.SimnetClientMaxConcurrentStreams),
 			SimnetClientMaxStreamsPerSession:   int(matched.SimnetClientMaxStreamsPerSession),
 			SimnetClientSessionIdleTimeoutSecs: int(matched.SimnetClientSessionIdleTimeoutSecs),
+			SimnetClientMaxUDPSessions:         int(matched.SimnetClientMaxUDPSessions),
 			OmniflowCarrier:                    matched.OmniflowCarrier,
 			OmniflowPath:                       matched.OmniflowPath,
 			OmniflowContentType:                matched.OmniflowContentType,

@@ -2192,6 +2192,10 @@ func (m *Protocol) validate(all bool) error {
 
 	// no validation rules for SimnetClientSessionIdleTimeoutSecs
 
+	// no validation rules for SimnetInboundMaxUdpStreamsPerSession
+
+	// no validation rules for SimnetClientMaxUdpSessions
+
 	// no validation rules for OmniflowCarrier
 
 	// no validation rules for OmniflowPath

@@ -26,6 +26,7 @@ func TestCleanLegacyNodeProtocolsKeepsSimnetAfClientFields(t *testing.T) {
 			SimnetClientMaxConcurrentStreams:   0,
 			SimnetClientMaxStreamsPerSession:   0,
 			SimnetClientSessionIdleTimeoutSecs: 0,
+			SimnetClientMaxUDPSessions:         0,
 		},
 		{
 			Type:                             "vless",
@@ -80,10 +81,11 @@ func TestCleanLegacyNodeProtocolsKeepsSimnetAfClientFields(t *testing.T) {
 	}
 	if protocol.SimnetClientMaxConcurrentStreams != 32 ||
 		protocol.SimnetClientMaxStreamsPerSession != 512 ||
-		protocol.SimnetClientSessionIdleTimeoutSecs != 90 {
-		t.Fatalf("expected simnet client defaults, got %d/%d/%d", protocol.SimnetClientMaxConcurrentStreams, protocol.SimnetClientMaxStreamsPerSession, protocol.SimnetClientSessionIdleTimeoutSecs)
+		protocol.SimnetClientSessionIdleTimeoutSecs != 90 ||
+		protocol.SimnetClientMaxUDPSessions != 64 {
+		t.Fatalf("expected simnet client defaults, got %d/%d/%d/%d", protocol.SimnetClientMaxConcurrentStreams, protocol.SimnetClientMaxStreamsPerSession, protocol.SimnetClientSessionIdleTimeoutSecs, protocol.SimnetClientMaxUDPSessions)
 	}
-	if protocols[1].SimnetClientMaxConcurrentStreams != 0 {
+	if protocols[1].SimnetClientMaxConcurrentStreams != 0 || protocols[1].SimnetClientMaxUDPSessions != 0 {
 		t.Fatalf("non-simnet protocol should not receive simnet defaults: %+v", protocols[1])
 	}
 }

@@ -158,6 +158,9 @@ func TestProtocolNormalizeSimnetDefaultsResourceLimits(t *testing.T) {
 	if protocol.SimnetInboundMaxStreamsPerSession != defaultSimnetInboundMaxStreamsPerSession {
 		t.Fatalf("inbound max streams = %d, want %d", protocol.SimnetInboundMaxStreamsPerSession, defaultSimnetInboundMaxStreamsPerSession)
 	}
+	if protocol.SimnetInboundMaxUDPStreamsPerSession != defaultSimnetInboundMaxUDPStreamsPerSession {
+		t.Fatalf("inbound max udp streams = %d, want %d", protocol.SimnetInboundMaxUDPStreamsPerSession, defaultSimnetInboundMaxUDPStreamsPerSession)
+	}
 	if protocol.SimnetInboundMaxHandlerTasksPerSession != defaultSimnetInboundMaxHandlerTasksPerSession {
 		t.Fatalf("handler task limit = %d, want %d", protocol.SimnetInboundMaxHandlerTasksPerSession, defaultSimnetInboundMaxHandlerTasksPerSession)
 	}
@@ -183,8 +186,9 @@ func TestProtocolNormalizeSimnetDefaultsResourceLimits(t *testing.T) {
 	}
 	if protocol.SimnetClientMaxConcurrentStreams != defaultSimnetClientMaxConcurrentStreams ||
 		protocol.SimnetClientMaxStreamsPerSession != defaultSimnetClientMaxStreamsPerSession ||
-		protocol.SimnetClientSessionIdleTimeoutSecs != defaultSimnetClientSessionIdleTimeoutSecs {
-		t.Fatalf("client defaults = %d/%d/%d", protocol.SimnetClientMaxConcurrentStreams, protocol.SimnetClientMaxStreamsPerSession, protocol.SimnetClientSessionIdleTimeoutSecs)
+		protocol.SimnetClientSessionIdleTimeoutSecs != defaultSimnetClientSessionIdleTimeoutSecs ||
+		protocol.SimnetClientMaxUDPSessions != defaultSimnetClientMaxUDPSessions {
+		t.Fatalf("client defaults = %d/%d/%d/%d", protocol.SimnetClientMaxConcurrentStreams, protocol.SimnetClientMaxStreamsPerSession, protocol.SimnetClientSessionIdleTimeoutSecs, protocol.SimnetClientMaxUDPSessions)
 	}
 }
 
@@ -197,9 +201,11 @@ func TestProtocolNormalizeSimnetDoesNotPolluteOtherProtocols(t *testing.T) {
 		t.Fatalf("non-simnet path changed to %q", protocol.SimnetPath)
 	}
 	if protocol.SimnetInboundMaxStreamsPerSession != 0 ||
+		protocol.SimnetInboundMaxUDPStreamsPerSession != 0 ||
 		protocol.SimnetTargetDialTimeoutMs != 0 ||
 		protocol.SimnetSendWindow != 0 ||
-		protocol.SimnetClientMaxConcurrentStreams != 0 {
+		protocol.SimnetClientMaxConcurrentStreams != 0 ||
+		protocol.SimnetClientMaxUDPSessions != 0 {
 		t.Fatalf("non-simnet resource fields were populated: %+v", protocol)
 	}
 }

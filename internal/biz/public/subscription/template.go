@@ -171,6 +171,7 @@ func buildOmnxtSimnetConfigs(proxies []map[string]interface{}, userInfo UserInfo
 			"simnet_client_max_concurrent_streams":    defaultInt(mapInt(proxy["SimnetClientMaxConcurrentStreams"]), 32),
 			"simnet_client_max_streams_per_session":   defaultInt(mapInt(proxy["SimnetClientMaxStreamsPerSession"]), 512),
 			"simnet_client_session_idle_timeout_secs": defaultInt(mapInt(proxy["SimnetClientSessionIdleTimeoutSecs"]), 90),
+			"simnet_client_max_udp_sessions":          defaultInt(mapInt(proxy["SimnetClientMaxUDPSessions"]), 64),
 			"proxy_mode":                              proxyMode,
 			"dns_servers":                             dnsServers,
 		}
@@ -218,8 +219,9 @@ func buildOmnxtProtocolLinks(proxies []map[string]interface{}, userInfo UserInfo
 			"simnet_client_max_concurrent_streams":  mapInt(item["simnet_client_max_concurrent_streams"]),
 			"simnet_client_max_streams_per_session": mapInt(item["simnet_client_max_streams_per_session"]),
 			"simnet_client_session_idle_timeout_secs": mapInt(item["simnet_client_session_idle_timeout_secs"]),
-			"proxy_mode":  item["proxy_mode"],
-			"dns_servers": item["dns_servers"],
+			"simnet_client_max_udp_sessions":          mapInt(item["simnet_client_max_udp_sessions"]),
+			"proxy_mode":                              item["proxy_mode"],
+			"dns_servers":                             item["dns_servers"],
 		}
 		if afEnabled {
 			payload["simnet_af_path_mode"] = mapString(item["simnet_af_path_mode"])

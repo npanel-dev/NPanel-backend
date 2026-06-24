@@ -510,6 +510,7 @@ type NodeInfo struct {
 	SimnetClientMaxConcurrentStreams   int
 	SimnetClientMaxStreamsPerSession   int
 	SimnetClientSessionIdleTimeoutSecs int
+	SimnetClientMaxUDPSessions         int
 	OmniflowCarrier                    string
 	OmniflowPath                       string
 	OmniflowContentType                string
@@ -544,6 +545,9 @@ func (n *NodeInfo) NormalizeSimnet() {
 	}
 	if n.SimnetClientSessionIdleTimeoutSecs <= 0 {
 		n.SimnetClientSessionIdleTimeoutSecs = 90
+	}
+	if n.SimnetClientMaxUDPSessions <= 0 {
+		n.SimnetClientMaxUDPSessions = 64
 	}
 	if !n.SimnetAfEnabled {
 		n.SimnetAfPathMode = ""

@@ -244,6 +244,7 @@ func (r *subscribeApplicationRepo) GetPreviewNodes(ctx context.Context) ([]*publ
 			SimnetClientMaxConcurrentStreams:   int(matched.SimnetClientMaxConcurrentStreams),
 			SimnetClientMaxStreamsPerSession:   int(matched.SimnetClientMaxStreamsPerSession),
 			SimnetClientSessionIdleTimeoutSecs: int(matched.SimnetClientSessionIdleTimeoutSecs),
+			SimnetClientMaxUDPSessions:         int(matched.SimnetClientMaxUDPSessions),
 		}
 		nodeInfo.NormalizeSimnet()
 		result = append(result, nodeInfo)

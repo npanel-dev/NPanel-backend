@@ -604,6 +604,7 @@ func (r *serverNodeRepo) QueryServerProtocolConfig(ctx context.Context, serverID
 			SimnetFallbackHostHeader:               serverNodeMapString(p["simnet_fallback_host_header"]),
 			SimnetFallbackTLSSNI:                   serverNodeMapString(p["simnet_fallback_tls_sni"]),
 			SimnetInboundMaxStreamsPerSession:      int32(serverNodeMapInt64(p["simnet_inbound_max_streams_per_session"])),
+			SimnetInboundMaxUDPStreamsPerSession:   int32(serverNodeMapInt64(p["simnet_inbound_max_udp_streams_per_session"])),
 			SimnetInboundMaxHandlerTasksPerSession: int32(serverNodeMapInt64(p["simnet_inbound_max_handler_tasks_per_session"])),
 			SimnetStreamEventChannelCapacity:       int32(serverNodeMapInt64(p["simnet_stream_event_channel_capacity"])),
 			SimnetStreamDataChannelCapacity:        int32(serverNodeMapInt64(p["simnet_stream_data_channel_capacity"])),
@@ -621,6 +622,7 @@ func (r *serverNodeRepo) QueryServerProtocolConfig(ctx context.Context, serverID
 			SimnetClientMaxConcurrentStreams:       int32(serverNodeMapInt64(p["simnet_client_max_concurrent_streams"])),
 			SimnetClientMaxStreamsPerSession:       int32(serverNodeMapInt64(p["simnet_client_max_streams_per_session"])),
 			SimnetClientSessionIdleTimeoutSecs:     int32(serverNodeMapInt64(p["simnet_client_session_idle_timeout_secs"])),
+			SimnetClientMaxUDPSessions:             int32(serverNodeMapInt64(p["simnet_client_max_udp_sessions"])),
 			// OmniFlow
 			OmniflowCarrier:                    serverNodeMapString(p["omniflow_carrier"]),
 			OmniflowPath:                       serverNodeMapString(p["omniflow_path"]),

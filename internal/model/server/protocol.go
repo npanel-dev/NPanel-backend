@@ -88,6 +88,7 @@ type Protocol struct {
 	SimnetFallbackHostHeader               string   `json:"simnet_fallback_host_header,omitempty"`
 	SimnetFallbackTLSSNI                   string   `json:"simnet_fallback_tls_sni,omitempty"`
 	SimnetInboundMaxStreamsPerSession      int32    `json:"simnet_inbound_max_streams_per_session,omitempty"`
+	SimnetInboundMaxUDPStreamsPerSession   int32    `json:"simnet_inbound_max_udp_streams_per_session,omitempty"`
 	SimnetInboundMaxHandlerTasksPerSession int32    `json:"simnet_inbound_max_handler_tasks_per_session,omitempty"`
 	SimnetStreamEventChannelCapacity       int32    `json:"simnet_stream_event_channel_capacity,omitempty"`
 	SimnetStreamDataChannelCapacity        int32    `json:"simnet_stream_data_channel_capacity,omitempty"`
@@ -105,6 +106,7 @@ type Protocol struct {
 	SimnetClientMaxConcurrentStreams       int32    `json:"simnet_client_max_concurrent_streams,omitempty"`
 	SimnetClientMaxStreamsPerSession       int32    `json:"simnet_client_max_streams_per_session,omitempty"`
 	SimnetClientSessionIdleTimeoutSecs     int32    `json:"simnet_client_session_idle_timeout_secs,omitempty"`
+	SimnetClientMaxUDPSessions             int32    `json:"simnet_client_max_udp_sessions,omitempty"`
 
 	// OmniFlow 基础配置
 	OmniflowCarrier     string `json:"omniflow_carrier,omitempty"`
@@ -161,6 +163,7 @@ type Protocol struct {
 
 const (
 	defaultSimnetInboundMaxStreamsPerSession      int32 = 128
+	defaultSimnetInboundMaxUDPStreamsPerSession   int32 = 64
 	defaultSimnetInboundMaxHandlerTasksPerSession int32 = 128
 	defaultSimnetStreamEventChannelCapacity       int32 = 256
 	defaultSimnetStreamDataChannelCapacity        int32 = 128
@@ -173,6 +176,7 @@ const (
 	defaultSimnetClientMaxConcurrentStreams       int32 = 32
 	defaultSimnetClientMaxStreamsPerSession       int32 = 512
 	defaultSimnetClientSessionIdleTimeoutSecs     int32 = 90
+	defaultSimnetClientMaxUDPSessions             int32 = 64
 )
 
 func (p *Protocol) UnmarshalJSON(data []byte) error {
@@ -387,6 +391,9 @@ func (p *Protocol) applySimnetResourceDefaults() {
 	if p.SimnetInboundMaxStreamsPerSession <= 0 {
 		p.SimnetInboundMaxStreamsPerSession = defaultSimnetInboundMaxStreamsPerSession
 	}
+	if p.SimnetInboundMaxUDPStreamsPerSession <= 0 {
+		p.SimnetInboundMaxUDPStreamsPerSession = defaultSimnetInboundMaxUDPStreamsPerSession
+	}
 	if p.SimnetInboundMaxHandlerTasksPerSession <= 0 {
 		p.SimnetInboundMaxHandlerTasksPerSession = defaultSimnetInboundMaxHandlerTasksPerSession
 	}
@@ -425,6 +432,9 @@ func (p *Protocol) applySimnetResourceDefaults() {
 	}
 	if p.SimnetClientSessionIdleTimeoutSecs <= 0 {
 		p.SimnetClientSessionIdleTimeoutSecs = defaultSimnetClientSessionIdleTimeoutSecs
+	}
+	if p.SimnetClientMaxUDPSessions <= 0 {
+		p.SimnetClientMaxUDPSessions = defaultSimnetClientMaxUDPSessions
 	}
 }
 
