@@ -7,6 +7,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxycoupon"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
@@ -19,10 +23,6 @@ import (
 	queueTypes "github.com/npanel-dev/NPanel-backend/internal/queue/types"
 	"github.com/npanel-dev/NPanel-backend/pkg/constant"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
-	"github.com/go-kratos/kratos/v2/log"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -1284,7 +1284,7 @@ func (h *ActivateOrderHandler) RedemptionActivate(ctx context.Context, orderInfo
 				ClearFinishedAt()
 			if sub.Traffic > 0 {
 				updateBuilder = updateBuilder.
-					SetTraffic(sub.Traffic * 1024 * 1024 * 1024).
+					SetTraffic(sub.Traffic).
 					SetDownload(0).
 					SetUpload(0)
 			}
@@ -1318,10 +1318,8 @@ func (h *ActivateOrderHandler) RedemptionActivate(ctx context.Context, orderInfo
 
 			// 创建新订阅
 			expireTime := tool.AddTime(redemptionData.UnitTime, redemptionData.Quantity, now)
-			traffic := int64(0)
-			if sub.Traffic > 0 {
-				traffic = sub.Traffic * 1024 * 1024 * 1024
-			}
+			// 套餐 traffic 已经按字节存储，不能再按 GB 换算。
+			traffic := sub.Traffic
 
 			builder := tx.ProxyUserSubscribe.Create().
 				SetUserID(int64(userInfo.ID)).
