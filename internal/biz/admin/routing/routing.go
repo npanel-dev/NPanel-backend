@@ -314,8 +314,8 @@ func (uc *RoutingUsecase) Preview(ctx context.Context, req PreviewRequest) (Prev
 	return publicrouting.PreviewRouteConfig(envelope, req), nil
 }
 
-func (uc *RoutingUsecase) BuildConfig(ctx context.Context, now time.Time) (publicrouting.Envelope, error) {
-	fixture := publicrouting.BuildPreviewConfig(now, publicrouting.ConfigOptions{})
+func (uc *RoutingUsecase) BuildConfig(ctx context.Context, now time.Time, opts ...publicrouting.ConfigOptions) (publicrouting.Envelope, error) {
+	fixture := publicrouting.BuildPreviewConfig(now, firstConfigOptions(opts))
 	profiles, _, err := uc.repo.ListProfiles(ctx, 1, 1000, "", boolPtr(true))
 	if err != nil {
 		return fixture, err
@@ -358,6 +358,9 @@ func (uc *RoutingUsecase) BuildConfig(ctx context.Context, now time.Time) (publi
 		DNSResolvers: unknownDNSHealth(envelope.DNSResolvers, envelope.GeneratedAt),
 		Services:     unknownServiceHealth(envelope.UnlockServices, envelope.GeneratedAt),
 	}
+	if err := validateCompiledEnvelope(envelope); err != nil {
+		return fixture, err
+	}
 	envelope.RoutingHash = publicrouting.StableHash(envelope)
 	return envelope, nil
 }
@@ -373,6 +376,13 @@ func normalizePage(page, size int) (int, int) {
 		size = 1000
 	}
 	return page, size
+}
+
+func firstConfigOptions(opts []publicrouting.ConfigOptions) publicrouting.ConfigOptions {
+	if len(opts) == 0 {
+		return publicrouting.ConfigOptions{}
+	}
+	return opts[0]
 }
 
 func normalizeProfile(item *RouteProfile) {
@@ -538,6 +548,52 @@ func rulesToRouting(items []*RouteRule) []publicrouting.Rule {
 		})
 	}
 	return result
+}
+
+func validateCompiledEnvelope(envelope publicrouting.Envelope) error {
+	resolvers := map[string]struct{}{
+		"":           {},
+		"dns:system": {},
+	}
+	for _, resolver := range envelope.DNSResolvers {
+		resolvers[resolver.Tag] = struct{}{}
+	}
+
+	outbounds := map[string]struct{}{
+		"":              {},
+		"proxy:default": {},
+	}
+	for _, outbound := range envelope.Outbounds {
+		outbounds[outbound.Tag] = struct{}{}
+	}
+
+	if _, ok := resolvers[envelope.Profile.DefaultDNSResolverTag]; !ok {
+		return fmt.Errorf("routing profile references missing dns resolver %q", envelope.Profile.DefaultDNSResolverTag)
+	}
+	if err := validateAction(envelope.Profile.DefaultAction, resolvers, outbounds); err != nil {
+		return err
+	}
+	for _, rule := range envelope.Rules {
+		if !rule.Enabled {
+			continue
+		}
+		if err := validateAction(rule.Action, resolvers, outbounds); err != nil {
+			return fmt.Errorf("routing rule %q: %w", rule.ID, err)
+		}
+	}
+	return nil
+}
+
+func validateAction(action publicrouting.RouteAction, resolvers, outbounds map[string]struct{}) error {
+	if _, ok := resolvers[action.DNSResolverTag]; !ok {
+		return fmt.Errorf("missing dns resolver %q", action.DNSResolverTag)
+	}
+	if action.Type == "outbound" {
+		if _, ok := outbounds[action.OutboundTag]; !ok {
+			return fmt.Errorf("missing outbound %q", action.OutboundTag)
+		}
+	}
+	return nil
 }
 
 func unknownOutboundHealth(items []publicrouting.RouteOutbound, now string) []publicrouting.HealthStatus {

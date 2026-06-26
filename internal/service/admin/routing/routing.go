@@ -3,11 +3,13 @@ package routing
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 
 	v1 "github.com/npanel-dev/NPanel-backend/api/admin/routing/v1"
 	routingbiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/routing"
+	publicrouting "github.com/npanel-dev/NPanel-backend/internal/biz/public/routing"
 )
 
 const successCode int32 = 200
@@ -21,6 +23,10 @@ type RoutingService struct {
 
 func NewRoutingService(uc *routingbiz.RoutingUsecase, logger log.Logger) *RoutingService {
 	return &RoutingService{uc: uc, logger: log.NewHelper(logger)}
+}
+
+func (s *RoutingService) BuildPublicConfig(ctx context.Context, now time.Time, opts publicrouting.ConfigOptions) (publicrouting.Envelope, error) {
+	return s.uc.BuildConfig(ctx, now, opts)
 }
 
 func (s *RoutingService) ListRouteProfiles(ctx context.Context, req *v1.ListRouteProfilesRequest) (*v1.ListRouteProfilesReply, error) {

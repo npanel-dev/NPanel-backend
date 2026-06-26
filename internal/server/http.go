@@ -179,7 +179,7 @@ func NewHTTPServer(c *conf.Server, appConf *conf.Application, authMiddleware *ap
 	publicuserv1.RegisterPublicUserHTTPServer(srv, publicUser)
 	// Public Routing P0 preview/config endpoints. These are read-only and do not
 	// change legacy subscription or node config responses.
-	registerRoutingPreviewRoutes(srv)
+	registerRoutingPreviewRoutes(srv, adminRouting)
 	// 注册兼容的订阅配置端点（与原项目格式完全一致）
 	for _, subscribePath := range subscribeCompatPaths(appConf) {
 		srv.HandleFunc(subscribePath, handleSubscribeConfig(publicSubscription, subscribePath))

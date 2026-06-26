@@ -4,66 +4,117 @@ import (
 	"encoding/json"
 	nethttp "net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
 	publicrouting "github.com/npanel-dev/NPanel-backend/internal/biz/public/routing"
 	"github.com/npanel-dev/NPanel-backend/internal/pkg/middleware"
+	adminroutingservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/routing"
 )
 
-func registerRoutingPreviewRoutes(srv *http.Server) {
-	srv.HandleFunc("/v1/public/routing/config", handleRoutingConfig)
-	srv.HandleFunc("/v1/public/routing/preview", handleRoutingPreview)
+type publicRoutingCache struct {
+	mu        sync.Mutex
+	envelope  publicrouting.Envelope
+	expiresAt time.Time
+	ok        bool
 }
 
-func handleRoutingConfig(w nethttp.ResponseWriter, r *nethttp.Request) {
-	if r.Method != nethttp.MethodGet {
-		writeRoutingError(w, nethttp.StatusMethodNotAllowed, 405, "method not allowed")
-		return
+func registerRoutingPreviewRoutes(srv *http.Server, routing *adminroutingservice.RoutingService) {
+	cache := &publicRoutingCache{}
+	srv.HandleFunc("/v1/public/routing/config", handleRoutingConfig(routing, cache))
+	srv.HandleFunc("/v1/public/routing/preview", handleRoutingPreview(routing, cache))
+}
+
+func handleRoutingConfig(routing *adminroutingservice.RoutingService, cache *publicRoutingCache) nethttp.HandlerFunc {
+	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		if r.Method != nethttp.MethodGet {
+			writeRoutingError(w, nethttp.StatusMethodNotAllowed, 405, "method not allowed")
+			return
+		}
+
+		cfg, fallback := loadPublicRoutingConfig(routing, cache, r)
+		if fallback != "" {
+			w.Header().Set("X-Routing-Fallback", fallback)
+		}
+
+		if r.Header.Get("If-None-Match") == cfg.RoutingHash {
+			w.WriteHeader(nethttp.StatusNotModified)
+			return
+		}
+
+		writeRoutingOK(w, cfg)
+	}
+}
+
+func handleRoutingPreview(routing *adminroutingservice.RoutingService, cache *publicRoutingCache) nethttp.HandlerFunc {
+	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		if r.Method != nethttp.MethodPost {
+			writeRoutingError(w, nethttp.StatusMethodNotAllowed, 405, "method not allowed")
+			return
+		}
+
+		var req publicrouting.PreviewRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeRoutingError(w, nethttp.StatusBadRequest, 400, "invalid preview request")
+			return
+		}
+		if len(req.SupportedFeatures) == 0 {
+			req.SupportedFeatures = publicrouting.ParseFeatureList(r.Header.Get("X-Routing-Features"))
+		}
+		req.Domain = strings.TrimSpace(req.Domain)
+		if req.Domain == "" && req.IP == "" {
+			writeRoutingError(w, nethttp.StatusBadRequest, 422, "domain or ip is required")
+			return
+		}
+
+		cfg, fallback := loadPublicRoutingConfig(routing, cache, r)
+		if fallback != "" {
+			w.Header().Set("X-Routing-Fallback", fallback)
+		}
+		result := publicrouting.PreviewRouteConfig(cfg, req)
+		writeRoutingOK(w, result)
+	}
+}
+
+func loadPublicRoutingConfig(routing *adminroutingservice.RoutingService, cache *publicRoutingCache, r *nethttp.Request) (publicrouting.Envelope, string) {
+	now := time.Now()
+	if cfg, ok := cache.get(now); ok {
+		return cfg, ""
 	}
 
 	features := publicrouting.ParseFeatureList(r.Header.Get("X-Routing-Features"))
-	cfg := publicrouting.BuildPreviewConfig(time.Now(), publicrouting.ConfigOptions{
+	cfg, err := routing.BuildPublicConfig(r.Context(), now, publicrouting.ConfigOptions{
 		UserID:            middleware.GetUserID(r.Context()),
 		UserAgent:         r.UserAgent(),
 		SupportedFeatures: features,
 	})
-
-	if r.Header.Get("If-None-Match") == cfg.RoutingHash {
-		w.WriteHeader(nethttp.StatusNotModified)
-		return
+	if err != nil {
+		return publicrouting.BuildPreviewConfig(now, publicrouting.ConfigOptions{
+			UserID:            middleware.GetUserID(r.Context()),
+			UserAgent:         r.UserAgent(),
+			SupportedFeatures: features,
+		}), "fixture"
 	}
-
-	writeRoutingOK(w, cfg)
+	cache.set(cfg, now.Add(15*time.Second))
+	return cfg, ""
 }
 
-func handleRoutingPreview(w nethttp.ResponseWriter, r *nethttp.Request) {
-	if r.Method != nethttp.MethodPost {
-		writeRoutingError(w, nethttp.StatusMethodNotAllowed, 405, "method not allowed")
-		return
+func (c *publicRoutingCache) get(now time.Time) (publicrouting.Envelope, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.ok || now.After(c.expiresAt) {
+		return publicrouting.Envelope{}, false
 	}
+	return c.envelope, true
+}
 
-	var req publicrouting.PreviewRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeRoutingError(w, nethttp.StatusBadRequest, 400, "invalid preview request")
-		return
-	}
-	if len(req.SupportedFeatures) == 0 {
-		req.SupportedFeatures = publicrouting.ParseFeatureList(r.Header.Get("X-Routing-Features"))
-	}
-	req.Domain = strings.TrimSpace(req.Domain)
-	if req.Domain == "" && req.IP == "" {
-		writeRoutingError(w, nethttp.StatusBadRequest, 422, "domain or ip is required")
-		return
-	}
-
-	cfg := publicrouting.BuildPreviewConfig(time.Now(), publicrouting.ConfigOptions{
-		UserID:            middleware.GetUserID(r.Context()),
-		UserAgent:         r.UserAgent(),
-		SupportedFeatures: req.SupportedFeatures,
-	})
-	result := publicrouting.PreviewRouteConfig(cfg, req)
-	writeRoutingOK(w, result)
+func (c *publicRoutingCache) set(envelope publicrouting.Envelope, expiresAt time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.envelope = envelope
+	c.expiresAt = expiresAt
+	c.ok = true
 }
 
 func writeRoutingOK(w nethttp.ResponseWriter, data any) {
