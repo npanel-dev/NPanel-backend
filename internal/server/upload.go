@@ -43,7 +43,7 @@ type uploadImageData struct {
 
 type httpRouteRegistrar interface {
 	HandleFunc(pattern string, handler nethttp.HandlerFunc)
-	Handle(pattern string, handler nethttp.Handler)
+	HandlePrefix(prefix string, handler nethttp.Handler)
 }
 
 func registerUploadRoutes(srv httpRouteRegistrar, c *conf.Server, d *data.Data) {
@@ -51,7 +51,7 @@ func registerUploadRoutes(srv httpRouteRegistrar, c *conf.Server, d *data.Data) 
 		return
 	}
 	srv.HandleFunc("/v1/upload/image", handleUploadImage(c, d))
-	srv.Handle(strings.TrimRight(defaultUploadURLPath, "/")+"/", uploadStaticHandler())
+	srv.HandlePrefix(strings.TrimRight(defaultUploadURLPath, "/")+"/", uploadStaticHandler())
 }
 
 func handleUploadImage(c *conf.Server, d *data.Data) nethttp.HandlerFunc {

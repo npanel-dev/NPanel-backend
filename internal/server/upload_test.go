@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	kratoshttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/npanel-dev/NPanel-backend/internal/conf"
 )
 
@@ -80,6 +81,35 @@ func TestAbsoluteUploadURLUsesForwardedCustomerHost(t *testing.T) {
 	want := "https://panel.customer.example/uploads/images/2026/06/27/logo.webp"
 	if got != want {
 		t.Fatalf("unexpected upload url: got %q want %q", got, want)
+	}
+}
+
+func TestUploadStaticRouteServesNestedImagePath(t *testing.T) {
+	uploadDir := t.TempDir()
+	t.Setenv("NPANEL_UPLOAD_DIR", uploadDir)
+
+	relativePath := filepath.FromSlash("images/2026/06/27/logo.webp")
+	localPath := filepath.Join(uploadDir, relativePath)
+	if err := os.MkdirAll(filepath.Dir(localPath), 0755); err != nil {
+		t.Fatalf("create upload dir: %v", err)
+	}
+	content := []byte("webp image")
+	if err := os.WriteFile(localPath, content, 0644); err != nil {
+		t.Fatalf("write upload file: %v", err)
+	}
+
+	srv := kratoshttp.NewServer()
+	registerUploadRoutes(srv, authDisabledServerConfig(), nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/uploads/images/2026/06/27/logo.webp", nil)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status: %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Equal(rec.Body.Bytes(), content) {
+		t.Fatalf("unexpected body: got %q want %q", rec.Body.Bytes(), content)
 	}
 }
 
