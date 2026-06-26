@@ -34,6 +34,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribeapplication"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -91,6 +92,8 @@ type Client struct {
 	ProxySubscribeCategory *ProxySubscribeCategoryClient
 	// ProxySubscribeGroup is the client for interacting with the ProxySubscribeGroup builders.
 	ProxySubscribeGroup *ProxySubscribeGroupClient
+	// ProxySubscribePriceOption is the client for interacting with the ProxySubscribePriceOption builders.
+	ProxySubscribePriceOption *ProxySubscribePriceOptionClient
 	// ProxySystem is the client for interacting with the ProxySystem builders.
 	ProxySystem *ProxySystemClient
 	// ProxySystemLog is the client for interacting with the ProxySystemLog builders.
@@ -145,6 +148,7 @@ func (c *Client) init() {
 	c.ProxySubscribeApplication = NewProxySubscribeApplicationClient(c.config)
 	c.ProxySubscribeCategory = NewProxySubscribeCategoryClient(c.config)
 	c.ProxySubscribeGroup = NewProxySubscribeGroupClient(c.config)
+	c.ProxySubscribePriceOption = NewProxySubscribePriceOptionClient(c.config)
 	c.ProxySystem = NewProxySystemClient(c.config)
 	c.ProxySystemLog = NewProxySystemLogClient(c.config)
 	c.ProxyTask = NewProxyTaskClient(c.config)
@@ -268,6 +272,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProxySubscribeApplication:   NewProxySubscribeApplicationClient(cfg),
 		ProxySubscribeCategory:      NewProxySubscribeCategoryClient(cfg),
 		ProxySubscribeGroup:         NewProxySubscribeGroupClient(cfg),
+		ProxySubscribePriceOption:   NewProxySubscribePriceOptionClient(cfg),
 		ProxySystem:                 NewProxySystemClient(cfg),
 		ProxySystemLog:              NewProxySystemLogClient(cfg),
 		ProxyTask:                   NewProxyTaskClient(cfg),
@@ -318,6 +323,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProxySubscribeApplication:   NewProxySubscribeApplicationClient(cfg),
 		ProxySubscribeCategory:      NewProxySubscribeCategoryClient(cfg),
 		ProxySubscribeGroup:         NewProxySubscribeGroupClient(cfg),
+		ProxySubscribePriceOption:   NewProxySubscribePriceOptionClient(cfg),
 		ProxySystem:                 NewProxySystemClient(cfg),
 		ProxySystemLog:              NewProxySystemLogClient(cfg),
 		ProxyTask:                   NewProxyTaskClient(cfg),
@@ -364,10 +370,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ProxyOrder, c.ProxyPayment, c.ProxyRedemptionCode, c.ProxyRedemptionRecord,
 		c.ProxySchemaMigrations, c.ProxyServer, c.ProxyServerGroup, c.ProxySubscribe,
 		c.ProxySubscribeApplication, c.ProxySubscribeCategory, c.ProxySubscribeGroup,
-		c.ProxySystem, c.ProxySystemLog, c.ProxyTask, c.ProxyTicket,
-		c.ProxyTicketFollow, c.ProxyTrafficLog, c.ProxyUser, c.ProxyUserAuthMethod,
-		c.ProxyUserDevice, c.ProxyUserDeviceOnlineRecord, c.ProxyUserSubscribe,
-		c.ProxyUserWithdrawal,
+		c.ProxySubscribePriceOption, c.ProxySystem, c.ProxySystemLog, c.ProxyTask,
+		c.ProxyTicket, c.ProxyTicketFollow, c.ProxyTrafficLog, c.ProxyUser,
+		c.ProxyUserAuthMethod, c.ProxyUserDevice, c.ProxyUserDeviceOnlineRecord,
+		c.ProxyUserSubscribe, c.ProxyUserWithdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -382,10 +388,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ProxyOrder, c.ProxyPayment, c.ProxyRedemptionCode, c.ProxyRedemptionRecord,
 		c.ProxySchemaMigrations, c.ProxyServer, c.ProxyServerGroup, c.ProxySubscribe,
 		c.ProxySubscribeApplication, c.ProxySubscribeCategory, c.ProxySubscribeGroup,
-		c.ProxySystem, c.ProxySystemLog, c.ProxyTask, c.ProxyTicket,
-		c.ProxyTicketFollow, c.ProxyTrafficLog, c.ProxyUser, c.ProxyUserAuthMethod,
-		c.ProxyUserDevice, c.ProxyUserDeviceOnlineRecord, c.ProxyUserSubscribe,
-		c.ProxyUserWithdrawal,
+		c.ProxySubscribePriceOption, c.ProxySystem, c.ProxySystemLog, c.ProxyTask,
+		c.ProxyTicket, c.ProxyTicketFollow, c.ProxyTrafficLog, c.ProxyUser,
+		c.ProxyUserAuthMethod, c.ProxyUserDevice, c.ProxyUserDeviceOnlineRecord,
+		c.ProxyUserSubscribe, c.ProxyUserWithdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -432,6 +438,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProxySubscribeCategory.mutate(ctx, m)
 	case *ProxySubscribeGroupMutation:
 		return c.ProxySubscribeGroup.mutate(ctx, m)
+	case *ProxySubscribePriceOptionMutation:
+		return c.ProxySubscribePriceOption.mutate(ctx, m)
 	case *ProxySystemMutation:
 		return c.ProxySystem.mutate(ctx, m)
 	case *ProxySystemLogMutation:
@@ -3036,6 +3044,139 @@ func (c *ProxySubscribeGroupClient) mutate(ctx context.Context, m *ProxySubscrib
 	}
 }
 
+// ProxySubscribePriceOptionClient is a client for the ProxySubscribePriceOption schema.
+type ProxySubscribePriceOptionClient struct {
+	config
+}
+
+// NewProxySubscribePriceOptionClient returns a client for the ProxySubscribePriceOption from the given config.
+func NewProxySubscribePriceOptionClient(c config) *ProxySubscribePriceOptionClient {
+	return &ProxySubscribePriceOptionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `proxysubscribepriceoption.Hooks(f(g(h())))`.
+func (c *ProxySubscribePriceOptionClient) Use(hooks ...Hook) {
+	c.hooks.ProxySubscribePriceOption = append(c.hooks.ProxySubscribePriceOption, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `proxysubscribepriceoption.Intercept(f(g(h())))`.
+func (c *ProxySubscribePriceOptionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProxySubscribePriceOption = append(c.inters.ProxySubscribePriceOption, interceptors...)
+}
+
+// Create returns a builder for creating a ProxySubscribePriceOption entity.
+func (c *ProxySubscribePriceOptionClient) Create() *ProxySubscribePriceOptionCreate {
+	mutation := newProxySubscribePriceOptionMutation(c.config, OpCreate)
+	return &ProxySubscribePriceOptionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProxySubscribePriceOption entities.
+func (c *ProxySubscribePriceOptionClient) CreateBulk(builders ...*ProxySubscribePriceOptionCreate) *ProxySubscribePriceOptionCreateBulk {
+	return &ProxySubscribePriceOptionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProxySubscribePriceOptionClient) MapCreateBulk(slice any, setFunc func(*ProxySubscribePriceOptionCreate, int)) *ProxySubscribePriceOptionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProxySubscribePriceOptionCreateBulk{err: fmt.Errorf("calling to ProxySubscribePriceOptionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProxySubscribePriceOptionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProxySubscribePriceOptionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProxySubscribePriceOption.
+func (c *ProxySubscribePriceOptionClient) Update() *ProxySubscribePriceOptionUpdate {
+	mutation := newProxySubscribePriceOptionMutation(c.config, OpUpdate)
+	return &ProxySubscribePriceOptionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProxySubscribePriceOptionClient) UpdateOne(_m *ProxySubscribePriceOption) *ProxySubscribePriceOptionUpdateOne {
+	mutation := newProxySubscribePriceOptionMutation(c.config, OpUpdateOne, withProxySubscribePriceOption(_m))
+	return &ProxySubscribePriceOptionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProxySubscribePriceOptionClient) UpdateOneID(id int64) *ProxySubscribePriceOptionUpdateOne {
+	mutation := newProxySubscribePriceOptionMutation(c.config, OpUpdateOne, withProxySubscribePriceOptionID(id))
+	return &ProxySubscribePriceOptionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProxySubscribePriceOption.
+func (c *ProxySubscribePriceOptionClient) Delete() *ProxySubscribePriceOptionDelete {
+	mutation := newProxySubscribePriceOptionMutation(c.config, OpDelete)
+	return &ProxySubscribePriceOptionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProxySubscribePriceOptionClient) DeleteOne(_m *ProxySubscribePriceOption) *ProxySubscribePriceOptionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProxySubscribePriceOptionClient) DeleteOneID(id int64) *ProxySubscribePriceOptionDeleteOne {
+	builder := c.Delete().Where(proxysubscribepriceoption.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProxySubscribePriceOptionDeleteOne{builder}
+}
+
+// Query returns a query builder for ProxySubscribePriceOption.
+func (c *ProxySubscribePriceOptionClient) Query() *ProxySubscribePriceOptionQuery {
+	return &ProxySubscribePriceOptionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProxySubscribePriceOption},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProxySubscribePriceOption entity by its id.
+func (c *ProxySubscribePriceOptionClient) Get(ctx context.Context, id int64) (*ProxySubscribePriceOption, error) {
+	return c.Query().Where(proxysubscribepriceoption.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProxySubscribePriceOptionClient) GetX(ctx context.Context, id int64) *ProxySubscribePriceOption {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProxySubscribePriceOptionClient) Hooks() []Hook {
+	return c.hooks.ProxySubscribePriceOption
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProxySubscribePriceOptionClient) Interceptors() []Interceptor {
+	return c.inters.ProxySubscribePriceOption
+}
+
+func (c *ProxySubscribePriceOptionClient) mutate(ctx context.Context, m *ProxySubscribePriceOptionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProxySubscribePriceOptionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProxySubscribePriceOptionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProxySubscribePriceOptionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProxySubscribePriceOptionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProxySubscribePriceOption mutation op: %q", m.Op())
+	}
+}
+
 // ProxySystemClient is a client for the ProxySystem schema.
 type ProxySystemClient struct {
 	config
@@ -4688,9 +4829,10 @@ type (
 		ProxyPayment, ProxyRedemptionCode, ProxyRedemptionRecord,
 		ProxySchemaMigrations, ProxyServer, ProxyServerGroup, ProxySubscribe,
 		ProxySubscribeApplication, ProxySubscribeCategory, ProxySubscribeGroup,
-		ProxySystem, ProxySystemLog, ProxyTask, ProxyTicket, ProxyTicketFollow,
-		ProxyTrafficLog, ProxyUser, ProxyUserAuthMethod, ProxyUserDevice,
-		ProxyUserDeviceOnlineRecord, ProxyUserSubscribe, ProxyUserWithdrawal []ent.Hook
+		ProxySubscribePriceOption, ProxySystem, ProxySystemLog, ProxyTask, ProxyTicket,
+		ProxyTicketFollow, ProxyTrafficLog, ProxyUser, ProxyUserAuthMethod,
+		ProxyUserDevice, ProxyUserDeviceOnlineRecord, ProxyUserSubscribe,
+		ProxyUserWithdrawal []ent.Hook
 	}
 	inters struct {
 		ProxyAds, ProxyAnnouncement, ProxyAuthMethod, ProxyCoupon, ProxyDocument,
@@ -4698,9 +4840,9 @@ type (
 		ProxyPayment, ProxyRedemptionCode, ProxyRedemptionRecord,
 		ProxySchemaMigrations, ProxyServer, ProxyServerGroup, ProxySubscribe,
 		ProxySubscribeApplication, ProxySubscribeCategory, ProxySubscribeGroup,
-		ProxySystem, ProxySystemLog, ProxyTask, ProxyTicket, ProxyTicketFollow,
-		ProxyTrafficLog, ProxyUser, ProxyUserAuthMethod, ProxyUserDevice,
-		ProxyUserDeviceOnlineRecord, ProxyUserSubscribe,
+		ProxySubscribePriceOption, ProxySystem, ProxySystemLog, ProxyTask, ProxyTicket,
+		ProxyTicketFollow, ProxyTrafficLog, ProxyUser, ProxyUserAuthMethod,
+		ProxyUserDevice, ProxyUserDeviceOnlineRecord, ProxyUserSubscribe,
 		ProxyUserWithdrawal []ent.Interceptor
 	}
 )

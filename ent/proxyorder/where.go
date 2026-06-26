@@ -144,6 +144,31 @@ func SubscribeID(v int64) predicate.ProxyOrder {
 	return predicate.ProxyOrder(sql.FieldEQ(FieldSubscribeID, v))
 }
 
+// PriceOptionID applies equality check predicate on the "price_option_id" field. It's identical to PriceOptionIDEQ.
+func PriceOptionID(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldPriceOptionID, v))
+}
+
+// PriceOptionName applies equality check predicate on the "price_option_name" field. It's identical to PriceOptionNameEQ.
+func PriceOptionName(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldPriceOptionName, v))
+}
+
+// DurationUnit applies equality check predicate on the "duration_unit" field. It's identical to DurationUnitEQ.
+func DurationUnit(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldDurationUnit, v))
+}
+
+// DurationValue applies equality check predicate on the "duration_value" field. It's identical to DurationValueEQ.
+func DurationValue(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldDurationValue, v))
+}
+
+// OptionPrice applies equality check predicate on the "option_price" field. It's identical to OptionPriceEQ.
+func OptionPrice(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldOptionPrice, v))
+}
+
 // SubscribeToken applies equality check predicate on the "subscribe_token" field. It's identical to SubscribeTokenEQ.
 func SubscribeToken(v string) predicate.ProxyOrder {
 	return predicate.ProxyOrder(sql.FieldEQ(FieldSubscribeToken, v))
@@ -1012,6 +1037,256 @@ func SubscribeIDLT(v int64) predicate.ProxyOrder {
 // SubscribeIDLTE applies the LTE predicate on the "subscribe_id" field.
 func SubscribeIDLTE(v int64) predicate.ProxyOrder {
 	return predicate.ProxyOrder(sql.FieldLTE(FieldSubscribeID, v))
+}
+
+// PriceOptionIDEQ applies the EQ predicate on the "price_option_id" field.
+func PriceOptionIDEQ(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldPriceOptionID, v))
+}
+
+// PriceOptionIDNEQ applies the NEQ predicate on the "price_option_id" field.
+func PriceOptionIDNEQ(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNEQ(FieldPriceOptionID, v))
+}
+
+// PriceOptionIDIn applies the In predicate on the "price_option_id" field.
+func PriceOptionIDIn(vs ...int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldIn(FieldPriceOptionID, vs...))
+}
+
+// PriceOptionIDNotIn applies the NotIn predicate on the "price_option_id" field.
+func PriceOptionIDNotIn(vs ...int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNotIn(FieldPriceOptionID, vs...))
+}
+
+// PriceOptionIDGT applies the GT predicate on the "price_option_id" field.
+func PriceOptionIDGT(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGT(FieldPriceOptionID, v))
+}
+
+// PriceOptionIDGTE applies the GTE predicate on the "price_option_id" field.
+func PriceOptionIDGTE(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGTE(FieldPriceOptionID, v))
+}
+
+// PriceOptionIDLT applies the LT predicate on the "price_option_id" field.
+func PriceOptionIDLT(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLT(FieldPriceOptionID, v))
+}
+
+// PriceOptionIDLTE applies the LTE predicate on the "price_option_id" field.
+func PriceOptionIDLTE(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLTE(FieldPriceOptionID, v))
+}
+
+// PriceOptionNameEQ applies the EQ predicate on the "price_option_name" field.
+func PriceOptionNameEQ(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameNEQ applies the NEQ predicate on the "price_option_name" field.
+func PriceOptionNameNEQ(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNEQ(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameIn applies the In predicate on the "price_option_name" field.
+func PriceOptionNameIn(vs ...string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldIn(FieldPriceOptionName, vs...))
+}
+
+// PriceOptionNameNotIn applies the NotIn predicate on the "price_option_name" field.
+func PriceOptionNameNotIn(vs ...string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNotIn(FieldPriceOptionName, vs...))
+}
+
+// PriceOptionNameGT applies the GT predicate on the "price_option_name" field.
+func PriceOptionNameGT(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGT(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameGTE applies the GTE predicate on the "price_option_name" field.
+func PriceOptionNameGTE(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGTE(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameLT applies the LT predicate on the "price_option_name" field.
+func PriceOptionNameLT(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLT(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameLTE applies the LTE predicate on the "price_option_name" field.
+func PriceOptionNameLTE(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLTE(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameContains applies the Contains predicate on the "price_option_name" field.
+func PriceOptionNameContains(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldContains(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameHasPrefix applies the HasPrefix predicate on the "price_option_name" field.
+func PriceOptionNameHasPrefix(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldHasPrefix(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameHasSuffix applies the HasSuffix predicate on the "price_option_name" field.
+func PriceOptionNameHasSuffix(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldHasSuffix(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameEqualFold applies the EqualFold predicate on the "price_option_name" field.
+func PriceOptionNameEqualFold(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEqualFold(FieldPriceOptionName, v))
+}
+
+// PriceOptionNameContainsFold applies the ContainsFold predicate on the "price_option_name" field.
+func PriceOptionNameContainsFold(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldContainsFold(FieldPriceOptionName, v))
+}
+
+// DurationUnitEQ applies the EQ predicate on the "duration_unit" field.
+func DurationUnitEQ(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldDurationUnit, v))
+}
+
+// DurationUnitNEQ applies the NEQ predicate on the "duration_unit" field.
+func DurationUnitNEQ(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNEQ(FieldDurationUnit, v))
+}
+
+// DurationUnitIn applies the In predicate on the "duration_unit" field.
+func DurationUnitIn(vs ...string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldIn(FieldDurationUnit, vs...))
+}
+
+// DurationUnitNotIn applies the NotIn predicate on the "duration_unit" field.
+func DurationUnitNotIn(vs ...string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNotIn(FieldDurationUnit, vs...))
+}
+
+// DurationUnitGT applies the GT predicate on the "duration_unit" field.
+func DurationUnitGT(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGT(FieldDurationUnit, v))
+}
+
+// DurationUnitGTE applies the GTE predicate on the "duration_unit" field.
+func DurationUnitGTE(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGTE(FieldDurationUnit, v))
+}
+
+// DurationUnitLT applies the LT predicate on the "duration_unit" field.
+func DurationUnitLT(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLT(FieldDurationUnit, v))
+}
+
+// DurationUnitLTE applies the LTE predicate on the "duration_unit" field.
+func DurationUnitLTE(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLTE(FieldDurationUnit, v))
+}
+
+// DurationUnitContains applies the Contains predicate on the "duration_unit" field.
+func DurationUnitContains(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldContains(FieldDurationUnit, v))
+}
+
+// DurationUnitHasPrefix applies the HasPrefix predicate on the "duration_unit" field.
+func DurationUnitHasPrefix(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldHasPrefix(FieldDurationUnit, v))
+}
+
+// DurationUnitHasSuffix applies the HasSuffix predicate on the "duration_unit" field.
+func DurationUnitHasSuffix(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldHasSuffix(FieldDurationUnit, v))
+}
+
+// DurationUnitEqualFold applies the EqualFold predicate on the "duration_unit" field.
+func DurationUnitEqualFold(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEqualFold(FieldDurationUnit, v))
+}
+
+// DurationUnitContainsFold applies the ContainsFold predicate on the "duration_unit" field.
+func DurationUnitContainsFold(v string) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldContainsFold(FieldDurationUnit, v))
+}
+
+// DurationValueEQ applies the EQ predicate on the "duration_value" field.
+func DurationValueEQ(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldDurationValue, v))
+}
+
+// DurationValueNEQ applies the NEQ predicate on the "duration_value" field.
+func DurationValueNEQ(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNEQ(FieldDurationValue, v))
+}
+
+// DurationValueIn applies the In predicate on the "duration_value" field.
+func DurationValueIn(vs ...int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldIn(FieldDurationValue, vs...))
+}
+
+// DurationValueNotIn applies the NotIn predicate on the "duration_value" field.
+func DurationValueNotIn(vs ...int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNotIn(FieldDurationValue, vs...))
+}
+
+// DurationValueGT applies the GT predicate on the "duration_value" field.
+func DurationValueGT(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGT(FieldDurationValue, v))
+}
+
+// DurationValueGTE applies the GTE predicate on the "duration_value" field.
+func DurationValueGTE(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGTE(FieldDurationValue, v))
+}
+
+// DurationValueLT applies the LT predicate on the "duration_value" field.
+func DurationValueLT(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLT(FieldDurationValue, v))
+}
+
+// DurationValueLTE applies the LTE predicate on the "duration_value" field.
+func DurationValueLTE(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLTE(FieldDurationValue, v))
+}
+
+// OptionPriceEQ applies the EQ predicate on the "option_price" field.
+func OptionPriceEQ(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldEQ(FieldOptionPrice, v))
+}
+
+// OptionPriceNEQ applies the NEQ predicate on the "option_price" field.
+func OptionPriceNEQ(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNEQ(FieldOptionPrice, v))
+}
+
+// OptionPriceIn applies the In predicate on the "option_price" field.
+func OptionPriceIn(vs ...int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldIn(FieldOptionPrice, vs...))
+}
+
+// OptionPriceNotIn applies the NotIn predicate on the "option_price" field.
+func OptionPriceNotIn(vs ...int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldNotIn(FieldOptionPrice, vs...))
+}
+
+// OptionPriceGT applies the GT predicate on the "option_price" field.
+func OptionPriceGT(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGT(FieldOptionPrice, v))
+}
+
+// OptionPriceGTE applies the GTE predicate on the "option_price" field.
+func OptionPriceGTE(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldGTE(FieldOptionPrice, v))
+}
+
+// OptionPriceLT applies the LT predicate on the "option_price" field.
+func OptionPriceLT(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLT(FieldOptionPrice, v))
+}
+
+// OptionPriceLTE applies the LTE predicate on the "option_price" field.
+func OptionPriceLTE(v int64) predicate.ProxyOrder {
+	return predicate.ProxyOrder(sql.FieldLTE(FieldOptionPrice, v))
 }
 
 // SubscribeTokenEQ applies the EQ predicate on the "subscribe_token" field.

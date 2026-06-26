@@ -1,6 +1,10 @@
 package migrate
 
-import "testing"
+import (
+	"testing"
+
+	mysql "github.com/go-sql-driver/mysql"
+)
 
 func TestNormalizeLegacyStatementSkipsObsoleteSubscribeTypeSeed(t *testing.T) {
 	stmt := "INSERT IGNORE INTO `subscribe_type` (`id`, `name`) VALUES (1, 'Clash')"
@@ -18,7 +22,7 @@ func TestNormalizeLegacyStatementUsesInsertIgnoreForSubscribeApplication(t *test
 }
 
 func TestLegacySQLMigrationsIncludeSyncedLatestVersions(t *testing.T) {
-	want := []int64{2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141}
+	want := []int64{2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143}
 	got := make([]int64, 0, len(want))
 	for _, migration := range legacySQLMigrations {
 		if migration.version >= 2133 {
@@ -32,5 +36,15 @@ func TestLegacySQLMigrationsIncludeSyncedLatestVersions(t *testing.T) {
 		if got[i] != want[i] {
 			t.Fatalf("unexpected synced migration versions: got %v want %v", got, want)
 		}
+	}
+}
+
+func TestShouldIgnoreLegacySQLErrorAllowsRepeatableSubscribeDefaultConstraint(t *testing.T) {
+	path := "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql"
+	if !shouldIgnoreLegacySQLError(path, "ALTER TABLE `subscribe_application` ADD COLUMN `default_unique_key` TINYINT", &mysql.MySQLError{Number: 1060}) {
+		t.Fatal("expected duplicate generated column error to be ignored for repeatable compatibility migration")
+	}
+	if !shouldIgnoreLegacySQLError(path, "ALTER TABLE `subscribe_application` ADD UNIQUE INDEX `uniq_subscribe_application_default` (`default_unique_key`)", &mysql.MySQLError{Number: 1061}) {
+		t.Fatal("expected duplicate default unique index error to be ignored for repeatable compatibility migration")
 	}
 }

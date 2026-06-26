@@ -264,6 +264,76 @@ func (_c *ProxyOrderCreate) SetNillableSubscribeID(v *int64) *ProxyOrderCreate {
 	return _c
 }
 
+// SetPriceOptionID sets the "price_option_id" field.
+func (_c *ProxyOrderCreate) SetPriceOptionID(v int64) *ProxyOrderCreate {
+	_c.mutation.SetPriceOptionID(v)
+	return _c
+}
+
+// SetNillablePriceOptionID sets the "price_option_id" field if the given value is not nil.
+func (_c *ProxyOrderCreate) SetNillablePriceOptionID(v *int64) *ProxyOrderCreate {
+	if v != nil {
+		_c.SetPriceOptionID(*v)
+	}
+	return _c
+}
+
+// SetPriceOptionName sets the "price_option_name" field.
+func (_c *ProxyOrderCreate) SetPriceOptionName(v string) *ProxyOrderCreate {
+	_c.mutation.SetPriceOptionName(v)
+	return _c
+}
+
+// SetNillablePriceOptionName sets the "price_option_name" field if the given value is not nil.
+func (_c *ProxyOrderCreate) SetNillablePriceOptionName(v *string) *ProxyOrderCreate {
+	if v != nil {
+		_c.SetPriceOptionName(*v)
+	}
+	return _c
+}
+
+// SetDurationUnit sets the "duration_unit" field.
+func (_c *ProxyOrderCreate) SetDurationUnit(v string) *ProxyOrderCreate {
+	_c.mutation.SetDurationUnit(v)
+	return _c
+}
+
+// SetNillableDurationUnit sets the "duration_unit" field if the given value is not nil.
+func (_c *ProxyOrderCreate) SetNillableDurationUnit(v *string) *ProxyOrderCreate {
+	if v != nil {
+		_c.SetDurationUnit(*v)
+	}
+	return _c
+}
+
+// SetDurationValue sets the "duration_value" field.
+func (_c *ProxyOrderCreate) SetDurationValue(v int64) *ProxyOrderCreate {
+	_c.mutation.SetDurationValue(v)
+	return _c
+}
+
+// SetNillableDurationValue sets the "duration_value" field if the given value is not nil.
+func (_c *ProxyOrderCreate) SetNillableDurationValue(v *int64) *ProxyOrderCreate {
+	if v != nil {
+		_c.SetDurationValue(*v)
+	}
+	return _c
+}
+
+// SetOptionPrice sets the "option_price" field.
+func (_c *ProxyOrderCreate) SetOptionPrice(v int64) *ProxyOrderCreate {
+	_c.mutation.SetOptionPrice(v)
+	return _c
+}
+
+// SetNillableOptionPrice sets the "option_price" field if the given value is not nil.
+func (_c *ProxyOrderCreate) SetNillableOptionPrice(v *int64) *ProxyOrderCreate {
+	if v != nil {
+		_c.SetOptionPrice(*v)
+	}
+	return _c
+}
+
 // SetSubscribeToken sets the "subscribe_token" field.
 func (_c *ProxyOrderCreate) SetSubscribeToken(v string) *ProxyOrderCreate {
 	_c.mutation.SetSubscribeToken(v)
@@ -417,6 +487,26 @@ func (_c *ProxyOrderCreate) defaults() {
 		v := proxyorder.DefaultSubscribeID
 		_c.mutation.SetSubscribeID(v)
 	}
+	if _, ok := _c.mutation.PriceOptionID(); !ok {
+		v := proxyorder.DefaultPriceOptionID
+		_c.mutation.SetPriceOptionID(v)
+	}
+	if _, ok := _c.mutation.PriceOptionName(); !ok {
+		v := proxyorder.DefaultPriceOptionName
+		_c.mutation.SetPriceOptionName(v)
+	}
+	if _, ok := _c.mutation.DurationUnit(); !ok {
+		v := proxyorder.DefaultDurationUnit
+		_c.mutation.SetDurationUnit(v)
+	}
+	if _, ok := _c.mutation.DurationValue(); !ok {
+		v := proxyorder.DefaultDurationValue
+		_c.mutation.SetDurationValue(v)
+	}
+	if _, ok := _c.mutation.OptionPrice(); !ok {
+		v := proxyorder.DefaultOptionPrice
+		_c.mutation.SetOptionPrice(v)
+	}
 	if _, ok := _c.mutation.IsNew(); !ok {
 		v := proxyorder.DefaultIsNew
 		_c.mutation.SetIsNew(v)
@@ -497,6 +587,31 @@ func (_c *ProxyOrderCreate) check() error {
 	}
 	if _, ok := _c.mutation.SubscribeID(); !ok {
 		return &ValidationError{Name: "subscribe_id", err: errors.New(`ent: missing required field "ProxyOrder.subscribe_id"`)}
+	}
+	if _, ok := _c.mutation.PriceOptionID(); !ok {
+		return &ValidationError{Name: "price_option_id", err: errors.New(`ent: missing required field "ProxyOrder.price_option_id"`)}
+	}
+	if _, ok := _c.mutation.PriceOptionName(); !ok {
+		return &ValidationError{Name: "price_option_name", err: errors.New(`ent: missing required field "ProxyOrder.price_option_name"`)}
+	}
+	if v, ok := _c.mutation.PriceOptionName(); ok {
+		if err := proxyorder.PriceOptionNameValidator(v); err != nil {
+			return &ValidationError{Name: "price_option_name", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.price_option_name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.DurationUnit(); !ok {
+		return &ValidationError{Name: "duration_unit", err: errors.New(`ent: missing required field "ProxyOrder.duration_unit"`)}
+	}
+	if v, ok := _c.mutation.DurationUnit(); ok {
+		if err := proxyorder.DurationUnitValidator(v); err != nil {
+			return &ValidationError{Name: "duration_unit", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.duration_unit": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.DurationValue(); !ok {
+		return &ValidationError{Name: "duration_value", err: errors.New(`ent: missing required field "ProxyOrder.duration_value"`)}
+	}
+	if _, ok := _c.mutation.OptionPrice(); !ok {
+		return &ValidationError{Name: "option_price", err: errors.New(`ent: missing required field "ProxyOrder.option_price"`)}
 	}
 	if v, ok := _c.mutation.SubscribeToken(); ok {
 		if err := proxyorder.SubscribeTokenValidator(v); err != nil {
@@ -615,6 +730,26 @@ func (_c *ProxyOrderCreate) createSpec() (*ProxyOrder, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SubscribeID(); ok {
 		_spec.SetField(proxyorder.FieldSubscribeID, field.TypeInt64, value)
 		_node.SubscribeID = value
+	}
+	if value, ok := _c.mutation.PriceOptionID(); ok {
+		_spec.SetField(proxyorder.FieldPriceOptionID, field.TypeInt64, value)
+		_node.PriceOptionID = value
+	}
+	if value, ok := _c.mutation.PriceOptionName(); ok {
+		_spec.SetField(proxyorder.FieldPriceOptionName, field.TypeString, value)
+		_node.PriceOptionName = value
+	}
+	if value, ok := _c.mutation.DurationUnit(); ok {
+		_spec.SetField(proxyorder.FieldDurationUnit, field.TypeString, value)
+		_node.DurationUnit = value
+	}
+	if value, ok := _c.mutation.DurationValue(); ok {
+		_spec.SetField(proxyorder.FieldDurationValue, field.TypeInt64, value)
+		_node.DurationValue = value
+	}
+	if value, ok := _c.mutation.OptionPrice(); ok {
+		_spec.SetField(proxyorder.FieldOptionPrice, field.TypeInt64, value)
+		_node.OptionPrice = value
 	}
 	if value, ok := _c.mutation.SubscribeToken(); ok {
 		_spec.SetField(proxyorder.FieldSubscribeToken, field.TypeString, value)

@@ -12,6 +12,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/subscribe"
 	"github.com/npanel-dev/NPanel-backend/internal/model"
@@ -37,7 +38,11 @@ func NewSubscribeRepo(data *Data, logger log.Logger) subscribe.SubscribeRepo {
 
 // CreateSubscribe create subscribe
 func (r *subscribeRepo) CreateSubscribe(ctx context.Context, sub *model.Subscribe) error {
-	_, err := r.data.db.ProxySubscribe.Create().
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	created, err := tx.ProxySubscribe.Create().
 		SetName(sub.Name).
 		SetLanguage(sub.Language).
 		SetDescription(sub.Description).
@@ -65,8 +70,15 @@ func (r *subscribeRepo) CreateSubscribe(ctx context.Context, sub *model.Subscrib
 		SetRenewalReset(sub.RenewalReset).
 		SetShowOriginalPrice(sub.ShowOriginalPrice).
 		Save(ctx)
+	if err != nil {
+		return rollback(tx, err)
+	}
 
-	return err
+	if err := r.replaceSubscribePriceOptions(ctx, tx, created.ID, sub.PriceOptions); err != nil {
+		return rollback(tx, err)
+	}
+
+	return tx.Commit()
 }
 
 // GetSubscribeByID get subscribe by ID
@@ -78,7 +90,11 @@ func (r *subscribeRepo) GetSubscribeByID(ctx context.Context, id int) (*ent.Prox
 
 // UpdateSubscribe update subscribe
 func (r *subscribeRepo) UpdateSubscribe(ctx context.Context, sub *model.Subscribe) error {
-	return r.data.db.ProxySubscribe.Update().
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	if err := tx.ProxySubscribe.Update().
 		Where(proxysubscribe.ID(sub.ID)).
 		SetName(sub.Name).
 		SetLanguage(sub.Language).
@@ -106,15 +122,32 @@ func (r *subscribeRepo) UpdateSubscribe(ctx context.Context, sub *model.Subscrib
 		SetResetCycle(int32(sub.ResetCycle)).
 		SetRenewalReset(sub.RenewalReset).
 		SetShowOriginalPrice(sub.ShowOriginalPrice).
-		Exec(ctx)
+		Exec(ctx); err != nil {
+		return rollback(tx, err)
+	}
+	if err := r.replaceSubscribePriceOptions(ctx, tx, sub.ID, sub.PriceOptions); err != nil {
+		return rollback(tx, err)
+	}
+	return tx.Commit()
 }
 
 // DeleteSubscribe delete subscribe
 func (r *subscribeRepo) DeleteSubscribe(ctx context.Context, id int) error {
-	_, err := r.data.db.ProxySubscribe.Delete().
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ProxySubscribePriceOption.Delete().
+		Where(proxysubscribepriceoption.SubscribeIDEQ(int64(id))).
+		Exec(ctx); err != nil {
+		return rollback(tx, err)
+	}
+	if _, err := tx.ProxySubscribe.Delete().
 		Where(proxysubscribe.ID(int64(id))).
-		Exec(ctx)
-	return err
+		Exec(ctx); err != nil {
+		return rollback(tx, err)
+	}
+	return tx.Commit()
 }
 
 // GetSubscribeList get subscribe list with pagination and filters
@@ -182,10 +215,65 @@ func (r *subscribeRepo) BatchDeleteSubscribe(ctx context.Context, ids []int) err
 	for i, id := range ids {
 		int64IDs[i] = int64(id)
 	}
-	_, err := r.data.db.ProxySubscribe.Delete().
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ProxySubscribePriceOption.Delete().
+		Where(proxysubscribepriceoption.SubscribeIDIn(int64IDs...)).
+		Exec(ctx); err != nil {
+		return rollback(tx, err)
+	}
+	if _, err := tx.ProxySubscribe.Delete().
 		Where(proxysubscribe.IDIn(int64IDs...)).
-		Exec(ctx)
-	return err
+		Exec(ctx); err != nil {
+		return rollback(tx, err)
+	}
+	return tx.Commit()
+}
+
+func (r *subscribeRepo) GetSubscribePriceOptionsBySubscribeIDs(ctx context.Context, ids []int64) (map[int64][]*ent.ProxySubscribePriceOption, error) {
+	result := make(map[int64][]*ent.ProxySubscribePriceOption)
+	if len(ids) == 0 {
+		return result, nil
+	}
+	items, err := r.data.db.ProxySubscribePriceOption.Query().
+		Where(proxysubscribepriceoption.SubscribeIDIn(ids...)).
+		Order(ent.Desc(proxysubscribepriceoption.FieldSort), ent.Asc(proxysubscribepriceoption.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range items {
+		result[item.SubscribeID] = append(result[item.SubscribeID], item)
+	}
+	return result, nil
+}
+
+func (r *subscribeRepo) replaceSubscribePriceOptions(ctx context.Context, tx *ent.Tx, subscribeID int64, options []model.SubscribePriceOption) error {
+	if _, err := tx.ProxySubscribePriceOption.Delete().
+		Where(proxysubscribepriceoption.SubscribeIDEQ(subscribeID)).
+		Exec(ctx); err != nil {
+		return err
+	}
+	for _, option := range options {
+		if _, err := tx.ProxySubscribePriceOption.Create().
+			SetSubscribeID(subscribeID).
+			SetName(option.Name).
+			SetDurationUnit(option.DurationUnit).
+			SetDurationValue(option.DurationValue).
+			SetPrice(option.Price).
+			SetOriginalPrice(option.OriginalPrice).
+			SetInventory(int32(option.Inventory)).
+			SetShow(option.Show).
+			SetSell(option.Sell).
+			SetIsDefault(option.IsDefault).
+			SetSort(int32(option.Sort)).
+			Save(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetSubscribeMinSort get minimum sort value for given IDs

@@ -23,6 +23,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribeapplication"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -542,20 +543,44 @@ func init() {
 	proxyorderDescSubscribeID := proxyorderFields[18].Descriptor()
 	// proxyorder.DefaultSubscribeID holds the default value on creation for the subscribe_id field.
 	proxyorder.DefaultSubscribeID = proxyorderDescSubscribeID.Default.(int64)
+	// proxyorderDescPriceOptionID is the schema descriptor for price_option_id field.
+	proxyorderDescPriceOptionID := proxyorderFields[19].Descriptor()
+	// proxyorder.DefaultPriceOptionID holds the default value on creation for the price_option_id field.
+	proxyorder.DefaultPriceOptionID = proxyorderDescPriceOptionID.Default.(int64)
+	// proxyorderDescPriceOptionName is the schema descriptor for price_option_name field.
+	proxyorderDescPriceOptionName := proxyorderFields[20].Descriptor()
+	// proxyorder.DefaultPriceOptionName holds the default value on creation for the price_option_name field.
+	proxyorder.DefaultPriceOptionName = proxyorderDescPriceOptionName.Default.(string)
+	// proxyorder.PriceOptionNameValidator is a validator for the "price_option_name" field. It is called by the builders before save.
+	proxyorder.PriceOptionNameValidator = proxyorderDescPriceOptionName.Validators[0].(func(string) error)
+	// proxyorderDescDurationUnit is the schema descriptor for duration_unit field.
+	proxyorderDescDurationUnit := proxyorderFields[21].Descriptor()
+	// proxyorder.DefaultDurationUnit holds the default value on creation for the duration_unit field.
+	proxyorder.DefaultDurationUnit = proxyorderDescDurationUnit.Default.(string)
+	// proxyorder.DurationUnitValidator is a validator for the "duration_unit" field. It is called by the builders before save.
+	proxyorder.DurationUnitValidator = proxyorderDescDurationUnit.Validators[0].(func(string) error)
+	// proxyorderDescDurationValue is the schema descriptor for duration_value field.
+	proxyorderDescDurationValue := proxyorderFields[22].Descriptor()
+	// proxyorder.DefaultDurationValue holds the default value on creation for the duration_value field.
+	proxyorder.DefaultDurationValue = proxyorderDescDurationValue.Default.(int64)
+	// proxyorderDescOptionPrice is the schema descriptor for option_price field.
+	proxyorderDescOptionPrice := proxyorderFields[23].Descriptor()
+	// proxyorder.DefaultOptionPrice holds the default value on creation for the option_price field.
+	proxyorder.DefaultOptionPrice = proxyorderDescOptionPrice.Default.(int64)
 	// proxyorderDescSubscribeToken is the schema descriptor for subscribe_token field.
-	proxyorderDescSubscribeToken := proxyorderFields[19].Descriptor()
+	proxyorderDescSubscribeToken := proxyorderFields[24].Descriptor()
 	// proxyorder.SubscribeTokenValidator is a validator for the "subscribe_token" field. It is called by the builders before save.
 	proxyorder.SubscribeTokenValidator = proxyorderDescSubscribeToken.Validators[0].(func(string) error)
 	// proxyorderDescIsNew is the schema descriptor for is_new field.
-	proxyorderDescIsNew := proxyorderFields[20].Descriptor()
+	proxyorderDescIsNew := proxyorderFields[25].Descriptor()
 	// proxyorder.DefaultIsNew holds the default value on creation for the is_new field.
 	proxyorder.DefaultIsNew = proxyorderDescIsNew.Default.(bool)
 	// proxyorderDescCreatedAt is the schema descriptor for created_at field.
-	proxyorderDescCreatedAt := proxyorderFields[21].Descriptor()
+	proxyorderDescCreatedAt := proxyorderFields[26].Descriptor()
 	// proxyorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	proxyorder.DefaultCreatedAt = proxyorderDescCreatedAt.Default.(func() time.Time)
 	// proxyorderDescUpdatedAt is the schema descriptor for updated_at field.
-	proxyorderDescUpdatedAt := proxyorderFields[22].Descriptor()
+	proxyorderDescUpdatedAt := proxyorderFields[27].Descriptor()
 	// proxyorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	proxyorder.DefaultUpdatedAt = proxyorderDescUpdatedAt.Default.(func() time.Time)
 	// proxyorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1134,6 +1159,66 @@ func init() {
 	proxysubscribegroupDescID := proxysubscribegroupFields[0].Descriptor()
 	// proxysubscribegroup.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	proxysubscribegroup.IDValidator = proxysubscribegroupDescID.Validators[0].(func(int64) error)
+	proxysubscribepriceoptionFields := schema.ProxySubscribePriceOption{}.Fields()
+	_ = proxysubscribepriceoptionFields
+	// proxysubscribepriceoptionDescName is the schema descriptor for name field.
+	proxysubscribepriceoptionDescName := proxysubscribepriceoptionFields[2].Descriptor()
+	// proxysubscribepriceoption.DefaultName holds the default value on creation for the name field.
+	proxysubscribepriceoption.DefaultName = proxysubscribepriceoptionDescName.Default.(string)
+	// proxysubscribepriceoption.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	proxysubscribepriceoption.NameValidator = proxysubscribepriceoptionDescName.Validators[0].(func(string) error)
+	// proxysubscribepriceoptionDescDurationUnit is the schema descriptor for duration_unit field.
+	proxysubscribepriceoptionDescDurationUnit := proxysubscribepriceoptionFields[3].Descriptor()
+	// proxysubscribepriceoption.DefaultDurationUnit holds the default value on creation for the duration_unit field.
+	proxysubscribepriceoption.DefaultDurationUnit = proxysubscribepriceoptionDescDurationUnit.Default.(string)
+	// proxysubscribepriceoption.DurationUnitValidator is a validator for the "duration_unit" field. It is called by the builders before save.
+	proxysubscribepriceoption.DurationUnitValidator = proxysubscribepriceoptionDescDurationUnit.Validators[0].(func(string) error)
+	// proxysubscribepriceoptionDescDurationValue is the schema descriptor for duration_value field.
+	proxysubscribepriceoptionDescDurationValue := proxysubscribepriceoptionFields[4].Descriptor()
+	// proxysubscribepriceoption.DefaultDurationValue holds the default value on creation for the duration_value field.
+	proxysubscribepriceoption.DefaultDurationValue = proxysubscribepriceoptionDescDurationValue.Default.(int64)
+	// proxysubscribepriceoptionDescPrice is the schema descriptor for price field.
+	proxysubscribepriceoptionDescPrice := proxysubscribepriceoptionFields[5].Descriptor()
+	// proxysubscribepriceoption.DefaultPrice holds the default value on creation for the price field.
+	proxysubscribepriceoption.DefaultPrice = proxysubscribepriceoptionDescPrice.Default.(int64)
+	// proxysubscribepriceoptionDescOriginalPrice is the schema descriptor for original_price field.
+	proxysubscribepriceoptionDescOriginalPrice := proxysubscribepriceoptionFields[6].Descriptor()
+	// proxysubscribepriceoption.DefaultOriginalPrice holds the default value on creation for the original_price field.
+	proxysubscribepriceoption.DefaultOriginalPrice = proxysubscribepriceoptionDescOriginalPrice.Default.(int64)
+	// proxysubscribepriceoptionDescInventory is the schema descriptor for inventory field.
+	proxysubscribepriceoptionDescInventory := proxysubscribepriceoptionFields[7].Descriptor()
+	// proxysubscribepriceoption.DefaultInventory holds the default value on creation for the inventory field.
+	proxysubscribepriceoption.DefaultInventory = proxysubscribepriceoptionDescInventory.Default.(int32)
+	// proxysubscribepriceoptionDescShow is the schema descriptor for show field.
+	proxysubscribepriceoptionDescShow := proxysubscribepriceoptionFields[8].Descriptor()
+	// proxysubscribepriceoption.DefaultShow holds the default value on creation for the show field.
+	proxysubscribepriceoption.DefaultShow = proxysubscribepriceoptionDescShow.Default.(bool)
+	// proxysubscribepriceoptionDescSell is the schema descriptor for sell field.
+	proxysubscribepriceoptionDescSell := proxysubscribepriceoptionFields[9].Descriptor()
+	// proxysubscribepriceoption.DefaultSell holds the default value on creation for the sell field.
+	proxysubscribepriceoption.DefaultSell = proxysubscribepriceoptionDescSell.Default.(bool)
+	// proxysubscribepriceoptionDescIsDefault is the schema descriptor for is_default field.
+	proxysubscribepriceoptionDescIsDefault := proxysubscribepriceoptionFields[10].Descriptor()
+	// proxysubscribepriceoption.DefaultIsDefault holds the default value on creation for the is_default field.
+	proxysubscribepriceoption.DefaultIsDefault = proxysubscribepriceoptionDescIsDefault.Default.(bool)
+	// proxysubscribepriceoptionDescSort is the schema descriptor for sort field.
+	proxysubscribepriceoptionDescSort := proxysubscribepriceoptionFields[11].Descriptor()
+	// proxysubscribepriceoption.DefaultSort holds the default value on creation for the sort field.
+	proxysubscribepriceoption.DefaultSort = proxysubscribepriceoptionDescSort.Default.(int32)
+	// proxysubscribepriceoptionDescCreatedAt is the schema descriptor for created_at field.
+	proxysubscribepriceoptionDescCreatedAt := proxysubscribepriceoptionFields[12].Descriptor()
+	// proxysubscribepriceoption.DefaultCreatedAt holds the default value on creation for the created_at field.
+	proxysubscribepriceoption.DefaultCreatedAt = proxysubscribepriceoptionDescCreatedAt.Default.(func() time.Time)
+	// proxysubscribepriceoptionDescUpdatedAt is the schema descriptor for updated_at field.
+	proxysubscribepriceoptionDescUpdatedAt := proxysubscribepriceoptionFields[13].Descriptor()
+	// proxysubscribepriceoption.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	proxysubscribepriceoption.DefaultUpdatedAt = proxysubscribepriceoptionDescUpdatedAt.Default.(func() time.Time)
+	// proxysubscribepriceoption.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	proxysubscribepriceoption.UpdateDefaultUpdatedAt = proxysubscribepriceoptionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// proxysubscribepriceoptionDescID is the schema descriptor for id field.
+	proxysubscribepriceoptionDescID := proxysubscribepriceoptionFields[0].Descriptor()
+	// proxysubscribepriceoption.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	proxysubscribepriceoption.IDValidator = proxysubscribepriceoptionDescID.Validators[0].(func(int64) error)
 	proxysystemFields := schema.ProxySystem{}.Fields()
 	_ = proxysystemFields
 	// proxysystemDescCategory is the schema descriptor for category field.

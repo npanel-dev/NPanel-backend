@@ -18,6 +18,8 @@ func AddTime(unit string, quantity int64, baseTime ...time.Time) time.Time {
 		return basic.AddDate(0, int(quantity), 0)
 	case "Day":
 		return basic.AddDate(0, 0, int(quantity))
+	case "Week":
+		return basic.AddDate(0, 0, int(quantity)*7)
 	case "Hour":
 		return basic.Add(time.Hour * time.Duration(quantity))
 	case "Minute":

@@ -27,10 +27,50 @@ func NewAdminAnnouncementRepo(data *Data, logger log.Logger) announcementbiz.Ann
 
 // Save 保存公告
 func (r *adminAnnouncementRepo) Save(ctx context.Context, announcement *announcementbiz.Announcement) (*announcementbiz.Announcement, error) {
+	pinned := getBoolPtrValue(announcement.Pinned)
+	if pinned {
+		tx, err := r.data.db.Tx(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		builder := tx.ProxyAnnouncement.Create().
+			SetTitle(announcement.Title).
+			SetShow(getBoolPtrValue(announcement.Show)).
+			SetPinned(false).
+			SetPopup(getBoolPtrValue(announcement.Popup))
+
+		if announcement.Content != nil {
+			builder.SetContent(*announcement.Content)
+		}
+
+		po, err := builder.Save(ctx)
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, err
+		}
+
+		if _, err = tx.ProxyAnnouncement.Update().SetPinned(false).Save(ctx); err != nil {
+			_ = tx.Rollback()
+			return nil, err
+		}
+
+		if po, err = tx.ProxyAnnouncement.UpdateOneID(po.ID).SetPinned(true).Save(ctx); err != nil {
+			_ = tx.Rollback()
+			return nil, err
+		}
+
+		if err = tx.Commit(); err != nil {
+			return nil, err
+		}
+
+		return r.convertToModel(po), nil
+	}
+
 	builder := r.data.db.ProxyAnnouncement.Create().
 		SetTitle(announcement.Title).
 		SetShow(getBoolPtrValue(announcement.Show)).
-		SetPinned(getBoolPtrValue(announcement.Pinned)).
+		SetPinned(pinned).
 		SetPopup(getBoolPtrValue(announcement.Popup))
 
 	if announcement.Content != nil {
@@ -47,6 +87,51 @@ func (r *adminAnnouncementRepo) Save(ctx context.Context, announcement *announce
 
 // Update 更新公告
 func (r *adminAnnouncementRepo) Update(ctx context.Context, announcement *announcementbiz.Announcement) (*announcementbiz.Announcement, error) {
+	if announcement.Pinned != nil && *announcement.Pinned {
+		tx, err := r.data.db.Tx(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err = tx.ProxyAnnouncement.Update().SetPinned(false).Save(ctx); err != nil {
+			_ = tx.Rollback()
+			return nil, err
+		}
+
+		builder := tx.ProxyAnnouncement.UpdateOneID(announcement.ID).
+			SetTitle(announcement.Title).
+			SetUpdatedAt(time.Now())
+
+		if announcement.Show != nil {
+			builder.SetShow(*announcement.Show)
+		}
+		builder.SetPinned(true)
+		if announcement.Popup != nil {
+			builder.SetPopup(*announcement.Popup)
+		}
+
+		if announcement.Content != nil {
+			builder.SetContent(*announcement.Content)
+		} else {
+			builder.ClearContent()
+		}
+
+		po, err := builder.Save(ctx)
+		if err != nil {
+			_ = tx.Rollback()
+			if ent.IsNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		if err = tx.Commit(); err != nil {
+			return nil, err
+		}
+
+		return r.convertToModel(po), nil
+	}
+
 	builder := r.data.db.ProxyAnnouncement.UpdateOneID(announcement.ID).
 		SetTitle(announcement.Title).
 		SetUpdatedAt(time.Now())

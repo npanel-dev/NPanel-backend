@@ -54,6 +54,16 @@ type ProxyOrder struct {
 	Status int8 `json:"status,omitempty"`
 	// 关联订阅ID
 	SubscribeID int64 `json:"subscribe_id,omitempty"`
+	// 价格档位ID
+	PriceOptionID int64 `json:"price_option_id,omitempty"`
+	// 价格档位名称快照
+	PriceOptionName string `json:"price_option_name,omitempty"`
+	// 时长单位快照
+	DurationUnit string `json:"duration_unit,omitempty"`
+	// 时长数值快照
+	DurationValue int64 `json:"duration_value,omitempty"`
+	// 价格档位售价快照
+	OptionPrice int64 `json:"option_price,omitempty"`
 	// 续费订阅Token
 	SubscribeToken string `json:"subscribe_token,omitempty"`
 	// 是否新订单
@@ -72,9 +82,9 @@ func (*ProxyOrder) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case proxyorder.FieldIsNew:
 			values[i] = new(sql.NullBool)
-		case proxyorder.FieldID, proxyorder.FieldParentID, proxyorder.FieldUserID, proxyorder.FieldType, proxyorder.FieldQuantity, proxyorder.FieldPrice, proxyorder.FieldAmount, proxyorder.FieldGiftAmount, proxyorder.FieldDiscount, proxyorder.FieldCouponDiscount, proxyorder.FieldCommission, proxyorder.FieldPaymentID, proxyorder.FieldFeeAmount, proxyorder.FieldStatus, proxyorder.FieldSubscribeID:
+		case proxyorder.FieldID, proxyorder.FieldParentID, proxyorder.FieldUserID, proxyorder.FieldType, proxyorder.FieldQuantity, proxyorder.FieldPrice, proxyorder.FieldAmount, proxyorder.FieldGiftAmount, proxyorder.FieldDiscount, proxyorder.FieldCouponDiscount, proxyorder.FieldCommission, proxyorder.FieldPaymentID, proxyorder.FieldFeeAmount, proxyorder.FieldStatus, proxyorder.FieldSubscribeID, proxyorder.FieldPriceOptionID, proxyorder.FieldDurationValue, proxyorder.FieldOptionPrice:
 			values[i] = new(sql.NullInt64)
-		case proxyorder.FieldOrderNo, proxyorder.FieldCoupon, proxyorder.FieldMethod, proxyorder.FieldTradeNo, proxyorder.FieldSubscribeToken:
+		case proxyorder.FieldOrderNo, proxyorder.FieldCoupon, proxyorder.FieldMethod, proxyorder.FieldTradeNo, proxyorder.FieldPriceOptionName, proxyorder.FieldDurationUnit, proxyorder.FieldSubscribeToken:
 			values[i] = new(sql.NullString)
 		case proxyorder.FieldCreatedAt, proxyorder.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -207,6 +217,36 @@ func (_m *ProxyOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SubscribeID = value.Int64
 			}
+		case proxyorder.FieldPriceOptionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field price_option_id", values[i])
+			} else if value.Valid {
+				_m.PriceOptionID = value.Int64
+			}
+		case proxyorder.FieldPriceOptionName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field price_option_name", values[i])
+			} else if value.Valid {
+				_m.PriceOptionName = value.String
+			}
+		case proxyorder.FieldDurationUnit:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field duration_unit", values[i])
+			} else if value.Valid {
+				_m.DurationUnit = value.String
+			}
+		case proxyorder.FieldDurationValue:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field duration_value", values[i])
+			} else if value.Valid {
+				_m.DurationValue = value.Int64
+			}
+		case proxyorder.FieldOptionPrice:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field option_price", values[i])
+			} else if value.Valid {
+				_m.OptionPrice = value.Int64
+			}
 		case proxyorder.FieldSubscribeToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field subscribe_token", values[i])
@@ -320,6 +360,21 @@ func (_m *ProxyOrder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("subscribe_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SubscribeID))
+	builder.WriteString(", ")
+	builder.WriteString("price_option_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PriceOptionID))
+	builder.WriteString(", ")
+	builder.WriteString("price_option_name=")
+	builder.WriteString(_m.PriceOptionName)
+	builder.WriteString(", ")
+	builder.WriteString("duration_unit=")
+	builder.WriteString(_m.DurationUnit)
+	builder.WriteString(", ")
+	builder.WriteString("duration_value=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DurationValue))
+	builder.WriteString(", ")
+	builder.WriteString("option_price=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OptionPrice))
 	builder.WriteString(", ")
 	builder.WriteString("subscribe_token=")
 	builder.WriteString(_m.SubscribeToken)

@@ -9,9 +9,13 @@ import (
 	"strings"
 	"time"
 
+	kratoserrors "github.com/go-kratos/kratos/v2/errors"
+	kratoslog "github.com/go-kratos/kratos/v2/log"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyauthmethod"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytrafficlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
@@ -31,9 +35,6 @@ import (
 	"github.com/npanel-dev/NPanel-backend/pkg/random"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 	"github.com/npanel-dev/NPanel-backend/pkg/uuidx"
-	kratoserrors "github.com/go-kratos/kratos/v2/errors"
-	kratoslog "github.com/go-kratos/kratos/v2/log"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"golang.org/x/oauth2"
 )
 
@@ -633,6 +634,7 @@ func (r *publicUserRepo) QueryUserSubscribe(ctx context.Context, userID int) ([]
 
 	now := time.Now()
 	list := make([]*userBiz.UserSubscribe, 0, len(subscriptions))
+	priceOptions := r.userSubscribePriceOptions(ctx, subscriptions)
 	for _, item := range subscriptions {
 		if !shouldKeepLegacyUserSubscribe(item, now) {
 			continue
@@ -669,6 +671,7 @@ func (r *publicUserRepo) QueryUserSubscribe(ctx context.Context, userID int) ([]
 			ResetCycle:        int64ValueFromInt32(subscribePlan.ResetCycle),
 			RenewalReset:      subscribePlan.RenewalReset,
 			ShowOriginalPrice: subscribePlan.ShowOriginalPrice,
+			PriceOptions:      priceOptions[item.SubscribeID],
 			Discount:          parseUserSubscribeDiscounts(subscribePlan.Discount),
 			CreatedAt:         subscribePlan.CreatedAt.UnixMilli(),
 			UpdatedAt:         subscribePlan.UpdatedAt.UnixMilli(),
@@ -714,6 +717,60 @@ func (r *publicUserRepo) QueryUserSubscribe(ctx context.Context, userID int) ([]
 	}
 
 	return list, int32(len(list)), nil
+}
+
+func (r *publicUserRepo) userSubscribePriceOptions(ctx context.Context, subscriptions []*ent.ProxyUserSubscribe) map[int64][]userBiz.SubscribePriceOption {
+	subscribeIDs := make([]int64, 0, len(subscriptions))
+	seen := make(map[int64]struct{}, len(subscriptions))
+	for _, item := range subscriptions {
+		if item == nil {
+			continue
+		}
+		if _, ok := seen[item.SubscribeID]; ok {
+			continue
+		}
+		seen[item.SubscribeID] = struct{}{}
+		subscribeIDs = append(subscribeIDs, item.SubscribeID)
+	}
+
+	result := make(map[int64][]userBiz.SubscribePriceOption)
+	if len(subscribeIDs) == 0 {
+		return result
+	}
+
+	items, err := r.data.db.ProxySubscribePriceOption.Query().
+		Where(
+			proxysubscribepriceoption.SubscribeIDIn(subscribeIDs...),
+			proxysubscribepriceoption.ShowEQ(true),
+			proxysubscribepriceoption.SellEQ(true),
+		).
+		Order(ent.Desc(proxysubscribepriceoption.FieldSort), ent.Asc(proxysubscribepriceoption.FieldID)).
+		All(ctx)
+	if err != nil {
+		r.logger.Warnf("[QueryUserSubscribe] Query price options failed: %v", err)
+		return result
+	}
+
+	for _, item := range items {
+		result[item.SubscribeID] = append(result[item.SubscribeID], userBiz.SubscribePriceOption{
+			ID:            item.ID,
+			SubscribeID:   item.SubscribeID,
+			Name:          item.Name,
+			DurationUnit:  item.DurationUnit,
+			DurationValue: item.DurationValue,
+			Price:         item.Price,
+			OriginalPrice: item.OriginalPrice,
+			Inventory:     int64(item.Inventory),
+			Show:          item.Show,
+			Sell:          item.Sell,
+			IsDefault:     item.IsDefault,
+			Sort:          int64(item.Sort),
+			CreatedAt:     item.CreatedAt.UnixMilli(),
+			UpdatedAt:     item.UpdatedAt.UnixMilli(),
+		})
+	}
+
+	return result
 }
 
 func (r *publicUserRepo) GetSubscribeLog(ctx context.Context, userID int, page, size int) ([]*userBiz.UserSubscribeLog, int32, error) {

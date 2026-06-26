@@ -51,6 +51,23 @@ type Subscribe struct {
 	ResetCycle        int64
 	RenewalReset      bool
 	ShowOriginalPrice bool
+	PriceOptions      []SubscribePriceOption
+}
+
+// SubscribePriceOption represents a concrete sellable price/duration option for a subscribe product.
+type SubscribePriceOption struct {
+	ID            int64
+	SubscribeID   int64
+	Name          string
+	DurationUnit  string
+	DurationValue int64
+	Price         int64
+	OriginalPrice int64
+	Inventory     int64
+	Show          bool
+	Sell          bool
+	IsDefault     bool
+	Sort          int64
 }
 
 // SubscribeDiscount discount configuration

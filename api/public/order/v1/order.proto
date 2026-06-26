@@ -83,6 +83,8 @@ message PreCreateOrderRequest {
   int64 quantity = 2;
   int64 payment = 3;
   string coupon = 4;
+  int64 price_option_id = 5;
+  int32 type = 6;
 }
 
 message PreCreateOrderReply {
@@ -100,6 +102,7 @@ message PurchaseRequest {
   int64 quantity = 2;
   int64 payment = 3;
   string coupon = 4;
+  int64 price_option_id = 5;
 }
 
 message PurchaseReply {
@@ -120,6 +123,7 @@ message RenewalRequest {
   int64 quantity = 2;
   int64 payment = 3;
   string coupon = 4;
+  int64 price_option_id = 5;
 }
 
 message RenewalReply {
@@ -163,6 +167,23 @@ message TrafficLimit {
   int32 speed_limit = 4;
 }
 
+message SubscribePriceOption {
+  int64 id = 1;
+  int64 subscribe_id = 2;
+  string name = 3;
+  string duration_unit = 4;
+  int64 duration_value = 5;
+  int64 price = 6;
+  int64 original_price = 7;
+  int32 inventory = 8;
+  bool show = 9;
+  bool sell = 10;
+  bool is_default = 11;
+  int32 sort = 12;
+  int64 created_at = 13;
+  int64 updated_at = 14;
+}
+
 message Subscribe {
   int64 id = 1;
   string name = 2;
@@ -194,6 +215,7 @@ message Subscribe {
   bool show_original_price = 26;
   int64 created_at = 27;
   int64 updated_at = 28;
+  repeated SubscribePriceOption price_options = 31;
 }
 
 message OrderDetail {
@@ -218,5 +240,9 @@ message OrderDetail {
   Subscribe subscribe = 19;
   int64 created_at = 20;
   int64 updated_at = 21;
+  int64 price_option_id = 22;
+  string price_option_name = 23;
+  string duration_unit = 24;
+  int64 duration_value = 25;
+  int64 option_price = 26;
 }
-

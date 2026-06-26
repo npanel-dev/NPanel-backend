@@ -9566,6 +9566,10 @@ components:
                     type: boolean
                 autoCreateGroup:
                     type: boolean
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.subscribe.v1.SubscribePriceOption'
             description: CreateSubscribeRequest 创建订阅套餐请求
         api.admin.subscribe.v1.DeleteSubscribeCategoryData:
             type: object
@@ -9880,6 +9884,10 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.subscribe.v1.SubscribePriceOption'
             description: SubscribeInfo 订阅套餐信息
         api.admin.subscribe.v1.SubscribeItem:
             type: object
@@ -9963,7 +9971,45 @@ components:
                     type: string
                 sold:
                     type: string
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.subscribe.v1.SubscribePriceOption'
             description: SubscribeItem 订阅套餐列表项（包含销量）
+        api.admin.subscribe.v1.SubscribePriceOption:
+            type: object
+            properties:
+                id:
+                    type: string
+                subscribeId:
+                    type: string
+                name:
+                    type: string
+                durationUnit:
+                    type: string
+                durationValue:
+                    type: string
+                price:
+                    type: string
+                originalPrice:
+                    type: string
+                inventory:
+                    type: integer
+                    format: int32
+                show:
+                    type: boolean
+                sell:
+                    type: boolean
+                isDefault:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+            description: SubscribePriceOption 商品价格档位
         api.admin.subscribe.v1.SubscribeSortData:
             type: object
             properties:
@@ -10163,6 +10209,10 @@ components:
                     type: boolean
                 showOriginalPrice:
                     type: boolean
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.subscribe.v1.SubscribePriceOption'
             description: UpdateSubscribeRequest 更新订阅套餐请求
         api.admin.system.v1.CurrencyConfig:
             type: object
@@ -12932,6 +12982,16 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                priceOptionId:
+                    type: string
+                priceOptionName:
+                    type: string
+                durationUnit:
+                    type: string
+                durationValue:
+                    type: string
+                optionPrice:
+                    type: string
         api.public.order.v1.PaymentMethod:
             type: object
             properties:
@@ -12980,6 +13040,11 @@ components:
                     type: string
                 coupon:
                     type: string
+                priceOptionId:
+                    type: string
+                type:
+                    type: integer
+                    format: int32
         api.public.order.v1.PurchaseReply:
             type: object
             properties:
@@ -12995,6 +13060,8 @@ components:
                 payment:
                     type: string
                 coupon:
+                    type: string
+                priceOptionId:
                     type: string
         api.public.order.v1.QueryOrderListReply:
             type: object
@@ -13033,6 +13100,8 @@ components:
                 payment:
                     type: string
                 coupon:
+                    type: string
+                priceOptionId:
                     type: string
         api.public.order.v1.ResetTrafficReply:
             type: object
@@ -13126,12 +13195,49 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.public.order.v1.SubscribePriceOption'
         api.public.order.v1.SubscribeDiscount:
             type: object
             properties:
                 quantity:
                     type: string
                 discount:
+                    type: string
+        api.public.order.v1.SubscribePriceOption:
+            type: object
+            properties:
+                id:
+                    type: string
+                subscribeId:
+                    type: string
+                name:
+                    type: string
+                durationUnit:
+                    type: string
+                durationValue:
+                    type: string
+                price:
+                    type: string
+                originalPrice:
+                    type: string
+                inventory:
+                    type: integer
+                    format: int32
+                show:
+                    type: boolean
+                sell:
+                    type: boolean
+                isDefault:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                updatedAt:
                     type: string
         api.public.order.v1.TrafficLimit:
             type: object
@@ -13269,6 +13375,8 @@ components:
                     type: string
                 coupon:
                     type: string
+                priceOptionId:
+                    type: string
         api.public.portal.v1.PurchaseCheckoutReply:
             type: object
             properties:
@@ -13311,6 +13419,8 @@ components:
                     type: string
                 turnstileToken:
                     type: string
+                priceOptionId:
+                    type: string
         api.public.portal.v1.QueryPurchaseOrderReply:
             type: object
             properties:
@@ -13340,6 +13450,16 @@ components:
                 createdAt:
                     type: string
                 token:
+                    type: string
+                priceOptionId:
+                    type: string
+                priceOptionName:
+                    type: string
+                durationUnit:
+                    type: string
+                durationValue:
+                    type: string
+                optionPrice:
                     type: string
         api.public.portal.v1.StripePayment:
             type: object
@@ -13459,6 +13579,43 @@ components:
                     type: boolean
                 showOriginalPrice:
                     type: boolean
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.public.portal.v1.SubscribePriceOption'
+        api.public.portal.v1.SubscribePriceOption:
+            type: object
+            properties:
+                id:
+                    type: string
+                subscribeId:
+                    type: string
+                name:
+                    type: string
+                durationUnit:
+                    type: string
+                durationValue:
+                    type: string
+                price:
+                    type: string
+                originalPrice:
+                    type: string
+                inventory:
+                    type: integer
+                    format: int32
+                show:
+                    type: boolean
+                sell:
+                    type: boolean
+                isDefault:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
                 createdAt:
                     type: string
                 updatedAt:
@@ -13598,6 +13755,10 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                priceOptions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.public.subscribe.v1.SubscribePriceOption'
         api.public.subscribe.v1.SubscribeCategory:
             type: object
             properties:
@@ -13632,6 +13793,39 @@ components:
                 discount:
                     type: number
                     format: double
+        api.public.subscribe.v1.SubscribePriceOption:
+            type: object
+            properties:
+                id:
+                    type: string
+                subscribeId:
+                    type: string
+                name:
+                    type: string
+                durationUnit:
+                    type: string
+                durationValue:
+                    type: string
+                price:
+                    type: string
+                originalPrice:
+                    type: string
+                inventory:
+                    type: integer
+                    format: int32
+                show:
+                    type: boolean
+                sell:
+                    type: boolean
+                isDefault:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
         api.public.subscribe.v1.TrafficLimit:
             type: object
             properties:

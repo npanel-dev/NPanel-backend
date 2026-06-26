@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/npanel-dev/NPanel-backend/ent"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
+	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
 	"github.com/npanel-dev/NPanel-backend/pkg/constant"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 	"github.com/npanel-dev/NPanel-backend/pkg/uuidx"
@@ -47,6 +50,10 @@ func (d *Data) sessionCacheKey(sessionID string) string {
 }
 
 func (d *Data) issueSessionTokenWithSessionID(ctx context.Context, userID int64, opts sessionTokenOptions) (string, string, error) {
+	if err := d.ensureUserCanUseSession(ctx, userID); err != nil {
+		return "", "", err
+	}
+
 	sessionID := uuidx.NewUUID().String()
 	expire := d.jwtExpireSeconds()
 	claims := map[string]interface{}{
@@ -78,4 +85,27 @@ func (d *Data) issueSessionTokenWithSessionID(ctx context.Context, userID int64,
 func (d *Data) issueSessionToken(ctx context.Context, userID int64, opts sessionTokenOptions) (string, error) {
 	token, _, err := d.issueSessionTokenWithSessionID(ctx, userID, opts)
 	return token, err
+}
+
+func (d *Data) ensureUserCanUseSession(ctx context.Context, userID int64) error {
+	userInfo, err := d.db.ProxyUser.Query().
+		Where(proxyuser.IDEQ(userID)).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return responsecode.NewKratosError(responsecode.ErrUserNotFound)
+		}
+		return err
+	}
+	return ensureUserActive(userInfo)
+}
+
+func ensureUserActive(userInfo *ent.ProxyUser) error {
+	if userInfo == nil || isDeletedUser(userInfo) {
+		return responsecode.NewKratosError(responsecode.ErrUserNotFound)
+	}
+	if !userInfo.Enable {
+		return responsecode.NewKratosError(responsecode.ErrAccountDisabled)
+	}
+	return nil
 }

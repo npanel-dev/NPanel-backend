@@ -49,6 +49,16 @@ const (
 	FieldStatus = "status"
 	// FieldSubscribeID holds the string denoting the subscribe_id field in the database.
 	FieldSubscribeID = "subscribe_id"
+	// FieldPriceOptionID holds the string denoting the price_option_id field in the database.
+	FieldPriceOptionID = "price_option_id"
+	// FieldPriceOptionName holds the string denoting the price_option_name field in the database.
+	FieldPriceOptionName = "price_option_name"
+	// FieldDurationUnit holds the string denoting the duration_unit field in the database.
+	FieldDurationUnit = "duration_unit"
+	// FieldDurationValue holds the string denoting the duration_value field in the database.
+	FieldDurationValue = "duration_value"
+	// FieldOptionPrice holds the string denoting the option_price field in the database.
+	FieldOptionPrice = "option_price"
 	// FieldSubscribeToken holds the string denoting the subscribe_token field in the database.
 	FieldSubscribeToken = "subscribe_token"
 	// FieldIsNew holds the string denoting the is_new field in the database.
@@ -82,6 +92,11 @@ var Columns = []string{
 	FieldTradeNo,
 	FieldStatus,
 	FieldSubscribeID,
+	FieldPriceOptionID,
+	FieldPriceOptionName,
+	FieldDurationUnit,
+	FieldDurationValue,
+	FieldOptionPrice,
 	FieldSubscribeToken,
 	FieldIsNew,
 	FieldCreatedAt,
@@ -135,6 +150,20 @@ var (
 	DefaultStatus int8
 	// DefaultSubscribeID holds the default value on creation for the "subscribe_id" field.
 	DefaultSubscribeID int64
+	// DefaultPriceOptionID holds the default value on creation for the "price_option_id" field.
+	DefaultPriceOptionID int64
+	// DefaultPriceOptionName holds the default value on creation for the "price_option_name" field.
+	DefaultPriceOptionName string
+	// PriceOptionNameValidator is a validator for the "price_option_name" field. It is called by the builders before save.
+	PriceOptionNameValidator func(string) error
+	// DefaultDurationUnit holds the default value on creation for the "duration_unit" field.
+	DefaultDurationUnit string
+	// DurationUnitValidator is a validator for the "duration_unit" field. It is called by the builders before save.
+	DurationUnitValidator func(string) error
+	// DefaultDurationValue holds the default value on creation for the "duration_value" field.
+	DefaultDurationValue int64
+	// DefaultOptionPrice holds the default value on creation for the "option_price" field.
+	DefaultOptionPrice int64
 	// SubscribeTokenValidator is a validator for the "subscribe_token" field. It is called by the builders before save.
 	SubscribeTokenValidator func(string) error
 	// DefaultIsNew holds the default value on creation for the "is_new" field.
@@ -243,6 +272,31 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // BySubscribeID orders the results by the subscribe_id field.
 func BySubscribeID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscribeID, opts...).ToFunc()
+}
+
+// ByPriceOptionID orders the results by the price_option_id field.
+func ByPriceOptionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceOptionID, opts...).ToFunc()
+}
+
+// ByPriceOptionName orders the results by the price_option_name field.
+func ByPriceOptionName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceOptionName, opts...).ToFunc()
+}
+
+// ByDurationUnit orders the results by the duration_unit field.
+func ByDurationUnit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDurationUnit, opts...).ToFunc()
+}
+
+// ByDurationValue orders the results by the duration_value field.
+func ByDurationValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDurationValue, opts...).ToFunc()
+}
+
+// ByOptionPrice orders the results by the option_price field.
+func ByOptionPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOptionPrice, opts...).ToFunc()
 }
 
 // BySubscribeToken orders the results by the subscribe_token field.

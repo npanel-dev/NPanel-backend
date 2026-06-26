@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	kerrors "github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyauthmethod"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
@@ -19,8 +21,6 @@ import (
 	"github.com/npanel-dev/NPanel-backend/pkg/captcha"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 	"github.com/npanel-dev/NPanel-backend/pkg/uuidx"
-	kerrors "github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type AuthCompat struct {
@@ -266,6 +266,9 @@ func (c *AuthCompat) DeviceLogin(ctx context.Context, params *DeviceLoginParams)
 		}
 	}
 
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
+	}
 	repo.bindDeviceSafely(ctx, params.Meta, userInfo.ID)
 
 	token, err := repo.issueDeviceSessionToken(ctx, userInfo.ID, params.Meta)
@@ -311,8 +314,8 @@ func (c *AuthCompat) AdminLogin(ctx context.Context, params *AdminLoginParams) (
 	if err != nil {
 		return nil, err
 	}
-	if isDeletedUser(userInfo) {
-		return nil, responsecode.NewKratosError(responsecode.ErrUserNotFound)
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
 	}
 	if !userInfo.IsAdmin {
 		return nil, responsecode.NewKratosError(responsecode.ErrPermissionDenied)
@@ -369,8 +372,8 @@ func (c *AuthCompat) AdminResetPassword(ctx context.Context, params *AdminResetP
 	if err != nil {
 		return nil, err
 	}
-	if isDeletedUser(userInfo) {
-		return nil, responsecode.NewKratosError(responsecode.ErrUserNotFound)
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
 	}
 	if !userInfo.IsAdmin {
 		return nil, responsecode.NewKratosError(responsecode.ErrPermissionDenied)

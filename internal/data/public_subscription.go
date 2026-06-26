@@ -53,6 +53,16 @@ func (r *publicSubscriptionRepo) ValidateTokenAndGetSubscribe(ctx context.Contex
 	// 原项目注释："Ignore expiration check"
 	// 过期检查会在 getServers (GetAvailableNodes) 中进行
 	// 这样可以返回过期提示节点而不是直接拒绝访问
+	userInfo, err := r.data.db.ProxyUser.Query().
+		Where(proxyuser.IDEQ(userSub.UserID)).
+		Only(ctx)
+	if err != nil {
+		r.log.Errorf("Failed to query subscribe user: %v", err)
+		return nil, fmt.Errorf("subscribe user not found")
+	}
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
+	}
 
 	// 获取订阅套餐信息
 	subscribePlan, err := r.data.db.ProxySubscribe.Query().

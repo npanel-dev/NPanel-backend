@@ -195,6 +195,11 @@ var (
 		{Name: "trade_no", Type: field.TypeString, Nullable: true, Size: 255, Comment: "第三方交易号"},
 		{Name: "status", Type: field.TypeInt8, Comment: "订单状态", Default: 1},
 		{Name: "subscribe_id", Type: field.TypeInt64, Comment: "关联订阅ID", Default: 0},
+		{Name: "price_option_id", Type: field.TypeInt64, Comment: "价格档位ID", Default: 0},
+		{Name: "price_option_name", Type: field.TypeString, Size: 255, Comment: "价格档位名称快照", Default: ""},
+		{Name: "duration_unit", Type: field.TypeString, Size: 32, Comment: "时长单位快照", Default: ""},
+		{Name: "duration_value", Type: field.TypeInt64, Comment: "时长数值快照", Default: 0},
+		{Name: "option_price", Type: field.TypeInt64, Comment: "价格档位售价快照", Default: 0},
 		{Name: "subscribe_token", Type: field.TypeString, Nullable: true, Size: 255, Comment: "续费订阅Token"},
 		{Name: "is_new", Type: field.TypeBool, Comment: "是否新订单", Default: false},
 		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
@@ -442,6 +447,29 @@ var (
 		Name:       "subscribe_group",
 		Columns:    SubscribeGroupColumns,
 		PrimaryKey: []*schema.Column{SubscribeGroupColumns[0]},
+	}
+	// SubscribePriceOptionColumns holds the columns for the "subscribe_price_option" table.
+	SubscribePriceOptionColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "价格档位ID"},
+		{Name: "subscribe_id", Type: field.TypeInt64, Comment: "订阅套餐ID"},
+		{Name: "name", Type: field.TypeString, Size: 255, Comment: "价格档位名称", Default: ""},
+		{Name: "duration_unit", Type: field.TypeString, Size: 32, Comment: "时长单位", Default: "Month"},
+		{Name: "duration_value", Type: field.TypeInt64, Comment: "时长数值", Default: 1},
+		{Name: "price", Type: field.TypeInt64, Comment: "售价", Default: 0},
+		{Name: "original_price", Type: field.TypeInt64, Comment: "原价", Default: 0},
+		{Name: "inventory", Type: field.TypeInt32, Comment: "档位库存", Default: -1},
+		{Name: "show", Type: field.TypeBool, Comment: "是否显示", Default: true},
+		{Name: "sell", Type: field.TypeBool, Comment: "是否售卖", Default: true},
+		{Name: "is_default", Type: field.TypeBool, Comment: "默认档位", Default: false},
+		{Name: "sort", Type: field.TypeInt32, Comment: "排序", Default: 0},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+	}
+	// SubscribePriceOptionTable holds the schema information for the "subscribe_price_option" table.
+	SubscribePriceOptionTable = &schema.Table{
+		Name:       "subscribe_price_option",
+		Columns:    SubscribePriceOptionColumns,
+		PrimaryKey: []*schema.Column{SubscribePriceOptionColumns[0]},
 	}
 	// SystemColumns holds the columns for the "system" table.
 	SystemColumns = []*schema.Column{
@@ -712,6 +740,7 @@ var (
 		SubscribeApplicationTable,
 		SubscribeCategoryTable,
 		SubscribeGroupTable,
+		SubscribePriceOptionTable,
 		SystemTable,
 		SystemLogsTable,
 		TaskTable,
@@ -786,6 +815,9 @@ func init() {
 	}
 	SubscribeGroupTable.Annotation = &entsql.Annotation{
 		Table: "subscribe_group",
+	}
+	SubscribePriceOptionTable.Annotation = &entsql.Annotation{
+		Table: "subscribe_price_option",
 	}
 	SystemTable.Annotation = &entsql.Annotation{
 		Table: "system",

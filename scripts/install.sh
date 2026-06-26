@@ -454,6 +454,7 @@ REDIS_PASSWORD=${REDIS_PASSWORD}
 ADMIN_EMAIL=${ADMIN_EMAIL}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
 JWT_SECRET=${JWT_SECRET}
+NPANEL_UPLOAD_DIR=/app/uploads
 SITE_HOST=${SITE_HOST}
 EOF
     chmod 0600 "${ENV_FILE}"
@@ -636,11 +637,15 @@ services:
     volumes:
       - ${CONFIG_FILE}:/data/conf/config.yaml:ro
       - npanel_logs:/app/logs
+      - npanel_uploads:/app/uploads
+    environment:
+      NPANEL_UPLOAD_DIR: \${NPANEL_UPLOAD_DIR:-/app/uploads}
 
 volumes:
   npanel_mysql:
   npanel_redis:
   npanel_logs:
+  npanel_uploads:
 EOF
 }
 

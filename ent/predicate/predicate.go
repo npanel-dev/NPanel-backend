@@ -63,6 +63,9 @@ type ProxySubscribeCategory func(*sql.Selector)
 // ProxySubscribeGroup is the predicate function for proxysubscribegroup builders.
 type ProxySubscribeGroup func(*sql.Selector)
 
+// ProxySubscribePriceOption is the predicate function for proxysubscribepriceoption builders.
+type ProxySubscribePriceOption func(*sql.Selector)
+
 // ProxySystem is the predicate function for proxysystem builders.
 type ProxySystem func(*sql.Selector)
 

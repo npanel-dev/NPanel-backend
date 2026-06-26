@@ -23,7 +23,7 @@ type PortalRepo interface {
 
 	// CalculateOrderPrice 计算订单价格（含折扣、优惠券、手续费）
 	// paymentID: 可选，用于计算手续费
-	CalculateOrderPrice(ctx context.Context, subscribeID, quantity int64, coupon *string, paymentID *int64) (*PriceInfo, error)
+	CalculateOrderPrice(ctx context.Context, subscribeID, priceOptionID, quantity int64, coupon *string, paymentID *int64) (*PriceInfo, error)
 
 	// CreatePortalOrder 创建Portal订单（userId=0，is_new=true）+ 保存临时订单 + 入队延迟关闭任务
 	// ⚠️ 包含保存临时订单到Redis的逻辑（复刻原项目事务逻辑）
@@ -76,8 +76,26 @@ type SubscribeInfo struct {
 	ResetCycle        int64
 	RenewalReset      bool
 	ShowOriginalPrice bool
+	PriceOptions      []SubscribePriceOption
 	CreatedAt         int64
 	UpdatedAt         int64
+}
+
+type SubscribePriceOption struct {
+	ID            int64
+	SubscribeID   int64
+	Name          string
+	DurationUnit  string
+	DurationValue int64
+	Price         int64
+	OriginalPrice int64
+	Inventory     int64
+	Show          bool
+	Sell          bool
+	IsDefault     bool
+	Sort          int64
+	CreatedAt     int64
+	UpdatedAt     int64
 }
 
 type SubscribeCategory struct {
@@ -124,14 +142,15 @@ type PriceInfo struct {
 
 // CreateOrderRequest 创建订单请求
 type CreateOrderRequest struct {
-	SubscribeID int64
-	Quantity    int64
-	PaymentID   int // 支付方式ID（用于计算手续费）
-	Coupon      *string
-	Identifier  string // 认证标识符（邮箱/Telegram ID等）
-	AuthType    string // 认证类型（email/telegram等）
-	Password    string // 密码（明文，将在创建用户时加密）
-	InviteCode  *string
+	SubscribeID   int64
+	PriceOptionID int64
+	Quantity      int64
+	PaymentID     int // 支付方式ID（用于计算手续费）
+	Coupon        *string
+	Identifier    string // 认证标识符（邮箱/Telegram ID等）
+	AuthType      string // 认证类型（email/telegram等）
+	Password      string // 密码（明文，将在创建用户时加密）
+	InviteCode    *string
 }
 
 // TempOrderInfo 临时订单信息（存储到Redis）
@@ -187,18 +206,23 @@ type StripePayment struct {
 
 // OrderStatusInfo 订单状态信息
 type OrderStatusInfo struct {
-	OrderNo        string
-	Subscribe      *SubscribeInfo
-	Quantity       int64
-	Price          int64
-	Amount         int64
-	Discount       int64
-	Coupon         string
-	CouponDiscount int64
-	FeeAmount      int64
-	Payment        *PaymentMethod
-	Status         int32
-	CreatedAt      time.Time
+	OrderNo         string
+	Subscribe       *SubscribeInfo
+	Quantity        int64
+	Price           int64
+	Amount          int64
+	Discount        int64
+	Coupon          string
+	CouponDiscount  int64
+	FeeAmount       int64
+	Payment         *PaymentMethod
+	Status          int32
+	PriceOptionID   int64
+	PriceOptionName string
+	DurationUnit    string
+	DurationValue   int64
+	OptionPrice     int64
+	CreatedAt       time.Time
 }
 
 // PortalUseCase Portal用例
@@ -221,8 +245,8 @@ func (uc *PortalUseCase) GetSubscribeCatalog(ctx context.Context, language strin
 }
 
 // PrePurchaseOrder 预购买订单（计算价格）
-func (uc *PortalUseCase) PrePurchaseOrder(ctx context.Context, subscribeID, quantity int64, coupon *string, paymentID *int64) (*PriceInfo, error) {
-	return uc.repo.CalculateOrderPrice(ctx, subscribeID, quantity, coupon, paymentID)
+func (uc *PortalUseCase) PrePurchaseOrder(ctx context.Context, subscribeID, priceOptionID, quantity int64, coupon *string, paymentID *int64) (*PriceInfo, error) {
+	return uc.repo.CalculateOrderPrice(ctx, subscribeID, priceOptionID, quantity, coupon, paymentID)
 }
 
 // Purchase 购买（创建订单）

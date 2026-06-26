@@ -396,6 +396,97 @@ func (_u *ProxyOrderUpdate) AddSubscribeID(v int64) *ProxyOrderUpdate {
 	return _u
 }
 
+// SetPriceOptionID sets the "price_option_id" field.
+func (_u *ProxyOrderUpdate) SetPriceOptionID(v int64) *ProxyOrderUpdate {
+	_u.mutation.ResetPriceOptionID()
+	_u.mutation.SetPriceOptionID(v)
+	return _u
+}
+
+// SetNillablePriceOptionID sets the "price_option_id" field if the given value is not nil.
+func (_u *ProxyOrderUpdate) SetNillablePriceOptionID(v *int64) *ProxyOrderUpdate {
+	if v != nil {
+		_u.SetPriceOptionID(*v)
+	}
+	return _u
+}
+
+// AddPriceOptionID adds value to the "price_option_id" field.
+func (_u *ProxyOrderUpdate) AddPriceOptionID(v int64) *ProxyOrderUpdate {
+	_u.mutation.AddPriceOptionID(v)
+	return _u
+}
+
+// SetPriceOptionName sets the "price_option_name" field.
+func (_u *ProxyOrderUpdate) SetPriceOptionName(v string) *ProxyOrderUpdate {
+	_u.mutation.SetPriceOptionName(v)
+	return _u
+}
+
+// SetNillablePriceOptionName sets the "price_option_name" field if the given value is not nil.
+func (_u *ProxyOrderUpdate) SetNillablePriceOptionName(v *string) *ProxyOrderUpdate {
+	if v != nil {
+		_u.SetPriceOptionName(*v)
+	}
+	return _u
+}
+
+// SetDurationUnit sets the "duration_unit" field.
+func (_u *ProxyOrderUpdate) SetDurationUnit(v string) *ProxyOrderUpdate {
+	_u.mutation.SetDurationUnit(v)
+	return _u
+}
+
+// SetNillableDurationUnit sets the "duration_unit" field if the given value is not nil.
+func (_u *ProxyOrderUpdate) SetNillableDurationUnit(v *string) *ProxyOrderUpdate {
+	if v != nil {
+		_u.SetDurationUnit(*v)
+	}
+	return _u
+}
+
+// SetDurationValue sets the "duration_value" field.
+func (_u *ProxyOrderUpdate) SetDurationValue(v int64) *ProxyOrderUpdate {
+	_u.mutation.ResetDurationValue()
+	_u.mutation.SetDurationValue(v)
+	return _u
+}
+
+// SetNillableDurationValue sets the "duration_value" field if the given value is not nil.
+func (_u *ProxyOrderUpdate) SetNillableDurationValue(v *int64) *ProxyOrderUpdate {
+	if v != nil {
+		_u.SetDurationValue(*v)
+	}
+	return _u
+}
+
+// AddDurationValue adds value to the "duration_value" field.
+func (_u *ProxyOrderUpdate) AddDurationValue(v int64) *ProxyOrderUpdate {
+	_u.mutation.AddDurationValue(v)
+	return _u
+}
+
+// SetOptionPrice sets the "option_price" field.
+func (_u *ProxyOrderUpdate) SetOptionPrice(v int64) *ProxyOrderUpdate {
+	_u.mutation.ResetOptionPrice()
+	_u.mutation.SetOptionPrice(v)
+	return _u
+}
+
+// SetNillableOptionPrice sets the "option_price" field if the given value is not nil.
+func (_u *ProxyOrderUpdate) SetNillableOptionPrice(v *int64) *ProxyOrderUpdate {
+	if v != nil {
+		_u.SetOptionPrice(*v)
+	}
+	return _u
+}
+
+// AddOptionPrice adds value to the "option_price" field.
+func (_u *ProxyOrderUpdate) AddOptionPrice(v int64) *ProxyOrderUpdate {
+	_u.mutation.AddOptionPrice(v)
+	return _u
+}
+
 // SetSubscribeToken sets the "subscribe_token" field.
 func (_u *ProxyOrderUpdate) SetSubscribeToken(v string) *ProxyOrderUpdate {
 	_u.mutation.SetSubscribeToken(v)
@@ -497,6 +588,16 @@ func (_u *ProxyOrderUpdate) check() error {
 	if v, ok := _u.mutation.TradeNo(); ok {
 		if err := proxyorder.TradeNoValidator(v); err != nil {
 			return &ValidationError{Name: "trade_no", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.trade_no": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PriceOptionName(); ok {
+		if err := proxyorder.PriceOptionNameValidator(v); err != nil {
+			return &ValidationError{Name: "price_option_name", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.price_option_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.DurationUnit(); ok {
+		if err := proxyorder.DurationUnitValidator(v); err != nil {
+			return &ValidationError{Name: "duration_unit", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.duration_unit": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.SubscribeToken(); ok {
@@ -623,6 +724,30 @@ func (_u *ProxyOrderUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.AddedSubscribeID(); ok {
 		_spec.AddField(proxyorder.FieldSubscribeID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PriceOptionID(); ok {
+		_spec.SetField(proxyorder.FieldPriceOptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPriceOptionID(); ok {
+		_spec.AddField(proxyorder.FieldPriceOptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PriceOptionName(); ok {
+		_spec.SetField(proxyorder.FieldPriceOptionName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DurationUnit(); ok {
+		_spec.SetField(proxyorder.FieldDurationUnit, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DurationValue(); ok {
+		_spec.SetField(proxyorder.FieldDurationValue, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedDurationValue(); ok {
+		_spec.AddField(proxyorder.FieldDurationValue, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.OptionPrice(); ok {
+		_spec.SetField(proxyorder.FieldOptionPrice, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOptionPrice(); ok {
+		_spec.AddField(proxyorder.FieldOptionPrice, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SubscribeToken(); ok {
 		_spec.SetField(proxyorder.FieldSubscribeToken, field.TypeString, value)
@@ -1024,6 +1149,97 @@ func (_u *ProxyOrderUpdateOne) AddSubscribeID(v int64) *ProxyOrderUpdateOne {
 	return _u
 }
 
+// SetPriceOptionID sets the "price_option_id" field.
+func (_u *ProxyOrderUpdateOne) SetPriceOptionID(v int64) *ProxyOrderUpdateOne {
+	_u.mutation.ResetPriceOptionID()
+	_u.mutation.SetPriceOptionID(v)
+	return _u
+}
+
+// SetNillablePriceOptionID sets the "price_option_id" field if the given value is not nil.
+func (_u *ProxyOrderUpdateOne) SetNillablePriceOptionID(v *int64) *ProxyOrderUpdateOne {
+	if v != nil {
+		_u.SetPriceOptionID(*v)
+	}
+	return _u
+}
+
+// AddPriceOptionID adds value to the "price_option_id" field.
+func (_u *ProxyOrderUpdateOne) AddPriceOptionID(v int64) *ProxyOrderUpdateOne {
+	_u.mutation.AddPriceOptionID(v)
+	return _u
+}
+
+// SetPriceOptionName sets the "price_option_name" field.
+func (_u *ProxyOrderUpdateOne) SetPriceOptionName(v string) *ProxyOrderUpdateOne {
+	_u.mutation.SetPriceOptionName(v)
+	return _u
+}
+
+// SetNillablePriceOptionName sets the "price_option_name" field if the given value is not nil.
+func (_u *ProxyOrderUpdateOne) SetNillablePriceOptionName(v *string) *ProxyOrderUpdateOne {
+	if v != nil {
+		_u.SetPriceOptionName(*v)
+	}
+	return _u
+}
+
+// SetDurationUnit sets the "duration_unit" field.
+func (_u *ProxyOrderUpdateOne) SetDurationUnit(v string) *ProxyOrderUpdateOne {
+	_u.mutation.SetDurationUnit(v)
+	return _u
+}
+
+// SetNillableDurationUnit sets the "duration_unit" field if the given value is not nil.
+func (_u *ProxyOrderUpdateOne) SetNillableDurationUnit(v *string) *ProxyOrderUpdateOne {
+	if v != nil {
+		_u.SetDurationUnit(*v)
+	}
+	return _u
+}
+
+// SetDurationValue sets the "duration_value" field.
+func (_u *ProxyOrderUpdateOne) SetDurationValue(v int64) *ProxyOrderUpdateOne {
+	_u.mutation.ResetDurationValue()
+	_u.mutation.SetDurationValue(v)
+	return _u
+}
+
+// SetNillableDurationValue sets the "duration_value" field if the given value is not nil.
+func (_u *ProxyOrderUpdateOne) SetNillableDurationValue(v *int64) *ProxyOrderUpdateOne {
+	if v != nil {
+		_u.SetDurationValue(*v)
+	}
+	return _u
+}
+
+// AddDurationValue adds value to the "duration_value" field.
+func (_u *ProxyOrderUpdateOne) AddDurationValue(v int64) *ProxyOrderUpdateOne {
+	_u.mutation.AddDurationValue(v)
+	return _u
+}
+
+// SetOptionPrice sets the "option_price" field.
+func (_u *ProxyOrderUpdateOne) SetOptionPrice(v int64) *ProxyOrderUpdateOne {
+	_u.mutation.ResetOptionPrice()
+	_u.mutation.SetOptionPrice(v)
+	return _u
+}
+
+// SetNillableOptionPrice sets the "option_price" field if the given value is not nil.
+func (_u *ProxyOrderUpdateOne) SetNillableOptionPrice(v *int64) *ProxyOrderUpdateOne {
+	if v != nil {
+		_u.SetOptionPrice(*v)
+	}
+	return _u
+}
+
+// AddOptionPrice adds value to the "option_price" field.
+func (_u *ProxyOrderUpdateOne) AddOptionPrice(v int64) *ProxyOrderUpdateOne {
+	_u.mutation.AddOptionPrice(v)
+	return _u
+}
+
 // SetSubscribeToken sets the "subscribe_token" field.
 func (_u *ProxyOrderUpdateOne) SetSubscribeToken(v string) *ProxyOrderUpdateOne {
 	_u.mutation.SetSubscribeToken(v)
@@ -1138,6 +1354,16 @@ func (_u *ProxyOrderUpdateOne) check() error {
 	if v, ok := _u.mutation.TradeNo(); ok {
 		if err := proxyorder.TradeNoValidator(v); err != nil {
 			return &ValidationError{Name: "trade_no", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.trade_no": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PriceOptionName(); ok {
+		if err := proxyorder.PriceOptionNameValidator(v); err != nil {
+			return &ValidationError{Name: "price_option_name", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.price_option_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.DurationUnit(); ok {
+		if err := proxyorder.DurationUnitValidator(v); err != nil {
+			return &ValidationError{Name: "duration_unit", err: fmt.Errorf(`ent: validator failed for field "ProxyOrder.duration_unit": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.SubscribeToken(); ok {
@@ -1281,6 +1507,30 @@ func (_u *ProxyOrderUpdateOne) sqlSave(ctx context.Context) (_node *ProxyOrder, 
 	}
 	if value, ok := _u.mutation.AddedSubscribeID(); ok {
 		_spec.AddField(proxyorder.FieldSubscribeID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PriceOptionID(); ok {
+		_spec.SetField(proxyorder.FieldPriceOptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPriceOptionID(); ok {
+		_spec.AddField(proxyorder.FieldPriceOptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PriceOptionName(); ok {
+		_spec.SetField(proxyorder.FieldPriceOptionName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DurationUnit(); ok {
+		_spec.SetField(proxyorder.FieldDurationUnit, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DurationValue(); ok {
+		_spec.SetField(proxyorder.FieldDurationValue, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedDurationValue(); ok {
+		_spec.AddField(proxyorder.FieldDurationValue, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.OptionPrice(); ok {
+		_spec.SetField(proxyorder.FieldOptionPrice, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedOptionPrice(); ok {
+		_spec.AddField(proxyorder.FieldOptionPrice, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SubscribeToken(); ok {
 		_spec.SetField(proxyorder.FieldSubscribeToken, field.TypeString, value)

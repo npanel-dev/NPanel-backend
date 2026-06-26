@@ -3,10 +3,12 @@ package data
 import (
 	"context"
 
+	"entgo.io/ent/dialect/sql"
+	"github.com/go-kratos/kratos/v2/log"
+
 	"github.com/npanel-dev/NPanel-backend/ent/proxyannouncement"
 	announcementBiz "github.com/npanel-dev/NPanel-backend/internal/biz/public/announcement"
 	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type publicAnnouncementRepo struct {
@@ -53,6 +55,13 @@ func (r *publicAnnouncementRepo) QueryAnnouncement(ctx context.Context, page, si
 
 	// 分页查询
 	announcements, err := query.
+		Order(func(s *sql.Selector) {
+			s.OrderBy(
+				sql.Desc(proxyannouncement.FieldPinned),
+				sql.Desc(proxyannouncement.FieldCreatedAt),
+				sql.Desc(proxyannouncement.FieldID),
+			)
+		}).
 		Offset(int((page - 1) * size)).
 		Limit(int(size)).
 		All(ctx)

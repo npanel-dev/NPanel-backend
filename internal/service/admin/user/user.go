@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"strconv"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -29,6 +30,17 @@ func parseStringInt64(s string) (int64, error) {
 func parseInt64(s string) int64 {
 	val, _ := strconv.ParseInt(s, 10, 64)
 	return val
+}
+
+func authMethodPriority(authType string) int {
+	switch authType {
+	case "email":
+		return 0
+	case "mobile":
+		return 1
+	default:
+		return 2
+	}
 }
 
 // UserService 用户服务
@@ -280,6 +292,14 @@ func (s *UserService) convertToProto(ctx context.Context, user *ent.ProxyUser) (
 	if err != nil {
 		s.logger.Errorf("Failed to query auth methods for user %d: %v", user.ID, err)
 	}
+	sort.SliceStable(authMethods, func(i, j int) bool {
+		left := authMethodPriority(authMethods[i].AuthType)
+		right := authMethodPriority(authMethods[j].AuthType)
+		if left != right {
+			return left < right
+		}
+		return authMethods[i].AuthType < authMethods[j].AuthType
+	})
 
 	// 查询用户设备
 	userDevices, err := s.db.ProxyUserDevice.Query().

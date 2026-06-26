@@ -48,8 +48,12 @@ services:
     volumes:
       - ./configs/config.docker.yaml:/data/conf/config.yaml:ro
       - npanel_logs:/app/logs
+      - npanel_uploads:/app/uploads
+    environment:
+      NPANEL_UPLOAD_DIR: /app/uploads
 
 volumes:
   npanel_mysql:
   npanel_redis:
   npanel_logs:
+  npanel_uploads:

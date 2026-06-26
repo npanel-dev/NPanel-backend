@@ -31,6 +31,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribeapplication"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -122,6 +123,7 @@ func checkColumn(t, c string) error {
 			proxysubscribeapplication.Table:   proxysubscribeapplication.ValidColumn,
 			proxysubscribecategory.Table:      proxysubscribecategory.ValidColumn,
 			proxysubscribegroup.Table:         proxysubscribegroup.ValidColumn,
+			proxysubscribepriceoption.Table:   proxysubscribepriceoption.ValidColumn,
 			proxysystem.Table:                 proxysystem.ValidColumn,
 			proxysystemlog.Table:              proxysystemlog.ValidColumn,
 			proxytask.Table:                   proxytask.ValidColumn,

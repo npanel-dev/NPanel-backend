@@ -80,36 +80,60 @@ type Subscribe struct {
 	ResetCycle        int64
 	RenewalReset      bool
 	ShowOriginalPrice bool
+	PriceOptions      []SubscribePriceOption
 	CreatedAt         int64
 	UpdatedAt         int64
 }
 
+// SubscribePriceOption represents a public sellable price/duration option.
+type SubscribePriceOption struct {
+	ID            int64
+	SubscribeID   int64
+	Name          string
+	DurationUnit  string
+	DurationValue int64
+	Price         int64
+	OriginalPrice int64
+	Inventory     int64
+	Show          bool
+	Sell          bool
+	IsDefault     bool
+	Sort          int64
+	CreatedAt     int64
+	UpdatedAt     int64
+}
+
 // OrderDetail represents order detail
 type OrderDetail struct {
-	ID             int64
-	ParentID       int64
-	UserID         int64
-	OrderNo        string
-	Type           int32
-	Quantity       int64
-	Price          int64
-	Amount         int64
-	GiftAmount     int64
-	Discount       int64
-	Coupon         string
-	CouponDiscount int64
-	Commission     int64
-	Payment        *PaymentMethod // Nested payment method object
-	Method         string
-	FeeAmount      int64
-	TradeNo        string
-	Status         int32
-	SubscribeID    int64
-	SubscribeToken string
-	IsNew          bool
-	CreatedAt      int64
-	UpdatedAt      int64
-	Subscribe      *Subscribe // Nested subscribe object
+	ID              int64
+	ParentID        int64
+	UserID          int64
+	OrderNo         string
+	Type            int32
+	Quantity        int64
+	Price           int64
+	Amount          int64
+	GiftAmount      int64
+	Discount        int64
+	Coupon          string
+	CouponDiscount  int64
+	Commission      int64
+	Payment         *PaymentMethod // Nested payment method object
+	Method          string
+	FeeAmount       int64
+	TradeNo         string
+	Status          int32
+	SubscribeID     int64
+	PriceOptionID   int64
+	PriceOptionName string
+	DurationUnit    string
+	DurationValue   int64
+	OptionPrice     int64
+	SubscribeToken  string
+	IsNew           bool
+	CreatedAt       int64
+	UpdatedAt       int64
+	Subscribe       *Subscribe // Nested subscribe object
 	// Additional fields for backward compatibility
 	SubscribeName string
 	PaymentName   string
@@ -124,6 +148,7 @@ type PreCreateOrderParams struct {
 	SubscribeID      int64
 	SubscribeGroupID int64
 	Quantity         int64
+	PriceOptionID    int64
 	Coupon           string
 	Payment          int64
 }
@@ -143,11 +168,12 @@ type PreCreateOrderResult struct {
 
 // PurchaseParams represents purchase parameters
 type PurchaseParams struct {
-	UserID      int64
-	SubscribeID int64
-	Quantity    int64
-	Coupon      string
-	Payment     int64
+	UserID        int64
+	SubscribeID   int64
+	PriceOptionID int64
+	Quantity      int64
+	Coupon        string
+	Payment       int64
 }
 
 // RechargeParams represents recharge parameters
@@ -161,6 +187,7 @@ type RechargeParams struct {
 type RenewalParams struct {
 	UserID          int64
 	UserSubscribeID int64
+	PriceOptionID   int64
 	Quantity        int64
 	Coupon          string
 	Payment         int64

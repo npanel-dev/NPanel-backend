@@ -166,6 +166,24 @@ message TrafficLimit {
   int32 speed_limit = 4;   // 速度限制
 }
 
+// SubscribePriceOption 商品价格档位
+message SubscribePriceOption {
+  int64 id = 1;                  // 价格档位ID
+  int64 subscribe_id = 2;        // 订阅套餐ID
+  string name = 3;               // 档位名称
+  string duration_unit = 4;      // 时长单位: Minute/Hour/Day/Week/Month/Year/NoLimit
+  int64 duration_value = 5;      // 时长数值
+  int64 price = 6;               // 售价（单位：分）
+  int64 original_price = 7;      // 原价（单位：分）
+  int32 inventory = 8;           // 库存，-1为不限
+  bool show = 9;                 // 是否显示
+  bool sell = 10;                // 是否售卖
+  bool is_default = 11;          // 是否默认档位
+  int32 sort = 12;               // 排序
+  int64 created_at = 13;         // 创建时间
+  int64 updated_at = 14;         // 更新时间
+}
+
 // SubscribeInfo 订阅套餐信息
 message SubscribeInfo {
   int64 id = 1;                              // 订阅套餐ID
@@ -198,6 +216,7 @@ message SubscribeInfo {
   bool show_original_price = 26;            // 显示原价
   int64 created_at = 27;                    // 创建时间
   int64 updated_at = 28;                    // 更新时间
+  repeated SubscribePriceOption price_options = 31; // 商品价格档位
 }
 
 // SubscribeItem 订阅套餐列表项（包含销量）
@@ -233,6 +252,7 @@ message SubscribeItem {
   int64 created_at = 27;
   int64 updated_at = 28;
   int64 sold = 29;  // 销量
+  repeated SubscribePriceOption price_options = 32; // 商品价格档位
 }
 
 // CreateSubscribeRequest 创建订阅套餐请求
@@ -264,6 +284,7 @@ message CreateSubscribeRequest {
   optional bool renewal_reset = 24;         // 续费重置
   bool show_original_price = 25;            // 显示原价
   bool auto_create_group = 26;              // 自动创建分组
+  repeated SubscribePriceOption price_options = 28; // 商品价格档位
 }
 
 // CreateSubscribeData 创建订阅套餐数据
@@ -307,6 +328,7 @@ message UpdateSubscribeRequest {
   int32 reset_cycle = 24;                   // 重置周期
   optional bool renewal_reset = 25;         // 续费重置
   bool show_original_price = 26;            // 显示原价
+  repeated SubscribePriceOption price_options = 28; // 商品价格档位
 }
 
 // UpdateSubscribeData 更新订阅套餐数据

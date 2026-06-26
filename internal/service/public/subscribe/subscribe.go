@@ -108,9 +108,36 @@ func convertPublicSubscribe(sub *subscribeBiz.Subscribe) *v1.Subscribe {
 		ResetCycle:        int32(sub.ResetCycle),
 		RenewalReset:      sub.RenewalReset,
 		ShowOriginalPrice: sub.ShowOriginalPrice,
+		PriceOptions:      convertPublicSubscribePriceOptions(sub.PriceOptions),
 		CreatedAt:         sub.CreatedAt,
 		UpdatedAt:         sub.UpdatedAt,
 	}
+}
+
+func convertPublicSubscribePriceOptions(items []subscribeBiz.SubscribePriceOption) []*v1.SubscribePriceOption {
+	if len(items) == 0 {
+		return []*v1.SubscribePriceOption{}
+	}
+	result := make([]*v1.SubscribePriceOption, 0, len(items))
+	for _, item := range items {
+		result = append(result, &v1.SubscribePriceOption{
+			Id:            item.ID,
+			SubscribeId:   item.SubscribeID,
+			Name:          item.Name,
+			DurationUnit:  item.DurationUnit,
+			DurationValue: item.DurationValue,
+			Price:         item.Price,
+			OriginalPrice: item.OriginalPrice,
+			Inventory:     int32(item.Inventory),
+			Show:          item.Show,
+			Sell:          item.Sell,
+			IsDefault:     item.IsDefault,
+			Sort:          int32(item.Sort),
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
+		})
+	}
+	return result
 }
 
 func convertPublicSubscribeCategory(category *subscribeBiz.SubscribeCategory) *v1.SubscribeCategory {

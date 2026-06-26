@@ -364,7 +364,8 @@ func (h *ActivateOrderHandler) getSubscribeInfo(ctx context.Context, subscribeID
 // 复刻原项目 line 328-350
 func (h *ActivateOrderHandler) createUserSubscription(ctx context.Context, orderInfo *ent.ProxyOrder, sub *ent.ProxySubscribe) (*ent.ProxyUserSubscribe, error) {
 	now := time.Now()
-	expireTime := tool.AddTime(sub.UnitTime, int64(orderInfo.Quantity), now)
+	durationUnit, durationValue := orderDurationSnapshot(orderInfo, sub)
+	expireTime := tool.AddTime(durationUnit, durationValue, now)
 	token := tool.GenerateSubscribeToken(orderInfo.OrderNo)
 
 	builder := h.db.ProxyUserSubscribe.Create().
@@ -555,6 +556,9 @@ func (h *ActivateOrderHandler) Renewal(ctx context.Context, orderInfo *ent.Proxy
 	if err != nil {
 		return err
 	}
+	if userSub.UserID != orderInfo.UserID {
+		return fmt.Errorf("user subscription owner mismatch: orderNo=%s userSubID=%d orderUserID=%d actualUserID=%d", orderInfo.OrderNo, userSub.ID, orderInfo.UserID, userSub.UserID)
+	}
 
 	// 4. 更新订阅
 	if err = h.updateSubscriptionForRenewal(ctx, userSub, sub, orderInfo); err != nil {
@@ -629,7 +633,8 @@ func (h *ActivateOrderHandler) updateSubscriptionForRenewal(ctx context.Context,
 	}
 
 	// 计算新的过期时间
-	newExpireTime := tool.AddTime(sub.UnitTime, int64(orderInfo.Quantity), expireTime)
+	durationUnit, durationValue := orderDurationSnapshot(orderInfo, sub)
+	newExpireTime := tool.AddTime(durationUnit, durationValue, expireTime)
 
 	// 更新订阅
 	updateBuilder := h.db.ProxyUserSubscribe.UpdateOneID(userSub.ID).
@@ -1467,4 +1472,11 @@ func (h *ActivateOrderHandler) triggerUserGroupRecalculation(ctx context.Context
 
 		h.logger.Infof("[ActivateOrder] 成功触发用户组重新计算: userID=%d, mode=%s, historyID=%d", userId, groupMode, historyID)
 	}()
+}
+
+func orderDurationSnapshot(orderInfo *ent.ProxyOrder, sub *ent.ProxySubscribe) (string, int64) {
+	if orderInfo.DurationUnit != "" {
+		return orderInfo.DurationUnit, orderInfo.DurationValue
+	}
+	return sub.UnitTime, int64(orderInfo.Quantity)
 }

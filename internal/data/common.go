@@ -10,6 +10,10 @@ import (
 	"net/http"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/hibiken/asynq"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyads"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyauthmethod"
@@ -25,8 +29,6 @@ import (
 	"github.com/npanel-dev/NPanel-backend/pkg/limit"
 	"github.com/npanel-dev/NPanel-backend/pkg/phone"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/hibiken/asynq"
 )
 
 type commonRepo struct {
@@ -55,6 +57,13 @@ func (r *commonRepo) GetAdsList(ctx context.Context, status int) ([]*v1.Ads, err
 		Where(
 			proxyads.Status(status),
 		).
+		Order(func(s *sql.Selector) {
+			s.OrderBy(
+				sql.Desc(proxyads.FieldStartTime),
+				sql.Desc(proxyads.FieldCreatedAt),
+				sql.Desc(proxyads.FieldID),
+			)
+		}).
 		Limit(200).
 		All(ctx)
 	if err != nil {

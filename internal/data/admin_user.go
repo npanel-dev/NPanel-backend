@@ -20,6 +20,7 @@ import (
 	userbiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/user"
 	logmodel "github.com/npanel-dev/NPanel-backend/internal/model/log"
 	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
+	"github.com/npanel-dev/NPanel-backend/pkg/phone"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 	"github.com/npanel-dev/NPanel-backend/pkg/uuidx"
 )
@@ -39,6 +40,19 @@ func NewAdminUserRepo(data *Data, logger log.Logger) userbiz.UserRepo {
 
 // CreateUser 创建用户
 func (r *adminUserRepo) CreateUser(ctx context.Context, req *v1.CreateUserRequest) (int64, error) {
+	req.Email = strings.TrimSpace(req.Email)
+	req.Telephone = strings.TrimSpace(req.Telephone)
+	req.TelephoneAreaCode = strings.TrimSpace(req.TelephoneAreaCode)
+	req.RefererUser = strings.TrimSpace(req.RefererUser)
+
+	if req.Telephone == "" {
+		req.TelephoneAreaCode = ""
+	} else if req.TelephoneAreaCode == "" {
+		return 0, responsecode.NewKratosError(responsecode.ErrTelephoneAreaCodeIsEmpty)
+	} else if !phone.Check(req.TelephoneAreaCode, req.Telephone) {
+		return 0, responsecode.NewKratosError(responsecode.ErrTelephoneError)
+	}
+
 	// 生成推荐码（如果未提供）
 	referCode := req.ReferCode
 	if referCode == "" {

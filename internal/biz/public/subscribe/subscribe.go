@@ -43,8 +43,26 @@ type Subscribe struct {
 	ResetCycle        int64
 	RenewalReset      bool
 	ShowOriginalPrice bool
+	PriceOptions      []SubscribePriceOption
 	CreatedAt         int64
 	UpdatedAt         int64
+}
+
+type SubscribePriceOption struct {
+	ID            int64
+	SubscribeID   int64
+	Name          string
+	DurationUnit  string
+	DurationValue int64
+	Price         int64
+	OriginalPrice int64
+	Inventory     int64
+	Show          bool
+	Sell          bool
+	IsDefault     bool
+	Sort          int64
+	CreatedAt     int64
+	UpdatedAt     int64
 }
 
 type SubscribeCategory struct {

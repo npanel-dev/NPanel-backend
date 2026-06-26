@@ -16,6 +16,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	publicBiz "github.com/npanel-dev/NPanel-backend/internal/biz/public"
@@ -102,6 +103,46 @@ func (r *publicOrderRepo) listLegacyValidUserSubscriptions(ctx context.Context, 
 	return result, nil
 }
 
+func (r *publicOrderRepo) getSellablePriceOption(ctx context.Context, subscribeID, optionID int64) (*ent.ProxySubscribePriceOption, error) {
+	if optionID <= 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	option, err := r.data.db.ProxySubscribePriceOption.Query().
+		Where(
+			proxysubscribepriceoption.IDEQ(optionID),
+			proxysubscribepriceoption.SubscribeIDEQ(subscribeID),
+			proxysubscribepriceoption.SellEQ(true),
+		).
+		Only(ctx)
+	if err != nil {
+		r.logger.Errorf("[getSellablePriceOption] option not found: subscribeID=%d optionID=%d error=%v", subscribeID, optionID, err)
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	if option.Inventory == 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
+	}
+	return option, nil
+}
+
+func priceFromOption(option *ent.ProxySubscribePriceOption) (price, amount, discount int64) {
+	amount = option.Price
+	price = option.OriginalPrice
+	if price <= 0 || price < amount {
+		price = amount
+	}
+	return price, amount, price - amount
+}
+
+func orderDurationQuantity(option *ent.ProxySubscribePriceOption) int32 {
+	if option.DurationUnit == "NoLimit" {
+		return 0
+	}
+	if option.DurationValue > 1<<31-1 {
+		return 1<<31 - 1
+	}
+	return int32(option.DurationValue)
+}
+
 // CloseOrder 关闭订单，包含完整的业务逻辑（含赠金退回）
 func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo string) error {
 	// 通过订单号查找订单信息
@@ -141,6 +182,30 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 		if err != nil {
 			r.logger.Errorf("[CloseOrder] Update order status failed: %v, orderNo: %s", err, orderNo)
 			return errors.InternalServer("ORDER_UPDATE_FAILED", "关闭订单失败")
+		}
+
+		if orderInfo.Type == 1 && subscribeInfo.Inventory != -1 {
+			err = tx.ProxySubscribe.UpdateOneID(subscribeInfo.ID).
+				SetInventory(subscribeInfo.Inventory + 1).
+				Exec(ctx)
+			if err != nil {
+				r.logger.Errorf("[CloseOrder] Restore subscribe inventory failed: %v, subscribeID: %d", err, subscribeInfo.ID)
+				return err
+			}
+		}
+
+		if (orderInfo.Type == 1 || orderInfo.Type == 2) && orderInfo.PriceOptionID > 0 {
+			optionInfo, err := tx.ProxySubscribePriceOption.Query().
+				Where(proxysubscribepriceoption.IDEQ(orderInfo.PriceOptionID)).
+				Only(ctx)
+			if err == nil && optionInfo.Inventory != -1 {
+				if err := tx.ProxySubscribePriceOption.UpdateOneID(optionInfo.ID).
+					SetInventory(optionInfo.Inventory + 1).
+					Exec(ctx); err != nil {
+					r.logger.Errorf("[CloseOrder] Restore price option inventory failed: %v, optionID: %d", err, optionInfo.ID)
+					return err
+				}
+			}
 		}
 
 		// 如果用户ID为0，说明是访客订单，无需退款，可直接删除
@@ -198,16 +263,6 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 
 			r.logger.Infof("[CloseOrder] Refunded gift amount: %d to user: %d, new balance: %d", orderInfo.GiftAmount, orderInfo.UserID, newGiftAmount)
 			return nil
-		}
-
-		if subscribeInfo.Inventory != -1 {
-			err = tx.ProxySubscribe.UpdateOneID(subscribeInfo.ID).
-				SetInventory(subscribeInfo.Inventory + 1).
-				Exec(ctx)
-			if err != nil {
-				r.logger.Errorf("[CloseOrder] Restore subscribe inventory failed: %v, subscribeID: %d", err, subscribeInfo.ID)
-				return err
-			}
 		}
 
 		return nil
@@ -347,15 +402,6 @@ func (r *publicOrderRepo) QueryOrderList(ctx context.Context, userID int, page, 
 
 // PreCreateOrder 验证并计算订单价格
 func (r *publicOrderRepo) PreCreateOrder(ctx context.Context, req *publicBiz.PreCreateOrderParams) (*publicBiz.PreCreateOrderResult, error) {
-	// 验证数量
-	if req.Quantity <= 0 {
-		r.logger.Debugf("[PreCreateOrder] Quantity is less than or equal to 0, setting to 1")
-		req.Quantity = 1
-	}
-	if req.Quantity > MaxQuantity {
-		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
-	}
-
 	// 查找订阅套餐 (已修复：使用ProxySubscribe而非ProxySubscribeGroup)
 	sub, err := r.data.db.ProxySubscribe.Query().
 		Where(
@@ -367,7 +413,7 @@ func (r *publicOrderRepo) PreCreateOrder(ctx context.Context, req *publicBiz.Pre
 		return nil, responsecode.NewKratosError(responsecode.ErrSubscribeNotFound)
 	}
 
-	if sub.Quota > 0 {
+	if req.Type != 2 && sub.Quota > 0 {
 		userSubs, err := r.listLegacyValidUserSubscriptions(ctx, req.UserID)
 		if err != nil {
 			r.logger.Errorf("[PreCreateOrder] 查询用户订阅失败, userID: %d, error: %v", req.UserID, err)
@@ -384,23 +430,14 @@ func (r *publicOrderRepo) PreCreateOrder(ctx context.Context, req *publicBiz.Pre
 		}
 	}
 
-	// 根据订阅单价计算基础价格
-	price := sub.UnitPrice * req.Quantity
-
-	// 根据数量应用折扣
-	var discount float64 = 1.0
-	if sub.Discount != nil && *sub.Discount != "" {
-		var discounts []SubscribeDiscount
-		if err := json.Unmarshal([]byte(*sub.Discount), &discounts); err == nil {
-			discount = r.getDiscount(discounts, req.Quantity)
-		}
+	option, err := r.getSellablePriceOption(ctx, req.SubscribeID, req.PriceOptionID)
+	if err != nil {
+		return nil, err
 	}
-
-	amount := int64(float64(price) * discount)
+	price, amount, discountAmount := priceFromOption(option)
 	if amount > MaxOrderAmount {
 		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
 	}
-	discountAmount := price - amount
 	var couponAmount int64
 
 	// 验证并计算优惠券折扣
@@ -506,14 +543,6 @@ func (r *publicOrderRepo) PreCreateOrder(ctx context.Context, req *publicBiz.Pre
 
 // Purchase 创建购买订单
 func (r *publicOrderRepo) Purchase(ctx context.Context, req *publicBiz.PurchaseParams) (*publicBiz.OrderResult, error) {
-	// 验证数量
-	quantity := req.Quantity
-	if quantity <= 0 {
-		quantity = 1
-	}
-	if quantity > MaxQuantity {
-		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
-	}
 	if req.SubscribeID <= 0 {
 		return nil, errors.BadRequest("INVALID_SUBSCRIBE_ID", "Invalid subscribe ID")
 	}
@@ -566,6 +595,10 @@ func (r *publicOrderRepo) Purchase(ctx context.Context, req *publicBiz.PurchaseP
 	if sub.Inventory == 0 {
 		return nil, responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
 	}
+	option, err := r.getSellablePriceOption(ctx, req.SubscribeID, req.PriceOptionID)
+	if err != nil {
+		return nil, err
+	}
 
 	// 检查订阅计划配额（每个计划的用户购买限制）
 	// 与老项目 QueryUserSubscribe 及当前项目用户侧有效订阅口径保持一致
@@ -587,23 +620,10 @@ func (r *publicOrderRepo) Purchase(ctx context.Context, req *publicBiz.PurchaseP
 		}
 	}
 
-	// 根据单价和数量计算价格
-	price := sub.UnitPrice * quantity
-
-	// 根据数量应用折扣
-	var discount float64 = 1.0
-	if sub.Discount != nil && *sub.Discount != "" {
-		var discounts []SubscribeDiscount
-		if err := json.Unmarshal([]byte(*sub.Discount), &discounts); err == nil {
-			discount = r.getDiscount(discounts, quantity)
-		}
-	}
-
-	amount := int64(float64(price) * discount)
+	price, amount, discountAmount := priceFromOption(option)
 	if amount > MaxOrderAmount {
 		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
 	}
-	discountAmount := price - amount
 	var coupon int64 = 0
 
 	// 计算优惠券扣除金额
@@ -698,22 +718,27 @@ func (r *publicOrderRepo) Purchase(ctx context.Context, req *publicBiz.PurchaseP
 	// 创建订单
 	orderInfo := &ent.ProxyOrder{
 
-		UserID:         req.UserID,
-		OrderNo:        orderNo,
-		Type:           1, // 购买类型
-		Quantity:       int32(quantity),
-		Price:          price,
-		Amount:         amount,
-		Discount:       discountAmount,
-		GiftAmount:     deductionAmount,
-		Coupon:         req.Coupon,
-		CouponDiscount: coupon,
-		PaymentID:      payment.ID,
-		Method:         payment.Platform,
-		FeeAmount:      feeAmount,
-		Status:         1, // 待付款
-		IsNew:          isNew,
-		SubscribeID:    req.SubscribeID,
+		UserID:          req.UserID,
+		OrderNo:         orderNo,
+		Type:            1, // 购买类型
+		Quantity:        orderDurationQuantity(option),
+		Price:           price,
+		Amount:          amount,
+		Discount:        discountAmount,
+		GiftAmount:      deductionAmount,
+		Coupon:          req.Coupon,
+		CouponDiscount:  coupon,
+		PaymentID:       payment.ID,
+		Method:          payment.Platform,
+		FeeAmount:       feeAmount,
+		Status:          1, // 待付款
+		IsNew:           isNew,
+		SubscribeID:     req.SubscribeID,
+		PriceOptionID:   option.ID,
+		PriceOptionName: option.Name,
+		DurationUnit:    option.DurationUnit,
+		DurationValue:   option.DurationValue,
+		OptionPrice:     option.Price,
 	}
 
 	// 使用TX辅助函数执行事务
@@ -755,6 +780,26 @@ func (r *publicOrderRepo) Purchase(ctx context.Context, req *publicBiz.PurchaseP
 				SetInventory(latestSub.Inventory - 1).
 				Exec(ctx); err != nil {
 				return errors.InternalServer("SUBSCRIBE_UPDATE_FAILED", "更新订阅库存失败")
+			}
+		}
+		if option.Inventory != -1 {
+			latestOption, err := tx.ProxySubscribePriceOption.Query().
+				Where(
+					proxysubscribepriceoption.IDEQ(option.ID),
+					proxysubscribepriceoption.SubscribeIDEQ(req.SubscribeID),
+					proxysubscribepriceoption.SellEQ(true),
+				).
+				Only(ctx)
+			if err != nil {
+				return errors.InternalServer("PRICE_OPTION_QUERY_FAILED", "查询价格档位失败")
+			}
+			if latestOption.Inventory == 0 {
+				return responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
+			}
+			if err := tx.ProxySubscribePriceOption.UpdateOneID(latestOption.ID).
+				SetInventory(latestOption.Inventory - 1).
+				Exec(ctx); err != nil {
+				return errors.InternalServer("PRICE_OPTION_UPDATE_FAILED", "更新价格档位库存失败")
 			}
 		}
 
@@ -804,6 +849,11 @@ func (r *publicOrderRepo) Purchase(ctx context.Context, req *publicBiz.PurchaseP
 			SetStatus(orderInfo.Status).
 			SetIsNew(orderInfo.IsNew).
 			SetSubscribeID(orderInfo.SubscribeID).
+			SetPriceOptionID(orderInfo.PriceOptionID).
+			SetPriceOptionName(orderInfo.PriceOptionName).
+			SetDurationUnit(orderInfo.DurationUnit).
+			SetDurationValue(orderInfo.DurationValue).
+			SetOptionPrice(orderInfo.OptionPrice).
 			Save(ctx)
 		if err != nil {
 			r.logger.Errorf("[Purchase] Insert order failed: %v", err)
@@ -902,18 +952,11 @@ func (r *publicOrderRepo) Recharge(ctx context.Context, req *publicBiz.RechargeP
 
 // Renewal 创建续费订单
 func (r *publicOrderRepo) Renewal(ctx context.Context, req *publicBiz.RenewalParams) (*publicBiz.OrderResult, error) {
-	quantity := req.Quantity
-	if quantity <= 0 {
-		quantity = 1
-	}
-	if quantity > MaxQuantity {
-		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
-	}
-
 	// 查找用户订阅
 	userSubscribe, err := r.data.db.ProxyUserSubscribe.Query().
 		Where(
 			proxyusersubscribe.IDEQ(req.UserSubscribeID),
+			proxyusersubscribe.UserIDEQ(req.UserID),
 		).
 		Only(ctx)
 	if err != nil {
@@ -938,23 +981,14 @@ func (r *publicOrderRepo) Renewal(ctx context.Context, req *publicBiz.RenewalPar
 		return nil, errors.BadRequest("SUBSCRIBE_NOT_FOR_SALE", "此订阅计划不可续费")
 	}
 
-	// 根据单价和数量计算价格
-	price := sub.UnitPrice * quantity
-
-	// 根据数量应用折扣
-	var discount float64 = 1.0
-	if sub.Discount != nil && *sub.Discount != "" {
-		var discounts []SubscribeDiscount
-		if err := json.Unmarshal([]byte(*sub.Discount), &discounts); err == nil {
-			discount = r.getDiscount(discounts, quantity)
-		}
+	option, err := r.getSellablePriceOption(ctx, userSubscribe.SubscribeID, req.PriceOptionID)
+	if err != nil {
+		return nil, err
 	}
-
-	amount := int64(float64(price) * discount)
+	price, amount, discountAmount := priceFromOption(option)
 	if amount > MaxOrderAmount {
 		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
 	}
-	discountAmount := price - amount
 	var coupon int64 = 0
 
 	// 计算优惠券扣除金额
@@ -1060,6 +1094,27 @@ func (r *publicOrderRepo) Renewal(ctx context.Context, req *publicBiz.RenewalPar
 	// 使用TX辅助函数执行事务
 	var createdOrder *ent.ProxyOrder
 	err = r.data.db.TX(ctx, func(tx *ent.Tx) error {
+		if option.Inventory != -1 {
+			latestOption, err := tx.ProxySubscribePriceOption.Query().
+				Where(
+					proxysubscribepriceoption.IDEQ(option.ID),
+					proxysubscribepriceoption.SubscribeIDEQ(userSubscribe.SubscribeID),
+					proxysubscribepriceoption.SellEQ(true),
+				).
+				Only(ctx)
+			if err != nil {
+				return errors.InternalServer("PRICE_OPTION_QUERY_FAILED", "查询价格档位失败")
+			}
+			if latestOption.Inventory == 0 {
+				return responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
+			}
+			if err := tx.ProxySubscribePriceOption.UpdateOneID(latestOption.ID).
+				SetInventory(latestOption.Inventory - 1).
+				Exec(ctx); err != nil {
+				return errors.InternalServer("PRICE_OPTION_UPDATE_FAILED", "更新价格档位库存失败")
+			}
+		}
+
 		// 更新用户赠金金额 如果存在扣除
 		if deductionAmount > 0 {
 			err := tx.ProxyUser.UpdateOneID(req.UserID).
@@ -1094,7 +1149,7 @@ func (r *publicOrderRepo) Renewal(ctx context.Context, req *publicBiz.RenewalPar
 			SetParentID(userSubscribe.OrderID).
 			SetOrderNo(orderNo).
 			SetType(2). // 续费类型
-			SetQuantity(int32(quantity)).
+			SetQuantity(orderDurationQuantity(option)).
 			SetPrice(price).
 			SetAmount(amount).
 			SetGiftAmount(deductionAmount).
@@ -1106,6 +1161,11 @@ func (r *publicOrderRepo) Renewal(ctx context.Context, req *publicBiz.RenewalPar
 			SetFeeAmount(feeAmount).
 			SetStatus(1). // 待付款
 			SetSubscribeID(userSubscribe.SubscribeID).
+			SetPriceOptionID(option.ID).
+			SetPriceOptionName(option.Name).
+			SetDurationUnit(option.DurationUnit).
+			SetDurationValue(option.DurationValue).
+			SetOptionPrice(option.Price).
 			SetSubscribeToken(subscribeToken).
 			Save(ctx)
 		if err != nil {
@@ -1332,34 +1392,39 @@ func (r *publicOrderRepo) convertToOrderDetail(order *ent.ProxyOrder) *publicBiz
 // convertToOrderDetailWithNames 将ent订单转换为biz订单详情（含订阅和支付名称）
 func (r *publicOrderRepo) convertToOrderDetailWithNames(order *ent.ProxyOrder, subscribeName, paymentName string) *publicBiz.OrderDetail {
 	return &publicBiz.OrderDetail{
-		ID:             order.ID,
-		ParentID:       order.ParentID,
-		UserID:         order.UserID,
-		OrderNo:        order.OrderNo,
-		Type:           int32(order.Type),
-		Quantity:       int64(order.Quantity),
-		Price:          order.Price,
-		Amount:         order.Amount,
-		GiftAmount:     order.GiftAmount,
-		Discount:       order.Discount,
-		Coupon:         order.Coupon,
-		CouponDiscount: order.CouponDiscount,
-		Commission:     order.Commission,
-		Payment:        nil, // Will be populated if needed
-		Method:         order.Method,
-		FeeAmount:      order.FeeAmount,
-		TradeNo:        order.TradeNo,
-		Status:         int32(order.Status),
-		SubscribeID:    order.SubscribeID,
-		SubscribeToken: order.SubscribeToken,
-		IsNew:          order.IsNew,
-		CreatedAt:      order.CreatedAt.UnixMilli(),
-		UpdatedAt:      order.UpdatedAt.UnixMilli(),
-		Subscribe:      nil, // Will be populated if needed
-		SubscribeName:  subscribeName,
-		PaymentName:    paymentName,
-		StatusText:     r.getOrderStatusText(order.Status),
-		TypeText:       r.getOrderTypeText(order.Type),
+		ID:              order.ID,
+		ParentID:        order.ParentID,
+		UserID:          order.UserID,
+		OrderNo:         order.OrderNo,
+		Type:            int32(order.Type),
+		Quantity:        int64(order.Quantity),
+		Price:           order.Price,
+		Amount:          order.Amount,
+		GiftAmount:      order.GiftAmount,
+		Discount:        order.Discount,
+		Coupon:          order.Coupon,
+		CouponDiscount:  order.CouponDiscount,
+		Commission:      order.Commission,
+		Payment:         nil, // Will be populated if needed
+		Method:          order.Method,
+		FeeAmount:       order.FeeAmount,
+		TradeNo:         order.TradeNo,
+		Status:          int32(order.Status),
+		SubscribeID:     order.SubscribeID,
+		PriceOptionID:   order.PriceOptionID,
+		PriceOptionName: order.PriceOptionName,
+		DurationUnit:    order.DurationUnit,
+		DurationValue:   order.DurationValue,
+		OptionPrice:     order.OptionPrice,
+		SubscribeToken:  order.SubscribeToken,
+		IsNew:           order.IsNew,
+		CreatedAt:       order.CreatedAt.UnixMilli(),
+		UpdatedAt:       order.UpdatedAt.UnixMilli(),
+		Subscribe:       nil, // Will be populated if needed
+		SubscribeName:   subscribeName,
+		PaymentName:     paymentName,
+		StatusText:      r.getOrderStatusText(order.Status),
+		TypeText:        r.getOrderTypeText(order.Type),
 	}
 }
 
@@ -1376,34 +1441,39 @@ func (r *publicOrderRepo) convertToOrderDetailFull(order *ent.ProxyOrder, subscr
 	}
 
 	return &publicBiz.OrderDetail{
-		ID:             order.ID,
-		ParentID:       order.ParentID,
-		UserID:         order.UserID,
-		OrderNo:        order.OrderNo,
-		Type:           int32(order.Type),
-		Quantity:       int64(order.Quantity),
-		Price:          order.Price,
-		Amount:         order.Amount,
-		GiftAmount:     order.GiftAmount,
-		Discount:       order.Discount,
-		Coupon:         order.Coupon,
-		CouponDiscount: order.CouponDiscount,
-		Commission:     0, // 防止佣金金额泄露
-		Payment:        payment,
-		Method:         order.Method,
-		FeeAmount:      order.FeeAmount,
-		TradeNo:        order.TradeNo,
-		Status:         int32(order.Status),
-		SubscribeID:    order.SubscribeID,
-		SubscribeToken: order.SubscribeToken,
-		IsNew:          order.IsNew,
-		CreatedAt:      order.CreatedAt.UnixMilli(),
-		UpdatedAt:      order.UpdatedAt.UnixMilli(),
-		Subscribe:      subscribe,
-		SubscribeName:  subscribeName,
-		PaymentName:    paymentName,
-		StatusText:     r.getOrderStatusText(order.Status),
-		TypeText:       r.getOrderTypeText(order.Type),
+		ID:              order.ID,
+		ParentID:        order.ParentID,
+		UserID:          order.UserID,
+		OrderNo:         order.OrderNo,
+		Type:            int32(order.Type),
+		Quantity:        int64(order.Quantity),
+		Price:           order.Price,
+		Amount:          order.Amount,
+		GiftAmount:      order.GiftAmount,
+		Discount:        order.Discount,
+		Coupon:          order.Coupon,
+		CouponDiscount:  order.CouponDiscount,
+		Commission:      0, // 防止佣金金额泄露
+		Payment:         payment,
+		Method:          order.Method,
+		FeeAmount:       order.FeeAmount,
+		TradeNo:         order.TradeNo,
+		Status:          int32(order.Status),
+		SubscribeID:     order.SubscribeID,
+		PriceOptionID:   order.PriceOptionID,
+		PriceOptionName: order.PriceOptionName,
+		DurationUnit:    order.DurationUnit,
+		DurationValue:   order.DurationValue,
+		OptionPrice:     order.OptionPrice,
+		SubscribeToken:  order.SubscribeToken,
+		IsNew:           order.IsNew,
+		CreatedAt:       order.CreatedAt.UnixMilli(),
+		UpdatedAt:       order.UpdatedAt.UnixMilli(),
+		Subscribe:       subscribe,
+		SubscribeName:   subscribeName,
+		PaymentName:     paymentName,
+		StatusText:      r.getOrderStatusText(order.Status),
+		TypeText:        r.getOrderTypeText(order.Type),
 	}
 }
 
@@ -1515,9 +1585,44 @@ func (r *publicOrderRepo) convertToSubscribe(ctx context.Context, subscribe *ent
 		ResetCycle:        resetCycle,
 		RenewalReset:      subscribe.RenewalReset,
 		ShowOriginalPrice: subscribe.ShowOriginalPrice,
+		PriceOptions:      r.convertToPublicPriceOptions(ctx, subscribe.ID),
 		CreatedAt:         subscribe.CreatedAt.UnixMilli(),
 		UpdatedAt:         subscribe.UpdatedAt.UnixMilli(),
 	}
+}
+
+func (r *publicOrderRepo) convertToPublicPriceOptions(ctx context.Context, subscribeID int64) []publicBiz.SubscribePriceOption {
+	items, err := r.data.db.ProxySubscribePriceOption.Query().
+		Where(
+			proxysubscribepriceoption.SubscribeIDEQ(subscribeID),
+			proxysubscribepriceoption.ShowEQ(true),
+			proxysubscribepriceoption.SellEQ(true),
+		).
+		Order(ent.Desc(proxysubscribepriceoption.FieldSort), ent.Asc(proxysubscribepriceoption.FieldID)).
+		All(ctx)
+	if err != nil {
+		return []publicBiz.SubscribePriceOption{}
+	}
+	result := make([]publicBiz.SubscribePriceOption, 0, len(items))
+	for _, item := range items {
+		result = append(result, publicBiz.SubscribePriceOption{
+			ID:            item.ID,
+			SubscribeID:   item.SubscribeID,
+			Name:          item.Name,
+			DurationUnit:  item.DurationUnit,
+			DurationValue: item.DurationValue,
+			Price:         item.Price,
+			OriginalPrice: item.OriginalPrice,
+			Inventory:     int64(item.Inventory),
+			Show:          item.Show,
+			Sell:          item.Sell,
+			IsDefault:     item.IsDefault,
+			Sort:          int64(item.Sort),
+			CreatedAt:     item.CreatedAt.UnixMilli(),
+			UpdatedAt:     item.UpdatedAt.UnixMilli(),
+		})
+	}
+	return result
 }
 
 // 订单类型和状态文本的辅助函数

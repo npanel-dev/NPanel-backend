@@ -70,9 +70,36 @@ func convertPortalSubscribe(item *portalBiz.SubscribeInfo) *v1.SubscribeInfo {
 		ResetCycle:        int32(item.ResetCycle),
 		RenewalReset:      item.RenewalReset,
 		ShowOriginalPrice: item.ShowOriginalPrice,
+		PriceOptions:      convertPortalPriceOptions(item.PriceOptions),
 		CreatedAt:         item.CreatedAt,
 		UpdatedAt:         item.UpdatedAt,
 	}
+}
+
+func convertPortalPriceOptions(items []portalBiz.SubscribePriceOption) []*v1.SubscribePriceOption {
+	if len(items) == 0 {
+		return []*v1.SubscribePriceOption{}
+	}
+	result := make([]*v1.SubscribePriceOption, 0, len(items))
+	for _, item := range items {
+		result = append(result, &v1.SubscribePriceOption{
+			Id:            item.ID,
+			SubscribeId:   item.SubscribeID,
+			Name:          item.Name,
+			DurationUnit:  item.DurationUnit,
+			DurationValue: item.DurationValue,
+			Price:         item.Price,
+			OriginalPrice: item.OriginalPrice,
+			Inventory:     int32(item.Inventory),
+			Show:          item.Show,
+			Sell:          item.Sell,
+			IsDefault:     item.IsDefault,
+			Sort:          int32(item.Sort),
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
+		})
+	}
+	return result
 }
 
 type PortalService struct {
@@ -163,7 +190,7 @@ func (s *PortalService) PrePurchaseOrder(ctx context.Context, req *v1.PrePurchas
 		paymentID = &req.Payment
 	}
 
-	priceInfo, err := s.uc.PrePurchaseOrder(ctx, req.SubscribeId, req.Quantity, coupon, paymentID)
+	priceInfo, err := s.uc.PrePurchaseOrder(ctx, req.SubscribeId, req.PriceOptionId, req.Quantity, coupon, paymentID)
 	if err != nil {
 		return nil, err
 	}
@@ -190,14 +217,15 @@ func (s *PortalService) Purchase(ctx context.Context, req *v1.PurchaseRequest) (
 	}
 
 	orderNo, err := s.uc.Purchase(ctx, &portalBiz.CreateOrderRequest{
-		SubscribeID: req.SubscribeId,
-		Quantity:    req.Quantity,
-		PaymentID:   int(req.Payment),
-		Coupon:      coupon,
-		Identifier:  req.Identifier,
-		AuthType:    req.AuthType,
-		Password:    req.Password,
-		InviteCode:  inviteCode,
+		SubscribeID:   req.SubscribeId,
+		PriceOptionID: req.PriceOptionId,
+		Quantity:      req.Quantity,
+		PaymentID:     int(req.Payment),
+		Coupon:        coupon,
+		Identifier:    req.Identifier,
+		AuthType:      req.AuthType,
+		Password:      req.Password,
+		InviteCode:    inviteCode,
 	})
 	if err != nil {
 		return nil, err
@@ -276,19 +304,24 @@ func (s *PortalService) QueryPurchaseOrder(ctx context.Context, req *v1.QueryPur
 	}
 
 	return &v1.QueryPurchaseOrderReply{
-		OrderNo:        statusInfo.OrderNo,
-		Subscribe:      convertPortalSubscribe(statusInfo.Subscribe),
-		Quantity:       statusInfo.Quantity,
-		Price:          statusInfo.Price,
-		Amount:         statusInfo.Amount,
-		Discount:       statusInfo.Discount,
-		Coupon:         statusInfo.Coupon,
-		CouponDiscount: statusInfo.CouponDiscount,
-		FeeAmount:      statusInfo.FeeAmount,
-		Payment:        paymentInfo,
-		Status:         statusInfo.Status,
-		CreatedAt:      statusInfo.CreatedAt.UnixMilli(),
-		Token:          token,
+		OrderNo:         statusInfo.OrderNo,
+		Subscribe:       convertPortalSubscribe(statusInfo.Subscribe),
+		Quantity:        statusInfo.Quantity,
+		Price:           statusInfo.Price,
+		Amount:          statusInfo.Amount,
+		Discount:        statusInfo.Discount,
+		Coupon:          statusInfo.Coupon,
+		CouponDiscount:  statusInfo.CouponDiscount,
+		FeeAmount:       statusInfo.FeeAmount,
+		Payment:         paymentInfo,
+		Status:          statusInfo.Status,
+		PriceOptionId:   statusInfo.PriceOptionID,
+		PriceOptionName: statusInfo.PriceOptionName,
+		DurationUnit:    statusInfo.DurationUnit,
+		DurationValue:   statusInfo.DurationValue,
+		OptionPrice:     statusInfo.OptionPrice,
+		CreatedAt:       statusInfo.CreatedAt.UnixMilli(),
+		Token:           token,
 	}, nil
 }
 

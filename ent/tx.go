@@ -50,6 +50,8 @@ type Tx struct {
 	ProxySubscribeCategory *ProxySubscribeCategoryClient
 	// ProxySubscribeGroup is the client for interacting with the ProxySubscribeGroup builders.
 	ProxySubscribeGroup *ProxySubscribeGroupClient
+	// ProxySubscribePriceOption is the client for interacting with the ProxySubscribePriceOption builders.
+	ProxySubscribePriceOption *ProxySubscribePriceOptionClient
 	// ProxySystem is the client for interacting with the ProxySystem builders.
 	ProxySystem *ProxySystemClient
 	// ProxySystemLog is the client for interacting with the ProxySystemLog builders.
@@ -224,6 +226,7 @@ func (tx *Tx) init() {
 	tx.ProxySubscribeApplication = NewProxySubscribeApplicationClient(tx.config)
 	tx.ProxySubscribeCategory = NewProxySubscribeCategoryClient(tx.config)
 	tx.ProxySubscribeGroup = NewProxySubscribeGroupClient(tx.config)
+	tx.ProxySubscribePriceOption = NewProxySubscribePriceOptionClient(tx.config)
 	tx.ProxySystem = NewProxySystemClient(tx.config)
 	tx.ProxySystemLog = NewProxySystemLogClient(tx.config)
 	tx.ProxyTask = NewProxyTaskClient(tx.config)

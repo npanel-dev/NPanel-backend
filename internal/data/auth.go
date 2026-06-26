@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
@@ -21,7 +22,6 @@ import (
 	"github.com/npanel-dev/NPanel-backend/pkg/phone"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 	"github.com/npanel-dev/NPanel-backend/pkg/uuidx"
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -166,7 +166,7 @@ func (r *authRepo) UserLogin(ctx context.Context, params *authbiz.UserLoginParam
 	}
 	userID = authMethod.UserID
 
-	if err := ensureEmailLoginAllowed(userInfo); err != nil {
+	if err := ensureUserActive(userInfo); err != nil {
 		return nil, err
 	}
 	if !tool.MultiPasswordVerify(userInfo.Algo, stringPointerValue(userInfo.Salt), params.Password, userInfo.Password) {
@@ -208,6 +208,9 @@ func (r *authRepo) TelephoneLogin(ctx context.Context, params *authbiz.Telephone
 	}
 	userID = authMethod.UserID
 
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
+	}
 	if params.Password == "" && params.TelephoneCode == "" {
 		return nil, responsecode.NewKratosError(responsecode.ErrPasswordOrVerificationCodeRequired)
 	}
@@ -497,6 +500,9 @@ func (r *authRepo) ResetPassword(ctx context.Context, params *authbiz.ResetPassw
 		return nil, err
 	}
 	userID = authMethod.UserID
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
+	}
 	_, err = r.data.db.ProxyUser.UpdateOneID(userInfo.ID).
 		SetPassword(tool.EncodePassWord(params.Password)).
 		SetAlgo("default").
@@ -545,6 +551,9 @@ func (r *authRepo) TelephoneResetPassword(ctx context.Context, params *authbiz.T
 		return nil, err
 	}
 	userID = authMethod.UserID
+	if err := ensureUserActive(userInfo); err != nil {
+		return nil, err
+	}
 	_, err = r.data.db.ProxyUser.UpdateOneID(userInfo.ID).
 		SetPassword(tool.EncodePassWord(params.Password)).
 		SetAlgo("default").
@@ -1182,10 +1191,7 @@ func (r *authRepo) logRegister(ctx context.Context, userID int, authMethod, iden
 }
 
 func ensureEmailLoginAllowed(userInfo *ent.ProxyUser) error {
-	if userInfo == nil || isDeletedUser(userInfo) {
-		return responsecode.NewKratosError(responsecode.ErrUserNotFound)
-	}
-	return nil
+	return ensureUserActive(userInfo)
 }
 
 func isDeletedUser(userInfo *ent.ProxyUser) bool {

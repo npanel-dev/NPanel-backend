@@ -4,11 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	modellog "github.com/npanel-dev/NPanel-backend/internal/model/log"
 	"github.com/npanel-dev/NPanel-backend/internal/service"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 // CloseOrderRequest 关闭订单请求
@@ -73,6 +75,10 @@ func (l *CloseOrderLogic) CloseOrder(req *CloseOrderRequest) error {
 			Exec(l.ctx)
 		if err != nil {
 			l.logger.Errorw("[CloseOrder] Update order status failed", "error", err.Error(), "orderNo", req.OrderNo)
+			return err
+		}
+
+		if err := l.restoreReservedInventory(tx, orderInfo); err != nil {
 			return err
 		}
 
@@ -159,6 +165,52 @@ func (l *CloseOrderLogic) CloseOrder(req *CloseOrderRequest) error {
 
 	l.logger.Infow("[CloseOrder] Order closed successfully", "orderNo", req.OrderNo)
 
+	return nil
+}
+
+func (l *CloseOrderLogic) restoreReservedInventory(tx *ent.Tx, orderInfo *ent.ProxyOrder) error {
+	if orderInfo.Type == 1 && orderInfo.SubscribeID > 0 {
+		subscribeInfo, err := tx.ProxySubscribe.Query().
+			Where(proxysubscribe.IDEQ(orderInfo.SubscribeID)).
+			Only(l.ctx)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				l.logger.Warnw("[CloseOrder] Subscribe not found, skip inventory restore", "subscribeID", orderInfo.SubscribeID, "orderNo", orderInfo.OrderNo)
+			} else {
+				l.logger.Errorw("[CloseOrder] Find subscribe failed", "error", err.Error(), "subscribeID", orderInfo.SubscribeID)
+				return err
+			}
+		} else if subscribeInfo.Inventory != -1 {
+			if err := tx.ProxySubscribe.UpdateOneID(subscribeInfo.ID).
+				SetInventory(subscribeInfo.Inventory + 1).
+				Exec(l.ctx); err != nil {
+				l.logger.Errorw("[CloseOrder] Restore subscribe inventory failed", "error", err.Error(), "subscribeID", subscribeInfo.ID)
+				return err
+			}
+		}
+	}
+
+	if (orderInfo.Type == 1 || orderInfo.Type == 2) && orderInfo.PriceOptionID > 0 {
+		optionInfo, err := tx.ProxySubscribePriceOption.Query().
+			Where(proxysubscribepriceoption.IDEQ(orderInfo.PriceOptionID)).
+			Only(l.ctx)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				l.logger.Warnw("[CloseOrder] Price option not found, skip inventory restore", "priceOptionID", orderInfo.PriceOptionID, "orderNo", orderInfo.OrderNo)
+				return nil
+			}
+			l.logger.Errorw("[CloseOrder] Find price option failed", "error", err.Error(), "priceOptionID", orderInfo.PriceOptionID)
+			return err
+		}
+		if optionInfo.Inventory != -1 {
+			if err := tx.ProxySubscribePriceOption.UpdateOneID(optionInfo.ID).
+				SetInventory(optionInfo.Inventory + 1).
+				Exec(l.ctx); err != nil {
+				l.logger.Errorw("[CloseOrder] Restore price option inventory failed", "error", err.Error(), "priceOptionID", optionInfo.ID)
+				return err
+			}
+		}
+	}
 	return nil
 }
 

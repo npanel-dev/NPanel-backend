@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/internal/conf"
 	pkgmiddleware "github.com/npanel-dev/NPanel-backend/internal/pkg/middleware"
@@ -19,9 +22,6 @@ import (
 	"github.com/npanel-dev/NPanel-backend/pkg/jwt"
 	"github.com/npanel-dev/NPanel-backend/pkg/logger"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -116,6 +116,12 @@ func (svc *ServiceContext) Auth() middleware.Middleware {
 					logger.Field("error", err.Error()),
 					logger.Field("userId", userID))
 				return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+			}
+			if userInfo.DeletedAt != nil || (userInfo.IsDel != nil && *userInfo.IsDel == 0) {
+				return nil, responsecode.NewKratosError(responsecode.ErrInvalidAccess)
+			}
+			if !userInfo.Enable {
+				return nil, responsecode.NewKratosError(responsecode.ErrAccountDisabled)
 			}
 
 			if isAdminOperation(tr.Operation()) && !userInfo.IsAdmin {
@@ -213,6 +219,7 @@ func anonymousPathPrefixes() []string {
 	return []string{
 		"/v1/auth/",
 		"/v1/common/",
+		"/v1/upload/image",
 		"/v1/notify/",
 		"/v1/public/portal/",
 		"/v1/telegram/",
@@ -221,6 +228,7 @@ func anonymousPathPrefixes() []string {
 		"/api/public/portal/",
 		"/api/auth/oauth/",
 		"/api/auth/",
+		"/uploads/",
 		"/v1/server/",
 		"/v2/server/",
 	}

@@ -131,7 +131,7 @@ func RegisterPublicUserHTTPServer(s *http.Server, srv PublicUserHTTPServer) {
 	r.GET("/v1/public/user/oauth_methods", _PublicUser_GetOAuthMethods0_HTTP_Handler(srv))
 	r.GET("/v1/public/user/subscribe", _PublicUser_QueryUserSubscribe0_HTTP_Handler(srv))
 	r.GET("/v1/public/user/subscribe_log", _PublicUser_GetSubscribeLog0_HTTP_Handler(srv))
-	r.PUT("/v1/public/user/subscribe_token", _PublicUser_ResetUserSubscribeToken1_HTTP_Handler(srv))
+	r.PUT("/v1/public/user/subscribe_token", _PublicUser_ResetUserSubscribeToken0_HTTP_Handler(srv))
 	r.POST("/v1/public/user/unsubscribe/pre", _PublicUser_PreUnsubscribe0_HTTP_Handler(srv))
 	r.POST("/v1/public/user/unsubscribe", _PublicUser_Unsubscribe0_HTTP_Handler(srv))
 	r.PUT("/v1/public/user/notify", _PublicUser_UpdateUserNotify0_HTTP_Handler(srv))
@@ -327,7 +327,7 @@ func _PublicUser_GetSubscribeLog0_HTTP_Handler(srv PublicUserHTTPServer) func(ct
 	}
 }
 
-func _PublicUser_ResetUserSubscribeToken1_HTTP_Handler(srv PublicUserHTTPServer) func(ctx http.Context) error {
+func _PublicUser_ResetUserSubscribeToken0_HTTP_Handler(srv PublicUserHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in ResetUserSubscribeTokenRequest
 		if err := ctx.Bind(&in); err != nil {

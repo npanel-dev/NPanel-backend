@@ -17,9 +17,11 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuserauthmethod"
 	portalBiz "github.com/npanel-dev/NPanel-backend/internal/biz/public/portal"
+	productlanguage "github.com/npanel-dev/NPanel-backend/internal/pkg/language"
 	"github.com/npanel-dev/NPanel-backend/internal/pkg/middleware"
 	queueTypes "github.com/npanel-dev/NPanel-backend/internal/queue/types"
 	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
@@ -75,6 +77,7 @@ func (r *publicPortalRepo) CheckUserExists(ctx context.Context, authType, identi
 // ⚠️ 包含租户过滤和语言过滤
 // language: 如果不为空，过滤指定语言；如果为空，返回默认语言（language=”）
 func (r *publicPortalRepo) GetSubscribeList(ctx context.Context, language string, categoryID int64) ([]*portalBiz.SubscribeInfo, error) {
+	language = productlanguage.NormalizeProductLanguage(language)
 	r.logger.Infof("[GetSubscribeList] language: %s", language)
 
 	// 构建查询条件
@@ -110,6 +113,7 @@ func (r *publicPortalRepo) GetSubscribeList(ctx context.Context, language string
 
 	result := make([]*portalBiz.SubscribeInfo, 0, len(subscribes))
 	categoryNames := r.portalSubscribeCategoryNames(ctx, subscribes)
+	priceOptions := r.portalSubscribePriceOptions(ctx, subscribes)
 	for _, sub := range subscribes {
 		// 解析Discount JSON为数组（复刻原项目 getSubscriptionLogic.go line 35-39）
 		var discounts []portalBiz.SubscribeDiscount
@@ -183,6 +187,7 @@ func (r *publicPortalRepo) GetSubscribeList(ctx context.Context, language string
 			ResetCycle:        int64(resetCycle),
 			RenewalReset:      sub.RenewalReset,
 			ShowOriginalPrice: sub.ShowOriginalPrice,
+			PriceOptions:      priceOptions[int64(sub.ID)],
 			CreatedAt:         sub.CreatedAt.Unix(),
 			UpdatedAt:         sub.UpdatedAt.Unix(),
 		})
@@ -192,6 +197,7 @@ func (r *publicPortalRepo) GetSubscribeList(ctx context.Context, language string
 }
 
 func (r *publicPortalRepo) GetSubscribeCatalog(ctx context.Context, language string) (*portalBiz.SubscribeCatalog, error) {
+	language = productlanguage.NormalizeProductLanguage(language)
 	subscribes, err := r.GetSubscribeList(ctx, language, 0)
 	if err != nil {
 		return nil, err
@@ -285,11 +291,83 @@ func (r *publicPortalRepo) portalSubscribeCategoryNames(ctx context.Context, sub
 	return result
 }
 
+func (r *publicPortalRepo) portalSubscribePriceOptions(ctx context.Context, subscribes []*ent.ProxySubscribe) map[int64][]portalBiz.SubscribePriceOption {
+	ids := make([]int64, 0, len(subscribes))
+	for _, sub := range subscribes {
+		if sub != nil {
+			ids = append(ids, int64(sub.ID))
+		}
+	}
+	result := make(map[int64][]portalBiz.SubscribePriceOption)
+	if len(ids) == 0 {
+		return result
+	}
+	items, err := r.data.db.ProxySubscribePriceOption.Query().
+		Where(
+			proxysubscribepriceoption.SubscribeIDIn(ids...),
+			proxysubscribepriceoption.ShowEQ(true),
+			proxysubscribepriceoption.SellEQ(true),
+		).
+		Order(ent.Desc(proxysubscribepriceoption.FieldSort), ent.Asc(proxysubscribepriceoption.FieldID)).
+		All(ctx)
+	if err != nil {
+		return result
+	}
+	for _, item := range items {
+		result[item.SubscribeID] = append(result[item.SubscribeID], portalBiz.SubscribePriceOption{
+			ID:            item.ID,
+			SubscribeID:   item.SubscribeID,
+			Name:          item.Name,
+			DurationUnit:  item.DurationUnit,
+			DurationValue: item.DurationValue,
+			Price:         item.Price,
+			OriginalPrice: item.OriginalPrice,
+			Inventory:     int64(item.Inventory),
+			Show:          item.Show,
+			Sell:          item.Sell,
+			IsDefault:     item.IsDefault,
+			Sort:          int64(item.Sort),
+			CreatedAt:     item.CreatedAt.Unix(),
+			UpdatedAt:     item.UpdatedAt.Unix(),
+		})
+	}
+	return result
+}
+
+func (r *publicPortalRepo) getSellablePortalPriceOption(ctx context.Context, subscribeID, optionID int64) (*ent.ProxySubscribePriceOption, error) {
+	if optionID <= 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	option, err := r.data.db.ProxySubscribePriceOption.Query().
+		Where(
+			proxysubscribepriceoption.IDEQ(optionID),
+			proxysubscribepriceoption.SubscribeIDEQ(subscribeID),
+			proxysubscribepriceoption.SellEQ(true),
+		).
+		Only(ctx)
+	if err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	if option.Inventory == 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
+	}
+	return option, nil
+}
+
+func portalPriceFromOption(option *ent.ProxySubscribePriceOption) (price, amount, discount int64) {
+	amount = option.Price
+	price = option.OriginalPrice
+	if price <= 0 || price < amount {
+		price = amount
+	}
+	return price, amount, price - amount
+}
+
 // CalculateOrderPrice 计算订单价格（含折扣、优惠券、手续费）
 // ⚠️ Portal订单不需要查询用户信息（userId=0）
 // ⚠️ paymentID可选，用于计算手续费
-func (r *publicPortalRepo) CalculateOrderPrice(ctx context.Context, subscribeID, quantity int64, coupon *string, paymentID *int64) (*portalBiz.PriceInfo, error) {
-	r.logger.Infof("[CalculateOrderPrice] subscribeID: %d, quantity: %d, paymentID: %v", subscribeID, quantity, paymentID)
+func (r *publicPortalRepo) CalculateOrderPrice(ctx context.Context, subscribeID, priceOptionID, quantity int64, coupon *string, paymentID *int64) (*portalBiz.PriceInfo, error) {
+	r.logger.Infof("[CalculateOrderPrice] subscribeID: %d, priceOptionID: %d, quantity: %d, paymentID: %v", subscribeID, priceOptionID, quantity, paymentID)
 
 	// 1. 查询订阅套餐
 	sub, err := r.data.db.ProxySubscribe.Query().
@@ -301,18 +379,16 @@ func (r *publicPortalRepo) CalculateOrderPrice(ctx context.Context, subscribeID,
 		r.logger.Errorf("[CalculateOrderPrice] 订阅不存在: %d", subscribeID)
 		return nil, responsecode.NewKratosError(responsecode.ErrSubscribeNotFound)
 	}
-
-	// 2. 计算基础价格
-	price := sub.UnitPrice * quantity
-
-	// 3. 计算订阅折扣（复刻原项目逻辑 - prePurchaseOrderLogic.go line 39-46）
-	var discount float64 = 1.0
-	if sub.Discount != nil && *sub.Discount != "" {
-		discounts := parseSubscribeDiscounts(*sub.Discount)
-		discount = getDiscount(discounts, quantity)
+	if !sub.Sell {
+		return nil, errors.BadRequest("SUBSCRIBE_NOT_SELL", "订阅计划未在售")
 	}
-	amount := int64(float64(price) * discount)
-	discountAmount := price - amount
+
+	option, err := r.getSellablePortalPriceOption(ctx, subscribeID, priceOptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	price, amount, discountAmount := portalPriceFromOption(option)
 
 	// 4. 计算优惠券折扣（复刻原项目逻辑 - prePurchaseOrderLogic.go line 49-68）
 	var couponAmount int64 = 0
@@ -423,17 +499,13 @@ func (r *publicPortalRepo) CreatePortalOrder(ctx context.Context, req *portalBiz
 		return "", responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
 	}
 
-	// 3. 计算订阅折扣（复刻原项目逻辑 - purchaseLogic.go line 62-67）
-	var discount float64 = 1.0
-	if subscribe.Discount != nil && *subscribe.Discount != "" {
-		discounts := parseSubscribeDiscounts(*subscribe.Discount)
-		discount = getDiscount(discounts, req.Quantity)
+	option, err := r.getSellablePortalPriceOption(ctx, req.SubscribeID, req.PriceOptionID)
+	if err != nil {
+		return "", err
 	}
 
 	// 4. 计算价格和折扣金额
-	price := subscribe.UnitPrice * req.Quantity
-	amount := int64(float64(price) * discount)
-	discountAmount := price - amount
+	price, amount, discountAmount := portalPriceFromOption(option)
 
 	// 5. 处理优惠券（如果有）
 	var couponAmount int = 0
@@ -563,12 +635,32 @@ func (r *publicPortalRepo) CreatePortalOrder(ctx context.Context, req *portalBiz
 				return errors.InternalServer("DATABASE_ERROR", "更新订阅库存失败")
 			}
 		}
+		if option.Inventory != -1 {
+			latestOption, err := tx.ProxySubscribePriceOption.Query().
+				Where(
+					proxysubscribepriceoption.IDEQ(option.ID),
+					proxysubscribepriceoption.SubscribeIDEQ(req.SubscribeID),
+					proxysubscribepriceoption.SellEQ(true),
+				).
+				Only(ctx)
+			if err != nil {
+				return errors.InternalServer("DATABASE_ERROR", "查询价格档位失败")
+			}
+			if latestOption.Inventory == 0 {
+				return responsecode.NewKratosError(responsecode.ErrSubscribeOutOfStock)
+			}
+			if err := tx.ProxySubscribePriceOption.UpdateOneID(latestOption.ID).
+				SetInventory(latestOption.Inventory - 1).
+				Exec(ctx); err != nil {
+				return errors.InternalServer("DATABASE_ERROR", "更新价格档位库存失败")
+			}
+		}
 
 		_, err := tx.ProxyOrder.Create().
 			SetUserID(0). // ⚠️ Portal订单userId为0
 			SetOrderNo(orderNo).
 			SetType(1). // 订阅类型
-			SetQuantity(int32(req.Quantity)).
+			SetQuantity(orderDurationQuantity(option)).
 			SetPrice(price).
 			SetAmount(amount). // ⚠️ 不含手续费（= 原价*折扣 - 优惠券）
 			SetDiscount(discountAmount).
@@ -580,6 +672,11 @@ func (r *publicPortalRepo) CreatePortalOrder(ctx context.Context, req *portalBiz
 			SetFeeAmount(int64(feeAmount)). // ⚠️ 手续费单独存储
 			SetCommission(0).               // Portal订单无佣金
 			SetSubscribeID(req.SubscribeID).
+			SetPriceOptionID(option.ID).
+			SetPriceOptionName(option.Name).
+			SetDurationUnit(option.DurationUnit).
+			SetDurationValue(option.DurationValue).
+			SetOptionPrice(option.Price).
 			SetIsNew(true). // ⚠️ 标记为新订单
 			SetStatus(1).   // 待支付
 			Save(ctx)
@@ -942,6 +1039,7 @@ func (r *publicPortalRepo) CheckOrderStatus(ctx context.Context, orderNo, authTy
 			ResetCycle:        int64(resetCycle),
 			RenewalReset:      subscribeEntity.RenewalReset,
 			ShowOriginalPrice: subscribeEntity.ShowOriginalPrice,
+			PriceOptions:      r.portalSubscribePriceOptions(ctx, []*ent.ProxySubscribe{subscribeEntity})[int64(subscribeEntity.ID)],
 			CreatedAt:         subscribeEntity.CreatedAt.Unix(),
 			UpdatedAt:         subscribeEntity.UpdatedAt.Unix(),
 		}
@@ -972,18 +1070,23 @@ func (r *publicPortalRepo) CheckOrderStatus(ctx context.Context, orderNo, authTy
 
 	// 5. 返回订单状态信息（包含所有字段）
 	return &portalBiz.OrderStatusInfo{
-		OrderNo:        order.OrderNo,
-		Subscribe:      subscribe,
-		Quantity:       int64(order.Quantity),
-		Price:          order.Price,
-		Amount:         order.Amount,
-		Discount:       order.Discount,
-		Coupon:         order.Coupon,
-		CouponDiscount: order.CouponDiscount,
-		FeeAmount:      order.FeeAmount,
-		Payment:        paymentInfo,
-		Status:         int32(order.Status),
-		CreatedAt:      order.CreatedAt,
+		OrderNo:         order.OrderNo,
+		Subscribe:       subscribe,
+		Quantity:        int64(order.Quantity),
+		Price:           order.Price,
+		Amount:          order.Amount,
+		Discount:        order.Discount,
+		Coupon:          order.Coupon,
+		CouponDiscount:  order.CouponDiscount,
+		FeeAmount:       order.FeeAmount,
+		Payment:         paymentInfo,
+		Status:          int32(order.Status),
+		PriceOptionID:   order.PriceOptionID,
+		PriceOptionName: order.PriceOptionName,
+		DurationUnit:    order.DurationUnit,
+		DurationValue:   order.DurationValue,
+		OptionPrice:     order.OptionPrice,
+		CreatedAt:       order.CreatedAt,
 	}, token, nil
 }
 
@@ -1097,7 +1200,7 @@ func (r *publicPortalRepo) epayPayment(ctx context.Context, paymentConfig *ent.P
 	client := epay.NewClient(config.Pid, config.Url, config.Key, config.Type)
 
 	// 3. 汇率转换（转换为CNY）
-	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount))
+	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount+order.FeeAmount))
 	if err != nil {
 		return "", err
 	}
@@ -1141,7 +1244,7 @@ func (r *publicPortalRepo) stripePayment(ctx context.Context, paymentConfig *ent
 	})
 
 	// 3. 汇率转换（转换为CNY）
-	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount))
+	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount+order.FeeAmount))
 	if err != nil {
 		return "", "", "", "", err
 	}
@@ -1197,7 +1300,7 @@ func (r *publicPortalRepo) alipayF2fPayment(ctx context.Context, paymentConfig *
 	}
 
 	// 4. 汇率转换（转换为CNY）
-	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount))
+	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount+order.FeeAmount))
 	if err != nil {
 		return "", err
 	}
@@ -1232,7 +1335,7 @@ func (r *publicPortalRepo) cryptoSaaSPayment(ctx context.Context, paymentConfig 
 	client := epay.NewClient(config.AccountID, config.Endpoint, config.SecretKey, config.Type)
 
 	// 3. 汇率转换（转换为CNY）
-	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount))
+	amount, err := r.queryExchangeRate(ctx, "CNY", int(order.Amount+order.FeeAmount))
 	if err != nil {
 		return "", err
 	}

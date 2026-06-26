@@ -30,7 +30,31 @@ func NewSubscribeApplicationRepo(data *Data, logger log.Logger) applicationbiz.S
 
 // Create 创建订阅应用配置
 func (r *subscribeApplicationRepo) Create(ctx context.Context, app *applicationbiz.SubscribeApplication) (*applicationbiz.SubscribeApplication, error) {
-	po, err := r.data.db.ProxySubscribeApplication.
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !app.IsDefault {
+		hasDefault, err := tx.ProxySubscribeApplication.Query().
+			Where(proxysubscribeapplication.IsDefault(true)).
+			Exist(ctx)
+		if err != nil {
+			return nil, rollback(tx, err)
+		}
+		if !hasDefault {
+			app.IsDefault = true
+		}
+	}
+	if app.IsDefault {
+		if _, err := tx.ProxySubscribeApplication.Update().
+			SetIsDefault(false).
+			Save(ctx); err != nil {
+			return nil, rollback(tx, err)
+		}
+	}
+
+	po, err := tx.ProxySubscribeApplication.
 		Create().
 		SetName(app.Name).
 		SetNillableIcon(app.Icon).
@@ -44,6 +68,9 @@ func (r *subscribeApplicationRepo) Create(ctx context.Context, app *applicationb
 		Save(ctx)
 
 	if err != nil {
+		return nil, rollback(tx, err)
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -63,10 +90,35 @@ func (r *subscribeApplicationRepo) Update(ctx context.Context, app *applicationb
 	if err != nil {
 		return nil, err
 	}
+	if existing.IsDefault && !app.IsDefault {
+		defaultCount, err := r.data.db.ProxySubscribeApplication.Query().
+			Where(proxysubscribeapplication.IsDefault(true)).
+			Count(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if defaultCount <= 1 {
+			app.IsDefault = true
+		}
+	}
+
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if app.IsDefault {
+		if _, err := tx.ProxySubscribeApplication.Update().
+			Where(proxysubscribeapplication.IDNEQ(app.ID)).
+			SetIsDefault(false).
+			Save(ctx); err != nil {
+			return nil, rollback(tx, err)
+		}
+	}
 
 	// 构建更新操作，所有字段都直接设置（包括可选字段）
-	updateBuilder := r.data.db.ProxySubscribeApplication.
-		UpdateOne(existing).
+	updateBuilder := tx.ProxySubscribeApplication.
+		UpdateOneID(app.ID).
 		SetName(app.Name).
 		SetScheme(app.Scheme).
 		SetUserAgent(app.UserAgent).
@@ -79,6 +131,9 @@ func (r *subscribeApplicationRepo) Update(ctx context.Context, app *applicationb
 
 	po, err := updateBuilder.Save(ctx)
 	if err != nil {
+		return nil, rollback(tx, err)
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -249,13 +304,59 @@ func (r *subscribeApplicationRepo) GetPreviewNodes(ctx context.Context) ([]*publ
 
 // Delete 删除订阅应用配置
 func (r *subscribeApplicationRepo) Delete(ctx context.Context, id int64) error {
-	_, err := r.data.db.ProxySubscribeApplication.
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+
+	deletingDefault := false
+	existing, err := tx.ProxySubscribeApplication.Query().
+		Where(proxysubscribeapplication.ID(id)).
+		Only(ctx)
+	if err != nil {
+		if !ent.IsNotFound(err) {
+			return rollback(tx, err)
+		}
+	} else {
+		deletingDefault = existing.IsDefault
+	}
+
+	_, err = tx.ProxySubscribeApplication.
 		Delete().
 		Where(
 			proxysubscribeapplication.ID(id),
 		).
 		Exec(ctx)
-	return err
+	if err != nil {
+		return rollback(tx, err)
+	}
+
+	if deletingDefault {
+		hasDefault, err := tx.ProxySubscribeApplication.Query().
+			Where(proxysubscribeapplication.IsDefault(true)).
+			Exist(ctx)
+		if err != nil {
+			return rollback(tx, err)
+		}
+		if !hasDefault {
+			nextDefault, err := tx.ProxySubscribeApplication.Query().
+				Order(ent.Asc(proxysubscribeapplication.FieldID)).
+				First(ctx)
+			if err != nil && !ent.IsNotFound(err) {
+				return rollback(tx, err)
+			}
+			if nextDefault != nil {
+				if _, err := tx.ProxySubscribeApplication.Update().
+					Where(proxysubscribeapplication.ID(nextDefault.ID)).
+					SetIsDefault(true).
+					Save(ctx); err != nil {
+					return rollback(tx, err)
+				}
+			}
+		}
+	}
+
+	return tx.Commit()
 }
 
 // convertToModel 转换为业务模型

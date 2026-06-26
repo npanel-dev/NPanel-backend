@@ -57,12 +57,13 @@ func (s *PublicOrderService) QueryOrderList(ctx context.Context, req *pb.QueryOr
 func (s *PublicOrderService) PreCreateOrder(ctx context.Context, req *pb.PreCreateOrderRequest) (*pb.PreCreateOrderReply, error) {
 	userID := middleware.GetUserID(ctx)
 	result, err := s.uc.PreCreateOrder(ctx, &publicBiz.PreCreateOrderParams{
-		UserID:      userID,
-		Type:        1,
-		SubscribeID: req.SubscribeId,
-		Quantity:    req.Quantity,
-		Coupon:      req.Coupon,
-		Payment:     req.Payment,
+		UserID:        userID,
+		Type:          req.Type,
+		SubscribeID:   req.SubscribeId,
+		PriceOptionID: req.PriceOptionId,
+		Quantity:      req.Quantity,
+		Coupon:        req.Coupon,
+		Payment:       req.Payment,
 	})
 	if err != nil {
 		return nil, err
@@ -82,11 +83,12 @@ func (s *PublicOrderService) PreCreateOrder(ctx context.Context, req *pb.PreCrea
 func (s *PublicOrderService) Purchase(ctx context.Context, req *pb.PurchaseRequest) (*pb.PurchaseReply, error) {
 	userID := middleware.GetUserID(ctx)
 	result, err := s.uc.Purchase(ctx, &publicBiz.PurchaseParams{
-		UserID:      userID,
-		SubscribeID: req.SubscribeId,
-		Quantity:    req.Quantity,
-		Coupon:      req.Coupon,
-		Payment:     req.Payment,
+		UserID:        userID,
+		SubscribeID:   req.SubscribeId,
+		PriceOptionID: req.PriceOptionId,
+		Quantity:      req.Quantity,
+		Coupon:        req.Coupon,
+		Payment:       req.Payment,
 	})
 	if err != nil {
 		return nil, err
@@ -112,6 +114,7 @@ func (s *PublicOrderService) Renewal(ctx context.Context, req *pb.RenewalRequest
 	result, err := s.uc.Renewal(ctx, &publicBiz.RenewalParams{
 		UserID:          userID,
 		UserSubscribeID: req.UserSubscribeId,
+		PriceOptionID:   req.PriceOptionId,
 		Quantity:        req.Quantity,
 		Coupon:          req.Coupon,
 		Payment:         req.Payment,
@@ -193,34 +196,66 @@ func (s *PublicOrderService) convertToProtoOrderDetail(order *publicBiz.OrderDet
 			ResetCycle:        int32(order.Subscribe.ResetCycle),
 			RenewalReset:      order.Subscribe.RenewalReset,
 			ShowOriginalPrice: order.Subscribe.ShowOriginalPrice,
+			PriceOptions:      convertOrderPriceOptions(order.Subscribe.PriceOptions),
 			CreatedAt:         order.Subscribe.CreatedAt,
 			UpdatedAt:         order.Subscribe.UpdatedAt,
 		}
 	}
 
 	return &pb.OrderDetail{
-		Id:             order.ID,
-		UserId:         order.UserID,
-		OrderNo:        order.OrderNo,
-		Type:           order.Type,
-		Quantity:       order.Quantity,
-		Price:          order.Price,
-		Amount:         order.Amount,
-		GiftAmount:     order.GiftAmount,
-		Discount:       order.Discount,
-		Coupon:         order.Coupon,
-		CouponDiscount: order.CouponDiscount,
-		Commission:     0,
-		Payment:        payment,
-		Method:         order.Method,
-		FeeAmount:      order.FeeAmount,
-		TradeNo:        order.TradeNo,
-		Status:         order.Status,
-		SubscribeId:    order.SubscribeID,
-		Subscribe:      subscribe,
-		CreatedAt:      order.CreatedAt,
-		UpdatedAt:      order.UpdatedAt,
+		Id:              order.ID,
+		UserId:          order.UserID,
+		OrderNo:         order.OrderNo,
+		Type:            order.Type,
+		Quantity:        order.Quantity,
+		Price:           order.Price,
+		Amount:          order.Amount,
+		GiftAmount:      order.GiftAmount,
+		Discount:        order.Discount,
+		Coupon:          order.Coupon,
+		CouponDiscount:  order.CouponDiscount,
+		Commission:      0,
+		Payment:         payment,
+		Method:          order.Method,
+		FeeAmount:       order.FeeAmount,
+		TradeNo:         order.TradeNo,
+		Status:          order.Status,
+		SubscribeId:     order.SubscribeID,
+		PriceOptionId:   order.PriceOptionID,
+		PriceOptionName: order.PriceOptionName,
+		DurationUnit:    order.DurationUnit,
+		DurationValue:   order.DurationValue,
+		OptionPrice:     order.OptionPrice,
+		Subscribe:       subscribe,
+		CreatedAt:       order.CreatedAt,
+		UpdatedAt:       order.UpdatedAt,
 	}
+}
+
+func convertOrderPriceOptions(items []publicBiz.SubscribePriceOption) []*pb.SubscribePriceOption {
+	if len(items) == 0 {
+		return []*pb.SubscribePriceOption{}
+	}
+	result := make([]*pb.SubscribePriceOption, 0, len(items))
+	for _, item := range items {
+		result = append(result, &pb.SubscribePriceOption{
+			Id:            item.ID,
+			SubscribeId:   item.SubscribeID,
+			Name:          item.Name,
+			DurationUnit:  item.DurationUnit,
+			DurationValue: item.DurationValue,
+			Price:         item.Price,
+			OriginalPrice: item.OriginalPrice,
+			Inventory:     int32(item.Inventory),
+			Show:          item.Show,
+			Sell:          item.Sell,
+			IsDefault:     item.IsDefault,
+			Sort:          int32(item.Sort),
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
+		})
+	}
+	return result
 }
 
 func convertIntSliceToInt64Slice(input []int) []int64 {
