@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-VERSION=${1:-${NPANEL_VERSION:-v1.0.9}}
+VERSION=${1:-${NPANEL_VERSION:-v1.0.10}}
 case "$VERSION" in
   v*) ;;
   *) VERSION="v$VERSION" ;;

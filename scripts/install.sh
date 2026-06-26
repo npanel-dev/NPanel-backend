@@ -105,7 +105,7 @@ NPanel Backend one-click installer
 
 Usage:
   bash install.sh [version]
-  bash install.sh --version v1.0.9
+  bash install.sh --version v1.0.10
   bash install.sh --mode docker
   bash install.sh --mode binary
 
@@ -141,7 +141,7 @@ Environment:
 
 Examples:
   curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash
-  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- v1.0.9
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- v1.0.10
   curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- --source-ref dev
 EOF
 }

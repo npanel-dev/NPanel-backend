@@ -34,7 +34,7 @@ services:
     build:
       context: .
       args:
-        VERSION: ${NPANEL_VERSION:-v1.0.9}
+        VERSION: ${NPANEL_VERSION:-v1.0.10}
     image: npanel:latest
     restart: unless-stopped
     depends_on:
