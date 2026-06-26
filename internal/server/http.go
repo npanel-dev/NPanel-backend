@@ -122,6 +122,7 @@ func NewHTTPServer(c *conf.Server, appConf *conf.Application, authMiddleware *ap
 		opts = append(opts, http.Timeout(httpConf.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
+	registerUploadRoutes(srv, c, d)
 	registerLegacyCompatRoutes(srv, authCompat, d, appConf, publicPayment, server, logger)
 	adsv1.RegisterAdsServiceHTTPServer(srv, ads)
 	announcementv1.RegisterAnnouncementServiceHTTPServer(srv, announcement)

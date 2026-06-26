@@ -219,6 +219,7 @@ func anonymousPathPrefixes() []string {
 	return []string{
 		"/v1/auth/",
 		"/v1/common/",
+		"/v1/upload/image",
 		"/v1/notify/",
 		"/v1/public/portal/",
 		"/v1/telegram/",
@@ -227,6 +228,7 @@ func anonymousPathPrefixes() []string {
 		"/api/public/portal/",
 		"/api/auth/oauth/",
 		"/api/auth/",
+		"/uploads/",
 		"/v1/server/",
 		"/v2/server/",
 	}

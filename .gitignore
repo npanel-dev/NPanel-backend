@@ -50,6 +50,7 @@ configs/*.private.yaml
 /mysql/
 /redis/
 /npanel-config/
+/uploads/
 
 # Logs and process files
 *.log
