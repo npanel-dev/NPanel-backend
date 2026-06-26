@@ -417,17 +417,23 @@ func (uc *RoutingUsecase) BuildConfig(ctx context.Context, now time.Time, opts .
 	envelope.Profile = profileToRoutingProfile(profile, fixture.Profile)
 
 	if resolvers, _, err := uc.repo.ListDNSResolvers(ctx, 1, 1000, "", boolPtr(true)); err == nil {
-		envelope.DNSResolvers = dnsResolversToRouting(resolvers)
+		if len(resolvers) > 0 {
+			envelope.DNSResolvers = dnsResolversToRouting(resolvers)
+		}
 	} else {
 		return fixture, err
 	}
 	if outbounds, _, err := uc.repo.ListOutbounds(ctx, 1, 1000, "", boolPtr(true)); err == nil {
-		envelope.Outbounds = outboundsToRouting(outbounds)
+		if len(outbounds) > 0 {
+			envelope.Outbounds = outboundsToRouting(outbounds)
+		}
 	} else {
 		return fixture, err
 	}
 	if services, _, err := uc.repo.ListUnlockServices(ctx, 1, 1000, "", boolPtr(true)); err == nil {
-		envelope.UnlockServices = unlockServicesToRouting(services)
+		if len(services) > 0 {
+			envelope.UnlockServices = unlockServicesToRouting(services)
+		}
 	} else {
 		return fixture, err
 	}

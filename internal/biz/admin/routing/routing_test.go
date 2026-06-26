@@ -93,6 +93,38 @@ func TestBuildConfigFallsBackToFixtureWhenStoreIsEmpty(t *testing.T) {
 	}
 }
 
+func TestBuildConfigKeepsPreviewDefaultsWhenProfileHasNoResources(t *testing.T) {
+	now := time.Date(2026, 6, 27, 10, 0, 0, 0, time.UTC)
+	uc := NewRoutingUsecase(fakeRoutingRepo{
+		profiles: []*RouteProfile{
+			{
+				ID:          1,
+				Code:        "db_profile",
+				Name:        "DB Profile",
+				ScopeType:   "global",
+				ScopeID:     "default",
+				Mode:        publicrouting.ModeObserve,
+				Enabled:     true,
+				ProfileJSON: `{"default_action":{"type":"proxy"},"default_dns_resolver_tag":"dns:cloudflare-doh","default_fallback_policy":"fallback_default"}`,
+			},
+		},
+	}, log.DefaultLogger)
+
+	cfg, err := uc.BuildConfig(context.Background(), now)
+	if err != nil {
+		t.Fatalf("BuildConfig() error = %v", err)
+	}
+	if cfg.Profile.Code != "db_profile" {
+		t.Fatalf("Profile.Code = %q, want db_profile", cfg.Profile.Code)
+	}
+	if len(cfg.DNSResolvers) == 0 {
+		t.Fatal("DNSResolvers is empty, want preview defaults")
+	}
+	if len(cfg.Outbounds) == 0 {
+		t.Fatal("Outbounds is empty, want preview defaults")
+	}
+}
+
 func TestBuildConfigFallsBackWhenRuleReferencesMissingOutbound(t *testing.T) {
 	now := time.Date(2026, 6, 27, 10, 0, 0, 0, time.UTC)
 	uc := NewRoutingUsecase(fakeRoutingRepo{
