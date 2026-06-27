@@ -359,7 +359,7 @@ func (s *RoutingService) ActRoutingGrayRelease(ctx context.Context, req *v1.ActR
 }
 
 func (s *RoutingService) GetRoutingReleaseGate(ctx context.Context, req *v1.GetRoutingReleaseGateRequest) (*v1.GetRoutingReleaseGateReply, error) {
-	item, err := s.uc.ReleaseGate(ctx, req.ProfileCode, req.RoutingHash, int(req.WindowMinutes))
+	item, err := s.uc.ReleaseGate(ctx, req.ProfileCode, req.RoutingHash, int(req.WindowMinutes), releaseThresholdsFromGateRequest(req))
 	if err != nil {
 		return nil, err
 	}
@@ -376,6 +376,22 @@ func (s *RoutingService) GetRoutingE2EChecklist(ctx context.Context, req *v1.Get
 
 func (s *RoutingService) GetRoutingCapabilityMatrix(ctx context.Context, req *v1.GetRoutingCapabilityMatrixRequest) (*v1.GetRoutingCapabilityMatrixReply, error) {
 	return &v1.GetRoutingCapabilityMatrixReply{Code: successCode, Message: "success", Data: capabilityMatrixToProto(s.uc.CapabilityMatrix(ctx))}, nil
+}
+
+func (s *RoutingService) GetRoutingReleaseReport(ctx context.Context, req *v1.GetRoutingReleaseReportRequest) (*v1.GetRoutingReleaseReportReply, error) {
+	item, err := s.uc.ReleaseReport(ctx, req.ReleaseId, req.ProfileCode, req.RoutingHash, int(req.WindowMinutes), releaseThresholdsFromReportRequest(req))
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetRoutingReleaseReportReply{Code: successCode, Message: "success", Data: releaseReportToProto(item)}, nil
+}
+
+func (s *RoutingService) SnapshotRoutingReleaseAudit(ctx context.Context, req *v1.SnapshotRoutingReleaseAuditRequest) (*v1.SnapshotRoutingReleaseAuditReply, error) {
+	item, err := s.uc.SnapshotReleaseAudit(ctx, req.ReleaseId, req.ProfileCode, req.RoutingHash, int(req.WindowMinutes), req.Operator, releaseThresholdsFromProto(req.Thresholds))
+	if err != nil {
+		return nil, err
+	}
+	return &v1.SnapshotRoutingReleaseAuditReply{Code: successCode, Message: "success", Data: releaseAuditSnapshotToProto(item)}, nil
 }
 
 func routeProfileFromProto(item *v1.RouteProfile) *routingbiz.RouteProfile {
@@ -562,6 +578,137 @@ func releaseGateToProto(item *routingbiz.RoutingReleaseGate) *v1.RoutingReleaseG
 		Checks:               checks,
 		Analytics:            routingAnalyticsToProto(item.Analytics),
 		GeneratedAt:          unixOrZero(item.GeneratedAt),
+		Thresholds:           releaseThresholdsToProto(item.Thresholds),
+	}
+}
+
+func releaseReportToProto(item *routingbiz.RoutingReleaseReport) *v1.RoutingReleaseReport {
+	if item == nil {
+		return nil
+	}
+	snapshots := make([]*v1.RoutingReleaseAuditSnapshot, 0, len(item.Snapshots))
+	for _, snapshot := range item.Snapshots {
+		snapshotCopy := snapshot
+		snapshots = append(snapshots, releaseAuditSnapshotToProto(&snapshotCopy))
+	}
+	return &v1.RoutingReleaseReport{
+		ProfileCode: item.ProfileCode,
+		RoutingHash: item.RoutingHash,
+		Thresholds:  releaseThresholdsToProto(item.Thresholds),
+		Gate:        releaseGateToProto(item.Gate),
+		Alerts:      releaseAlertsToProto(item.Alerts),
+		Snapshots:   snapshots,
+		GeneratedAt: unixOrZero(item.GeneratedAt),
+	}
+}
+
+func releaseAuditSnapshotToProto(item *routingbiz.RoutingReleaseAuditSnapshot) *v1.RoutingReleaseAuditSnapshot {
+	if item == nil {
+		return nil
+	}
+	return &v1.RoutingReleaseAuditSnapshot{
+		Id:          item.ID,
+		ReleaseId:   item.ReleaseID,
+		ProfileCode: item.ProfileCode,
+		RoutingHash: item.RoutingHash,
+		Operator:    item.Operator,
+		Allowed:     item.Allowed,
+		Summary:     item.Summary,
+		Thresholds:  releaseThresholdsToProto(item.Thresholds),
+		Gate:        releaseGateToProto(item.Gate),
+		Alerts:      releaseAlertsToProto(item.Alerts),
+		ReportJson:  item.ReportJSON,
+		CreatedAt:   unixOrZero(item.CreatedAt),
+	}
+}
+
+func releaseAlertsToProto(items []routingbiz.RoutingReleaseAlert) []*v1.RoutingReleaseAlert {
+	result := make([]*v1.RoutingReleaseAlert, 0, len(items))
+	for _, item := range items {
+		result = append(result, &v1.RoutingReleaseAlert{
+			Key:      item.Key,
+			Severity: item.Severity,
+			Message:  item.Message,
+			Evidence: item.Evidence,
+		})
+	}
+	return result
+}
+
+func releaseThresholdsFromProto(item *v1.RoutingReleaseThresholds) routingbiz.RoutingReleaseThresholds {
+	if item == nil {
+		return routingbiz.RoutingReleaseThresholds{}
+	}
+	return routingbiz.RoutingReleaseThresholds{
+		FallbackRateBP:     int(item.FallbackRateBp),
+		DNSFailRateBP:      int(item.DnsFailRateBp),
+		OutboundFailRateBP: int(item.OutboundFailRateBp),
+		TopErrorsMax:       int(item.TopErrorsMax),
+		MinRouteEvents:     int(item.MinRouteEvents),
+		MinHealthReports:   int(item.MinHealthReports),
+	}
+}
+
+func releaseThresholdsFromGateRequest(req *v1.GetRoutingReleaseGateRequest) routingbiz.RoutingReleaseThresholds {
+	if req == nil {
+		return routingbiz.RoutingReleaseThresholds{}
+	}
+	item := releaseThresholdsFromProto(req.Thresholds)
+	if req.FallbackRateBp > 0 {
+		item.FallbackRateBP = int(req.FallbackRateBp)
+	}
+	if req.DnsFailRateBp > 0 {
+		item.DNSFailRateBP = int(req.DnsFailRateBp)
+	}
+	if req.OutboundFailRateBp > 0 {
+		item.OutboundFailRateBP = int(req.OutboundFailRateBp)
+	}
+	if req.TopErrorsMax > 0 {
+		item.TopErrorsMax = int(req.TopErrorsMax)
+	}
+	if req.MinRouteEvents > 0 {
+		item.MinRouteEvents = int(req.MinRouteEvents)
+	}
+	if req.MinHealthReports > 0 {
+		item.MinHealthReports = int(req.MinHealthReports)
+	}
+	return item
+}
+
+func releaseThresholdsFromReportRequest(req *v1.GetRoutingReleaseReportRequest) routingbiz.RoutingReleaseThresholds {
+	if req == nil {
+		return routingbiz.RoutingReleaseThresholds{}
+	}
+	item := releaseThresholdsFromProto(req.Thresholds)
+	if req.FallbackRateBp > 0 {
+		item.FallbackRateBP = int(req.FallbackRateBp)
+	}
+	if req.DnsFailRateBp > 0 {
+		item.DNSFailRateBP = int(req.DnsFailRateBp)
+	}
+	if req.OutboundFailRateBp > 0 {
+		item.OutboundFailRateBP = int(req.OutboundFailRateBp)
+	}
+	if req.TopErrorsMax > 0 {
+		item.TopErrorsMax = int(req.TopErrorsMax)
+	}
+	if req.MinRouteEvents > 0 {
+		item.MinRouteEvents = int(req.MinRouteEvents)
+	}
+	if req.MinHealthReports > 0 {
+		item.MinHealthReports = int(req.MinHealthReports)
+	}
+	return item
+}
+
+func releaseThresholdsToProto(item routingbiz.RoutingReleaseThresholds) *v1.RoutingReleaseThresholds {
+	return &v1.RoutingReleaseThresholds{
+		FallbackRateBp:     int32(item.FallbackRateBP),
+		DnsFailRateBp:      int32(item.DNSFailRateBP),
+		OutboundFailRateBp: int32(item.OutboundFailRateBP),
+		TopErrorsMax:       int32(item.TopErrorsMax),
+		MinRouteEvents:     int32(item.MinRouteEvents),
+		MinHealthReports:   int32(item.MinHealthReports),
 	}
 }
 

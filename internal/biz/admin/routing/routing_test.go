@@ -2,6 +2,7 @@ package routing
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -284,6 +285,104 @@ func TestReleaseGateBlocksGlobalProfileAndHighFallback(t *testing.T) {
 	}
 	if !hasGateCheck(gate.Checks, "fallback_rate_ok", false) {
 		t.Fatal("fallback_rate_ok check did not block")
+	}
+}
+
+func TestReleaseGateUsesConfigurableThresholds(t *testing.T) {
+	now := time.Now()
+	uc := NewRoutingUsecase(fakeRoutingRepo{
+		profiles: []*RouteProfile{
+			{
+				ID:          1,
+				Code:        "p_user_1",
+				Name:        "User Profile",
+				ScopeType:   "user",
+				ScopeID:     "1",
+				Enabled:     true,
+				ProfileJSON: `{}`,
+			},
+		},
+		grayReleases: []*RoutingGrayRelease{
+			{
+				ID:            1,
+				ProfileCode:   "p_user_1",
+				Name:          "user gray",
+				Status:        "running",
+				BatchNo:       1,
+				TargetType:    "user",
+				TargetIDsJSON: `[1]`,
+				ReleaseJSON:   `{}`,
+			},
+		},
+		routeEvents: []*RoutingRouteEvent{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", EventType: "route_decision", Status: "matched", EventAt: now.Add(-time.Minute)},
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", EventType: "route_fallback", Status: "fallback", EventAt: now.Add(-30 * time.Second)},
+		},
+		healthReports: []*RoutingHealthReport{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", SubjectType: "outbound", SubjectKey: "unlock:openai:us", Status: "healthy", CheckedAt: now.Add(-20 * time.Second)},
+		},
+	}, log.DefaultLogger)
+
+	blocked, err := uc.ReleaseGate(context.Background(), "p_user_1", "hash-1", 60)
+	if err != nil {
+		t.Fatalf("ReleaseGate() error = %v", err)
+	}
+	if blocked.Allowed {
+		t.Fatal("ReleaseGate() allowed with default fallback threshold, want blocked")
+	}
+
+	allowed, err := uc.ReleaseGate(context.Background(), "p_user_1", "hash-1", 60, RoutingReleaseThresholds{
+		FallbackRateBP:     10_000,
+		DNSFailRateBP:      500,
+		OutboundFailRateBP: 500,
+		MinRouteEvents:     1,
+		MinHealthReports:   1,
+	})
+	if err != nil {
+		t.Fatalf("ReleaseGate() with thresholds error = %v", err)
+	}
+	if !allowed.Allowed {
+		t.Fatalf("ReleaseGate() blocked with relaxed threshold: %+v", allowed.Checks)
+	}
+}
+
+func TestSnapshotReleaseAuditPersistsReleaseJSON(t *testing.T) {
+	now := time.Now()
+	release := &RoutingGrayRelease{
+		ID:            1,
+		ProfileCode:   "p_user_1",
+		Name:          "user gray",
+		Status:        "running",
+		BatchNo:       1,
+		TargetType:    "user",
+		TargetIDsJSON: `[1]`,
+		ReleaseJSON:   `{}`,
+	}
+	uc := NewRoutingUsecase(fakeRoutingRepo{
+		profiles: []*RouteProfile{
+			{ID: 1, Code: "p_user_1", Name: "User Profile", ScopeType: "user", ScopeID: "1", Enabled: true, ProfileJSON: `{}`},
+		},
+		grayReleases: []*RoutingGrayRelease{release},
+		routeEvents: []*RoutingRouteEvent{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", EventType: "route_decision", Status: "matched", EventAt: now.Add(-time.Minute)},
+		},
+		healthReports: []*RoutingHealthReport{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", SubjectType: "outbound", SubjectKey: "unlock:openai:us", Status: "healthy", CheckedAt: now.Add(-20 * time.Second)},
+		},
+	}, log.DefaultLogger)
+
+	snapshot, err := uc.SnapshotReleaseAudit(context.Background(), 1, "p_user_1", "hash-1", 60, "admin", RoutingReleaseThresholds{})
+	if err != nil {
+		t.Fatalf("SnapshotReleaseAudit() error = %v", err)
+	}
+	if snapshot.ID == "" {
+		t.Fatal("SnapshotReleaseAudit() snapshot ID is empty")
+	}
+	if !strings.Contains(release.ReleaseJSON, "audit_snapshots") {
+		t.Fatalf("ReleaseJSON = %s, want audit_snapshots", release.ReleaseJSON)
+	}
+	if !strings.Contains(release.ReleaseJSON, "thresholds") {
+		t.Fatalf("ReleaseJSON = %s, want thresholds", release.ReleaseJSON)
 	}
 }
 

@@ -212,6 +212,7 @@ type RoutingReleaseGate struct {
 	Checks               []RoutingReleaseGateCheck
 	Analytics            *RoutingAnalytics
 	GeneratedAt          time.Time
+	Thresholds           RoutingReleaseThresholds
 }
 
 type RoutingE2EChecklistItem struct {
@@ -242,6 +243,53 @@ type RoutingCapabilityMatrixItem struct {
 type RoutingCapabilityMatrix struct {
 	Items       []RoutingCapabilityMatrixItem
 	GeneratedAt time.Time
+}
+
+type RoutingReleaseThresholds struct {
+	FallbackRateBP     int `json:"fallback_rate_bp"`
+	DNSFailRateBP      int `json:"dns_fail_rate_bp"`
+	OutboundFailRateBP int `json:"outbound_fail_rate_bp"`
+	TopErrorsMax       int `json:"top_errors_max"`
+	MinRouteEvents     int `json:"min_route_events"`
+	MinHealthReports   int `json:"min_health_reports"`
+}
+
+type RoutingReleaseAlert struct {
+	Key      string `json:"key"`
+	Severity string `json:"severity"`
+	Message  string `json:"message"`
+	Evidence string `json:"evidence"`
+}
+
+type RoutingReleaseAuditSnapshot struct {
+	ID          string                   `json:"id"`
+	ReleaseID   int64                    `json:"release_id"`
+	ProfileCode string                   `json:"profile_code"`
+	RoutingHash string                   `json:"routing_hash"`
+	Operator    string                   `json:"operator"`
+	Allowed     bool                     `json:"allowed"`
+	Summary     string                   `json:"summary"`
+	Thresholds  RoutingReleaseThresholds `json:"thresholds"`
+	Gate        *RoutingReleaseGate      `json:"gate,omitempty"`
+	Alerts      []RoutingReleaseAlert    `json:"alerts"`
+	ReportJSON  string                   `json:"report_json"`
+	CreatedAt   time.Time                `json:"created_at"`
+}
+
+type RoutingReleaseReport struct {
+	ProfileCode string
+	RoutingHash string
+	Thresholds  RoutingReleaseThresholds
+	Gate        *RoutingReleaseGate
+	Alerts      []RoutingReleaseAlert
+	Snapshots   []RoutingReleaseAuditSnapshot
+	GeneratedAt time.Time
+}
+
+type routingGrayReleaseMetadata struct {
+	Basis          string                        `json:"basis,omitempty"`
+	Thresholds     *RoutingReleaseThresholds     `json:"thresholds,omitempty"`
+	AuditSnapshots []RoutingReleaseAuditSnapshot `json:"audit_snapshots,omitempty"`
 }
 
 type RoutingEnforceGuard struct {
@@ -644,10 +692,11 @@ func (uc *RoutingUsecase) Analytics(ctx context.Context, profileCode, routingHas
 	return buildRoutingAnalytics(events, healthReports, strings.TrimSpace(routingHash), startedAt), nil
 }
 
-func (uc *RoutingUsecase) ReleaseGate(ctx context.Context, profileCode, routingHash string, windowMinutes int) (*RoutingReleaseGate, error) {
+func (uc *RoutingUsecase) ReleaseGate(ctx context.Context, profileCode, routingHash string, windowMinutes int, thresholdOverrides ...RoutingReleaseThresholds) (*RoutingReleaseGate, error) {
 	now := time.Now()
 	profileCode = strings.TrimSpace(profileCode)
 	routingHash = strings.TrimSpace(routingHash)
+	thresholds := normalizeReleaseThresholds(firstReleaseThresholds(thresholdOverrides))
 	analytics, err := uc.Analytics(ctx, profileCode, routingHash, windowMinutes)
 	if err != nil {
 		return nil, err
@@ -661,10 +710,12 @@ func (uc *RoutingUsecase) ReleaseGate(ctx context.Context, profileCode, routingH
 		releaseGateCheck("gray_running", "Gray batch running", hasRunningGrayRelease(releases), "advance a gray batch first", "running gray batch exists"),
 		releaseGateCheck("gray_not_paused_or_rolled_back", "Gray batch active", !hasBlockedGrayRelease(releases), "latest gray batch is paused or rolled back", "gray batch not blocked"),
 		releaseGateCheck("routing_hash_present", "Routing hash present", routingHash != "", "routing hash is empty", "routing hash present"),
-		releaseGateCheck("fallback_rate_ok", "Fallback rate below threshold", analytics.FallbackRateBP <= 500, "fallback rate is above 5%", "fallback rate is below 5%"),
-		releaseGateCheck("dns_fail_rate_ok", "DNS fail rate below threshold", analytics.DNSFailRateBP <= 500, "DNS fail rate is above 5%", "DNS fail rate is below 5%"),
-		releaseGateCheck("outbound_fail_rate_ok", "Outbound fail rate below threshold", analytics.OutboundFailRateBP <= 500, "outbound fail rate is above 5%", "outbound fail rate is below 5%"),
-		releaseGateCheck("top_errors_clear", "No unconfirmed top errors", len(analytics.TopErrors) == 0, "top errors need confirmation", "no top errors"),
+		releaseGateCheck("fallback_rate_ok", "Fallback rate below threshold", analytics.FallbackRateBP <= thresholds.FallbackRateBP, fmt.Sprintf("fallback rate is above %.2f%%", float64(thresholds.FallbackRateBP)/100), fmt.Sprintf("fallback rate is below %.2f%%", float64(thresholds.FallbackRateBP)/100)),
+		releaseGateCheck("dns_fail_rate_ok", "DNS fail rate below threshold", analytics.DNSFailRateBP <= thresholds.DNSFailRateBP, fmt.Sprintf("DNS fail rate is above %.2f%%", float64(thresholds.DNSFailRateBP)/100), fmt.Sprintf("DNS fail rate is below %.2f%%", float64(thresholds.DNSFailRateBP)/100)),
+		releaseGateCheck("outbound_fail_rate_ok", "Outbound fail rate below threshold", analytics.OutboundFailRateBP <= thresholds.OutboundFailRateBP, fmt.Sprintf("outbound fail rate is above %.2f%%", float64(thresholds.OutboundFailRateBP)/100), fmt.Sprintf("outbound fail rate is below %.2f%%", float64(thresholds.OutboundFailRateBP)/100)),
+		releaseGateCheck("top_errors_clear", "No unconfirmed top errors", len(analytics.TopErrors) <= thresholds.TopErrorsMax, fmt.Sprintf("top errors exceed %d", thresholds.TopErrorsMax), "top errors are within threshold"),
+		releaseGateCheck("min_route_events", "Route event sample ready", analytics.TotalRouteEvents >= thresholds.MinRouteEvents, fmt.Sprintf("route events are below %d", thresholds.MinRouteEvents), "route event sample ready"),
+		releaseGateCheck("min_health_reports", "Health report sample ready", analytics.TotalHealthReports >= thresholds.MinHealthReports, fmt.Sprintf("health reports are below %d", thresholds.MinHealthReports), "health report sample ready"),
 	}
 	allowed := true
 	for _, check := range checks {
@@ -686,7 +737,86 @@ func (uc *RoutingUsecase) ReleaseGate(ctx context.Context, profileCode, routingH
 		Checks:               checks,
 		Analytics:            analytics,
 		GeneratedAt:          now,
+		Thresholds:           thresholds,
 	}, nil
+}
+
+func (uc *RoutingUsecase) ReleaseReport(ctx context.Context, releaseID int64, profileCode, routingHash string, windowMinutes int, thresholdOverrides RoutingReleaseThresholds) (*RoutingReleaseReport, error) {
+	now := time.Now()
+	profileCode = strings.TrimSpace(profileCode)
+	routingHash = strings.TrimSpace(routingHash)
+	release, err := uc.releaseForReport(ctx, releaseID, profileCode)
+	if err != nil {
+		return nil, err
+	}
+	if release != nil {
+		if profileCode == "" {
+			profileCode = release.ProfileCode
+		}
+		metadata := parseGrayReleaseMetadata(release.ReleaseJSON)
+		thresholdOverrides = mergeReleaseThresholds(metadata.thresholdsOrZero(), thresholdOverrides)
+	}
+	thresholds := normalizeReleaseThresholds(thresholdOverrides)
+	gate, err := uc.ReleaseGate(ctx, profileCode, routingHash, windowMinutes, thresholds)
+	if err != nil {
+		return nil, err
+	}
+	snapshots := uc.auditSnapshotsForReport(ctx, release, profileCode)
+	return &RoutingReleaseReport{
+		ProfileCode: profileCode,
+		RoutingHash: routingHash,
+		Thresholds:  thresholds,
+		Gate:        gate,
+		Alerts:      releaseAlertsFromGate(gate),
+		Snapshots:   snapshots,
+		GeneratedAt: now,
+	}, nil
+}
+
+func (uc *RoutingUsecase) SnapshotReleaseAudit(ctx context.Context, releaseID int64, profileCode, routingHash string, windowMinutes int, operator string, thresholds RoutingReleaseThresholds) (*RoutingReleaseAuditSnapshot, error) {
+	if releaseID <= 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	release, err := uc.repo.FindGrayReleaseByID(ctx, releaseID)
+	if err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+	}
+	if release == nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrSystemNotFound)
+	}
+	report, err := uc.ReleaseReport(ctx, releaseID, firstNonEmpty(profileCode, release.ProfileCode), routingHash, windowMinutes, thresholds)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	snapshot := RoutingReleaseAuditSnapshot{
+		ID:          fmt.Sprintf("release-%d-%d", releaseID, now.Unix()),
+		ReleaseID:   releaseID,
+		ProfileCode: report.ProfileCode,
+		RoutingHash: report.RoutingHash,
+		Operator:    strings.TrimSpace(operator),
+		Allowed:     report.Gate != nil && report.Gate.Allowed,
+		Summary:     "",
+		Thresholds:  report.Thresholds,
+		Gate:        report.Gate,
+		Alerts:      report.Alerts,
+		CreatedAt:   now,
+	}
+	if report.Gate != nil {
+		snapshot.Summary = report.Gate.Summary
+	}
+	snapshot.ReportJSON = releaseReportJSON(report)
+	metadata := parseGrayReleaseMetadata(release.ReleaseJSON)
+	metadata.Thresholds = &report.Thresholds
+	metadata.AuditSnapshots = append([]RoutingReleaseAuditSnapshot{snapshot}, metadata.AuditSnapshots...)
+	if len(metadata.AuditSnapshots) > 20 {
+		metadata.AuditSnapshots = metadata.AuditSnapshots[:20]
+	}
+	release.ReleaseJSON = encodeGrayReleaseMetadata(metadata)
+	if _, err := uc.repo.UpdateGrayRelease(ctx, release); err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseUpdate)
+	}
+	return &snapshot, nil
 }
 
 func (uc *RoutingUsecase) E2EChecklist(ctx context.Context, profileCode string) (*RoutingE2EChecklist, error) {
@@ -1436,6 +1566,199 @@ func e2eChecklistItem(key, label string, passed bool, evidence string) RoutingE2
 		status = "ok"
 	}
 	return RoutingE2EChecklistItem{Key: key, Label: label, Status: status, Passed: passed, Evidence: evidence}
+}
+
+func defaultReleaseThresholds() RoutingReleaseThresholds {
+	return RoutingReleaseThresholds{
+		FallbackRateBP:     500,
+		DNSFailRateBP:      500,
+		OutboundFailRateBP: 500,
+		TopErrorsMax:       0,
+		MinRouteEvents:     1,
+		MinHealthReports:   1,
+	}
+}
+
+func firstReleaseThresholds(items []RoutingReleaseThresholds) RoutingReleaseThresholds {
+	if len(items) == 0 {
+		return RoutingReleaseThresholds{}
+	}
+	return items[0]
+}
+
+func normalizeReleaseThresholds(item RoutingReleaseThresholds) RoutingReleaseThresholds {
+	defaults := defaultReleaseThresholds()
+	if item.FallbackRateBP <= 0 {
+		item.FallbackRateBP = defaults.FallbackRateBP
+	}
+	if item.DNSFailRateBP <= 0 {
+		item.DNSFailRateBP = defaults.DNSFailRateBP
+	}
+	if item.OutboundFailRateBP <= 0 {
+		item.OutboundFailRateBP = defaults.OutboundFailRateBP
+	}
+	if item.TopErrorsMax < 0 {
+		item.TopErrorsMax = defaults.TopErrorsMax
+	}
+	if item.MinRouteEvents <= 0 {
+		item.MinRouteEvents = defaults.MinRouteEvents
+	}
+	if item.MinHealthReports <= 0 {
+		item.MinHealthReports = defaults.MinHealthReports
+	}
+	return item
+}
+
+func mergeReleaseThresholds(base, override RoutingReleaseThresholds) RoutingReleaseThresholds {
+	if override.FallbackRateBP > 0 {
+		base.FallbackRateBP = override.FallbackRateBP
+	}
+	if override.DNSFailRateBP > 0 {
+		base.DNSFailRateBP = override.DNSFailRateBP
+	}
+	if override.OutboundFailRateBP > 0 {
+		base.OutboundFailRateBP = override.OutboundFailRateBP
+	}
+	if override.TopErrorsMax > 0 {
+		base.TopErrorsMax = override.TopErrorsMax
+	}
+	if override.MinRouteEvents > 0 {
+		base.MinRouteEvents = override.MinRouteEvents
+	}
+	if override.MinHealthReports > 0 {
+		base.MinHealthReports = override.MinHealthReports
+	}
+	return base
+}
+
+func (item routingGrayReleaseMetadata) thresholdsOrZero() RoutingReleaseThresholds {
+	if item.Thresholds == nil {
+		return RoutingReleaseThresholds{}
+	}
+	return *item.Thresholds
+}
+
+func parseGrayReleaseMetadata(raw string) routingGrayReleaseMetadata {
+	var metadata routingGrayReleaseMetadata
+	if err := json.Unmarshal([]byte(normalizeJSONWithDefault(raw, "{}")), &metadata); err != nil {
+		return routingGrayReleaseMetadata{}
+	}
+	return metadata
+}
+
+func encodeGrayReleaseMetadata(metadata routingGrayReleaseMetadata) string {
+	b, err := json.Marshal(metadata)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}
+
+func releaseAlertsFromGate(gate *RoutingReleaseGate) []RoutingReleaseAlert {
+	if gate == nil {
+		return nil
+	}
+	alerts := make([]RoutingReleaseAlert, 0)
+	for _, check := range gate.Checks {
+		if check.Passed {
+			continue
+		}
+		severity := "warning"
+		switch check.Key {
+		case "profile_exists", "profile_enabled", "profile_not_global", "gray_running", "gray_not_paused_or_rolled_back", "routing_hash_present":
+			severity = "critical"
+		case "min_route_events", "min_health_reports":
+			severity = "info"
+		}
+		alerts = append(alerts, RoutingReleaseAlert{
+			Key:      check.Key,
+			Severity: severity,
+			Message:  check.Label,
+			Evidence: check.Reason,
+		})
+	}
+	if gate.Analytics != nil {
+		for _, top := range gate.Analytics.TopErrors {
+			alerts = append(alerts, RoutingReleaseAlert{
+				Key:      firstNonEmpty(top.Key, top.Kind),
+				Severity: "warning",
+				Message:  top.Error,
+				Evidence: fmt.Sprintf("%s count=%d", top.Kind, top.Count),
+			})
+		}
+	}
+	return alerts
+}
+
+func releaseReportJSON(report *RoutingReleaseReport) string {
+	type compactReport struct {
+		ProfileCode string                   `json:"profile_code"`
+		RoutingHash string                   `json:"routing_hash"`
+		Thresholds  RoutingReleaseThresholds `json:"thresholds"`
+		Allowed     bool                     `json:"allowed"`
+		Summary     string                   `json:"summary"`
+		Alerts      []RoutingReleaseAlert    `json:"alerts"`
+		GeneratedAt time.Time                `json:"generated_at"`
+	}
+	compact := compactReport{
+		ProfileCode: report.ProfileCode,
+		RoutingHash: report.RoutingHash,
+		Thresholds:  report.Thresholds,
+		Alerts:      report.Alerts,
+		GeneratedAt: report.GeneratedAt,
+	}
+	if report.Gate != nil {
+		compact.Allowed = report.Gate.Allowed
+		compact.Summary = report.Gate.Summary
+	}
+	b, err := json.Marshal(compact)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}
+
+func (uc *RoutingUsecase) releaseForReport(ctx context.Context, releaseID int64, profileCode string) (*RoutingGrayRelease, error) {
+	if releaseID > 0 {
+		release, err := uc.repo.FindGrayReleaseByID(ctx, releaseID)
+		if err != nil {
+			return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+		}
+		if release == nil {
+			return nil, responsecode.NewKratosError(responsecode.ErrSystemNotFound)
+		}
+		return release, nil
+	}
+	releases, _, err := uc.repo.ListGrayReleases(ctx, 1, 1, profileCode, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(releases) == 0 {
+		return nil, nil
+	}
+	return releases[0], nil
+}
+
+func (uc *RoutingUsecase) auditSnapshotsForReport(ctx context.Context, release *RoutingGrayRelease, profileCode string) []RoutingReleaseAuditSnapshot {
+	if release != nil {
+		return parseGrayReleaseMetadata(release.ReleaseJSON).AuditSnapshots
+	}
+	releases, _, err := uc.repo.ListGrayReleases(ctx, 1, 20, profileCode, "")
+	if err != nil {
+		return nil
+	}
+	var snapshots []RoutingReleaseAuditSnapshot
+	for _, item := range releases {
+		if item == nil {
+			continue
+		}
+		snapshots = append(snapshots, parseGrayReleaseMetadata(item.ReleaseJSON).AuditSnapshots...)
+	}
+	sort.SliceStable(snapshots, func(i, j int) bool { return snapshots[i].CreatedAt.After(snapshots[j].CreatedAt) })
+	if len(snapshots) > 20 {
+		snapshots = snapshots[:20]
+	}
+	return snapshots
 }
 
 func matchesRoutingHash(value, expected string) bool {

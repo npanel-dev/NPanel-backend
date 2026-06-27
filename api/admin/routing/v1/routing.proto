@@ -161,6 +161,17 @@ service RoutingService {
   rpc GetRoutingCapabilityMatrix(GetRoutingCapabilityMatrixRequest) returns (GetRoutingCapabilityMatrixReply) {
     option (google.api.http) = { get: "/v1/admin/routing/capability_matrix" };
   }
+
+  rpc GetRoutingReleaseReport(GetRoutingReleaseReportRequest) returns (GetRoutingReleaseReportReply) {
+    option (google.api.http) = { get: "/v1/admin/routing/release_report" };
+  }
+
+  rpc SnapshotRoutingReleaseAudit(SnapshotRoutingReleaseAuditRequest) returns (SnapshotRoutingReleaseAuditReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/routing/release_audit_snapshot"
+      body: "*"
+    };
+  }
 }
 
 message RouteProfile {
@@ -502,12 +513,20 @@ message RoutingReleaseGate {
   repeated RoutingReleaseGateCheck checks = 6;
   RoutingAnalyticsData analytics = 7;
   int64 generated_at = 8;
+  RoutingReleaseThresholds thresholds = 9;
 }
 
 message GetRoutingReleaseGateRequest {
   string profile_code = 1;
   string routing_hash = 2;
   int64 window_minutes = 3;
+  RoutingReleaseThresholds thresholds = 4;
+  int32 fallback_rate_bp = 5;
+  int32 dns_fail_rate_bp = 6;
+  int32 outbound_fail_rate_bp = 7;
+  int32 top_errors_max = 8;
+  int32 min_route_events = 9;
+  int32 min_health_reports = 10;
 }
 
 message GetRoutingReleaseGateReply {
@@ -562,6 +581,82 @@ message GetRoutingCapabilityMatrixReply {
   int32 code = 1;
   string message = 2;
   RoutingCapabilityMatrixData data = 3;
+}
+
+message RoutingReleaseThresholds {
+  int32 fallback_rate_bp = 1;
+  int32 dns_fail_rate_bp = 2;
+  int32 outbound_fail_rate_bp = 3;
+  int32 top_errors_max = 4;
+  int32 min_route_events = 5;
+  int32 min_health_reports = 6;
+}
+
+message RoutingReleaseAlert {
+  string key = 1;
+  string severity = 2;
+  string message = 3;
+  string evidence = 4;
+}
+
+message RoutingReleaseAuditSnapshot {
+  string id = 1;
+  int64 release_id = 2;
+  string profile_code = 3;
+  string routing_hash = 4;
+  string operator = 5;
+  bool allowed = 6;
+  string summary = 7;
+  RoutingReleaseThresholds thresholds = 8;
+  RoutingReleaseGate gate = 9;
+  repeated RoutingReleaseAlert alerts = 10;
+  string report_json = 11;
+  int64 created_at = 12;
+}
+
+message RoutingReleaseReport {
+  string profile_code = 1;
+  string routing_hash = 2;
+  RoutingReleaseThresholds thresholds = 3;
+  RoutingReleaseGate gate = 4;
+  repeated RoutingReleaseAlert alerts = 5;
+  repeated RoutingReleaseAuditSnapshot snapshots = 6;
+  int64 generated_at = 7;
+}
+
+message GetRoutingReleaseReportRequest {
+  int64 release_id = 1;
+  string profile_code = 2;
+  string routing_hash = 3;
+  int64 window_minutes = 4;
+  RoutingReleaseThresholds thresholds = 5;
+  int32 fallback_rate_bp = 6;
+  int32 dns_fail_rate_bp = 7;
+  int32 outbound_fail_rate_bp = 8;
+  int32 top_errors_max = 9;
+  int32 min_route_events = 10;
+  int32 min_health_reports = 11;
+}
+
+message GetRoutingReleaseReportReply {
+  int32 code = 1;
+  string message = 2;
+  RoutingReleaseReport data = 3;
+}
+
+message SnapshotRoutingReleaseAuditRequest {
+  int64 release_id = 1;
+  string profile_code = 2;
+  string routing_hash = 3;
+  int64 window_minutes = 4;
+  string operator = 5;
+  RoutingReleaseThresholds thresholds = 6;
+}
+
+message SnapshotRoutingReleaseAuditReply {
+  int32 code = 1;
+  string message = 2;
+  RoutingReleaseAuditSnapshot data = 3;
 }
 
 message RoutingHealthItem {

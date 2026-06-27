@@ -2420,6 +2420,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.routing.v1.ListRouteProfilesReply'
+    /v1/admin/routing/release_audit_snapshot:
+        post:
+            tags:
+                - RoutingService
+            operationId: RoutingService_SnapshotRoutingReleaseAudit
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.routing.v1.SnapshotRoutingReleaseAuditRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.routing.v1.SnapshotRoutingReleaseAuditReply'
     /v1/admin/routing/release_gate:
         get:
             tags:
@@ -2438,6 +2456,66 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: thresholds.fallbackRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.dnsFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.outboundFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.topErrorsMax
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.minRouteEvents
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.minHealthReports
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: fallbackRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: dnsFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: outboundFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: topErrorsMax
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: minRouteEvents
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: minHealthReports
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -2445,6 +2523,95 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.routing.v1.GetRoutingReleaseGateReply'
+    /v1/admin/routing/release_report:
+        get:
+            tags:
+                - RoutingService
+            operationId: RoutingService_GetRoutingReleaseReport
+            parameters:
+                - name: releaseId
+                  in: query
+                  schema:
+                    type: string
+                - name: profileCode
+                  in: query
+                  schema:
+                    type: string
+                - name: routingHash
+                  in: query
+                  schema:
+                    type: string
+                - name: windowMinutes
+                  in: query
+                  schema:
+                    type: string
+                - name: thresholds.fallbackRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.dnsFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.outboundFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.topErrorsMax
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.minRouteEvents
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: thresholds.minHealthReports
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: fallbackRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: dnsFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: outboundFailRateBp
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: topErrorsMax
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: minRouteEvents
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: minHealthReports
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.routing.v1.GetRoutingReleaseReportReply'
     /v1/admin/routing/route_events:
         get:
             tags:
@@ -9348,6 +9515,16 @@ components:
                     type: string
                 data:
                     $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseGate'
+        api.admin.routing.v1.GetRoutingReleaseReportReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseReport'
         api.admin.routing.v1.ListDnsResolversReply:
             type: object
             properties:
@@ -9987,6 +10164,46 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.admin.routing.v1.RoutingAuditEvent'
+        api.admin.routing.v1.RoutingReleaseAlert:
+            type: object
+            properties:
+                key:
+                    type: string
+                severity:
+                    type: string
+                message:
+                    type: string
+                evidence:
+                    type: string
+        api.admin.routing.v1.RoutingReleaseAuditSnapshot:
+            type: object
+            properties:
+                id:
+                    type: string
+                releaseId:
+                    type: string
+                profileCode:
+                    type: string
+                routingHash:
+                    type: string
+                operator:
+                    type: string
+                allowed:
+                    type: boolean
+                summary:
+                    type: string
+                thresholds:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseThresholds'
+                gate:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseGate'
+                alerts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseAlert'
+                reportJson:
+                    type: string
+                createdAt:
+                    type: string
         api.admin.routing.v1.RoutingReleaseGate:
             type: object
             properties:
@@ -10008,6 +10225,8 @@ components:
                     $ref: '#/components/schemas/api.admin.routing.v1.RoutingAnalyticsData'
                 generatedAt:
                     type: string
+                thresholds:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseThresholds'
         api.admin.routing.v1.RoutingReleaseGateCheck:
             type: object
             properties:
@@ -10021,6 +10240,48 @@ components:
                     type: string
                 reason:
                     type: string
+        api.admin.routing.v1.RoutingReleaseReport:
+            type: object
+            properties:
+                profileCode:
+                    type: string
+                routingHash:
+                    type: string
+                thresholds:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseThresholds'
+                gate:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseGate'
+                alerts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseAlert'
+                snapshots:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseAuditSnapshot'
+                generatedAt:
+                    type: string
+        api.admin.routing.v1.RoutingReleaseThresholds:
+            type: object
+            properties:
+                fallbackRateBp:
+                    type: integer
+                    format: int32
+                dnsFailRateBp:
+                    type: integer
+                    format: int32
+                outboundFailRateBp:
+                    type: integer
+                    format: int32
+                topErrorsMax:
+                    type: integer
+                    format: int32
+                minRouteEvents:
+                    type: integer
+                    format: int32
+                minHealthReports:
+                    type: integer
+                    format: int32
         api.admin.routing.v1.RoutingRouteEvent:
             type: object
             properties:
@@ -10075,6 +10336,31 @@ components:
                 total:
                     type: integer
                     format: int32
+        api.admin.routing.v1.SnapshotRoutingReleaseAuditReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseAuditSnapshot'
+        api.admin.routing.v1.SnapshotRoutingReleaseAuditRequest:
+            type: object
+            properties:
+                releaseId:
+                    type: string
+                profileCode:
+                    type: string
+                routingHash:
+                    type: string
+                windowMinutes:
+                    type: string
+                operator:
+                    type: string
+                thresholds:
+                    $ref: '#/components/schemas/api.admin.routing.v1.RoutingReleaseThresholds'
         api.admin.routing.v1.UnlockService:
             type: object
             properties:
