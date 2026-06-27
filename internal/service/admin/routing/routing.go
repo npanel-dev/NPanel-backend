@@ -394,6 +394,22 @@ func (s *RoutingService) SnapshotRoutingReleaseAudit(ctx context.Context, req *v
 	return &v1.SnapshotRoutingReleaseAuditReply{Code: successCode, Message: "success", Data: releaseAuditSnapshotToProto(item)}, nil
 }
 
+func (s *RoutingService) ConfirmRoutingReleaseEnforce(ctx context.Context, req *v1.ConfirmRoutingReleaseEnforceRequest) (*v1.ConfirmRoutingReleaseEnforceReply, error) {
+	item, err := s.uc.ConfirmReleaseEnforce(ctx, req.ReleaseId, req.SnapshotId, req.ProfileCode, req.RoutingHash, req.Operator, req.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.ConfirmRoutingReleaseEnforceReply{Code: successCode, Message: "success", Data: releaseApprovalToProto(item)}, nil
+}
+
+func (s *RoutingService) RollbackRoutingReleaseAudit(ctx context.Context, req *v1.RollbackRoutingReleaseAuditRequest) (*v1.RollbackRoutingReleaseAuditReply, error) {
+	item, err := s.uc.RollbackReleaseAudit(ctx, req.ReleaseId, req.ProfileCode, req.RoutingHash, int(req.WindowMinutes), req.Operator, req.Reason)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.RollbackRoutingReleaseAuditReply{Code: successCode, Message: "success", Data: rollbackAuditToProto(item)}, nil
+}
+
 func routeProfileFromProto(item *v1.RouteProfile) *routingbiz.RouteProfile {
 	if item == nil {
 		return &routingbiz.RouteProfile{}
@@ -591,14 +607,26 @@ func releaseReportToProto(item *routingbiz.RoutingReleaseReport) *v1.RoutingRele
 		snapshotCopy := snapshot
 		snapshots = append(snapshots, releaseAuditSnapshotToProto(&snapshotCopy))
 	}
+	approvals := make([]*v1.RoutingReleaseApproval, 0, len(item.Approvals))
+	for _, approval := range item.Approvals {
+		approvalCopy := approval
+		approvals = append(approvals, releaseApprovalToProto(&approvalCopy))
+	}
+	rollbacks := make([]*v1.RoutingRollbackAudit, 0, len(item.Rollbacks))
+	for _, rollback := range item.Rollbacks {
+		rollbackCopy := rollback
+		rollbacks = append(rollbacks, rollbackAuditToProto(&rollbackCopy))
+	}
 	return &v1.RoutingReleaseReport{
-		ProfileCode: item.ProfileCode,
-		RoutingHash: item.RoutingHash,
-		Thresholds:  releaseThresholdsToProto(item.Thresholds),
-		Gate:        releaseGateToProto(item.Gate),
-		Alerts:      releaseAlertsToProto(item.Alerts),
-		Snapshots:   snapshots,
-		GeneratedAt: unixOrZero(item.GeneratedAt),
+		ProfileCode:    item.ProfileCode,
+		RoutingHash:    item.RoutingHash,
+		Thresholds:     releaseThresholdsToProto(item.Thresholds),
+		Gate:           releaseGateToProto(item.Gate),
+		Alerts:         releaseAlertsToProto(item.Alerts),
+		Snapshots:      snapshots,
+		GeneratedAt:    unixOrZero(item.GeneratedAt),
+		Approvals:      approvals,
+		RollbackAudits: rollbacks,
 	}
 }
 
@@ -633,6 +661,43 @@ func releaseAlertsToProto(items []routingbiz.RoutingReleaseAlert) []*v1.RoutingR
 		})
 	}
 	return result
+}
+
+func releaseApprovalToProto(item *routingbiz.RoutingReleaseApproval) *v1.RoutingReleaseApproval {
+	if item == nil {
+		return nil
+	}
+	return &v1.RoutingReleaseApproval{
+		Id:          item.ID,
+		ReleaseId:   item.ReleaseID,
+		SnapshotId:  item.SnapshotID,
+		ProfileCode: item.ProfileCode,
+		RoutingHash: item.RoutingHash,
+		Operator:    item.Operator,
+		Reason:      item.Reason,
+		ConfirmedAt: unixOrZero(item.ConfirmedAt),
+	}
+}
+
+func rollbackAuditToProto(item *routingbiz.RoutingRollbackAudit) *v1.RoutingRollbackAudit {
+	if item == nil {
+		return nil
+	}
+	return &v1.RoutingRollbackAudit{
+		Id:                  item.ID,
+		ReleaseId:           item.ReleaseID,
+		ProfileCode:         item.ProfileCode,
+		RoutingHash:         item.RoutingHash,
+		Operator:            item.Operator,
+		Reason:              item.Reason,
+		BeforeMode:          item.BeforeMode,
+		AfterMode:           item.AfterMode,
+		BeforeReleaseStatus: item.BeforeReleaseStatus,
+		AfterReleaseStatus:  item.AfterReleaseStatus,
+		Summary:             item.Summary,
+		Alerts:              releaseAlertsToProto(item.Alerts),
+		CreatedAt:           unixOrZero(item.CreatedAt),
+	}
 }
 
 func releaseThresholdsFromProto(item *v1.RoutingReleaseThresholds) routingbiz.RoutingReleaseThresholds {

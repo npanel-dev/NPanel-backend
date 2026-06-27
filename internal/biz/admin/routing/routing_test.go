@@ -22,11 +22,22 @@ type fakeRoutingRepo struct {
 func (r fakeRoutingRepo) SaveProfile(context.Context, *RouteProfile) (*RouteProfile, error) {
 	panic("not used")
 }
-func (r fakeRoutingRepo) UpdateProfile(context.Context, *RouteProfile) (*RouteProfile, error) {
-	panic("not used")
+func (r fakeRoutingRepo) UpdateProfile(_ context.Context, item *RouteProfile) (*RouteProfile, error) {
+	for _, profile := range r.profiles {
+		if profile.ID == item.ID {
+			*profile = *item
+			return profile, nil
+		}
+	}
+	return item, nil
 }
-func (r fakeRoutingRepo) FindProfileByID(context.Context, int64) (*RouteProfile, error) {
-	panic("not used")
+func (r fakeRoutingRepo) FindProfileByID(_ context.Context, id int64) (*RouteProfile, error) {
+	for _, profile := range r.profiles {
+		if profile.ID == id {
+			return profile, nil
+		}
+	}
+	return nil, nil
 }
 func (r fakeRoutingRepo) ListProfiles(context.Context, int, int, string, *bool) ([]*RouteProfile, int32, error) {
 	return r.profiles, int32(len(r.profiles)), nil
@@ -383,6 +394,116 @@ func TestSnapshotReleaseAuditPersistsReleaseJSON(t *testing.T) {
 	}
 	if !strings.Contains(release.ReleaseJSON, "thresholds") {
 		t.Fatalf("ReleaseJSON = %s, want thresholds", release.ReleaseJSON)
+	}
+}
+
+func TestUpdateProfileRejectsEnforceWithoutApproval(t *testing.T) {
+	uc := NewRoutingUsecase(fakeRoutingRepo{
+		profiles: []*RouteProfile{
+			{ID: 1, Code: "p_user_1", Name: "User Profile", ScopeType: "user", ScopeID: "1", Mode: "observe", Enabled: true, ProfileJSON: `{}`},
+		},
+	}, log.DefaultLogger)
+
+	_, err := uc.UpdateProfile(context.Background(), &RouteProfile{
+		ID:          1,
+		Code:        "p_user_1",
+		Name:        "User Profile",
+		ScopeType:   "user",
+		ScopeID:     "1",
+		Mode:        "enforce",
+		Enabled:     true,
+		ProfileJSON: `{}`,
+	})
+	if err == nil {
+		t.Fatal("UpdateProfile() allowed enforce without release approval")
+	}
+}
+
+func TestConfirmReleaseEnforceRequiresAllowedSnapshot(t *testing.T) {
+	now := time.Now()
+	profile := &RouteProfile{ID: 1, Code: "p_user_1", Name: "User Profile", ScopeType: "user", ScopeID: "1", Mode: "observe", Enabled: true, ProfileJSON: `{}`}
+	release := &RoutingGrayRelease{
+		ID:            1,
+		ProfileCode:   "p_user_1",
+		Name:          "user gray",
+		Status:        "running",
+		BatchNo:       1,
+		TargetType:    "user",
+		TargetIDsJSON: `[1]`,
+		ReleaseJSON:   `{}`,
+	}
+	uc := NewRoutingUsecase(fakeRoutingRepo{
+		profiles:     []*RouteProfile{profile},
+		grayReleases: []*RoutingGrayRelease{release},
+		routeEvents: []*RoutingRouteEvent{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", EventType: "route_decision", Status: "matched", EventAt: now.Add(-time.Minute)},
+		},
+		healthReports: []*RoutingHealthReport{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", SubjectType: "outbound", SubjectKey: "unlock:openai:us", Status: "healthy", CheckedAt: now.Add(-20 * time.Second)},
+		},
+	}, log.DefaultLogger)
+
+	snapshot, err := uc.SnapshotReleaseAudit(context.Background(), 1, "p_user_1", "hash-1", 60, "admin", RoutingReleaseThresholds{})
+	if err != nil {
+		t.Fatalf("SnapshotReleaseAudit() error = %v", err)
+	}
+	if !snapshot.Allowed {
+		t.Fatalf("snapshot.Allowed = false, checks = %+v", snapshot.Gate.Checks)
+	}
+	approval, err := uc.ConfirmReleaseEnforce(context.Background(), 1, snapshot.ID, "p_user_1", "hash-1", "admin", "small scope verified")
+	if err != nil {
+		t.Fatalf("ConfirmReleaseEnforce() error = %v", err)
+	}
+	if approval.ID == "" {
+		t.Fatal("approval ID is empty")
+	}
+	if profile.Mode != "enforce" {
+		t.Fatalf("profile.Mode = %q, want enforce", profile.Mode)
+	}
+	if !strings.Contains(profile.ProfileJSON, "release_approval") {
+		t.Fatalf("ProfileJSON = %s, want release_approval", profile.ProfileJSON)
+	}
+}
+
+func TestRollbackReleaseAuditRecordsAuditAndObserveMode(t *testing.T) {
+	now := time.Now()
+	profile := &RouteProfile{ID: 1, Code: "p_user_1", Name: "User Profile", ScopeType: "user", ScopeID: "1", Mode: "enforce", Enabled: true, ProfileJSON: `{}`}
+	release := &RoutingGrayRelease{
+		ID:            1,
+		ProfileCode:   "p_user_1",
+		Name:          "user gray",
+		Status:        "running",
+		BatchNo:       1,
+		TargetType:    "user",
+		TargetIDsJSON: `[1]`,
+		ReleaseJSON:   `{}`,
+	}
+	uc := NewRoutingUsecase(fakeRoutingRepo{
+		profiles:     []*RouteProfile{profile},
+		grayReleases: []*RoutingGrayRelease{release},
+		routeEvents: []*RoutingRouteEvent{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", EventType: "route_fallback", Status: "fallback", Error: "manual rollback smoke", EventAt: now.Add(-time.Minute)},
+		},
+		healthReports: []*RoutingHealthReport{
+			{ReporterID: "device-1", ProfileCode: "p_user_1", RoutingHash: "hash-1", SubjectType: "outbound", SubjectKey: "unlock:openai:us", Status: "failed", LastError: "outbound failed", CheckedAt: now.Add(-20 * time.Second)},
+		},
+	}, log.DefaultLogger)
+
+	audit, err := uc.RollbackReleaseAudit(context.Background(), 1, "p_user_1", "hash-1", 60, "admin", "fallback spike")
+	if err != nil {
+		t.Fatalf("RollbackReleaseAudit() error = %v", err)
+	}
+	if audit.ID == "" {
+		t.Fatal("rollback audit ID is empty")
+	}
+	if profile.Mode != "observe" {
+		t.Fatalf("profile.Mode = %q, want observe", profile.Mode)
+	}
+	if release.Status != "rolled_back" {
+		t.Fatalf("release.Status = %q, want rolled_back", release.Status)
+	}
+	if !strings.Contains(release.ReleaseJSON, "rollback_audits") {
+		t.Fatalf("ReleaseJSON = %s, want rollback_audits", release.ReleaseJSON)
 	}
 }
 

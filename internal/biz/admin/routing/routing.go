@@ -276,6 +276,33 @@ type RoutingReleaseAuditSnapshot struct {
 	CreatedAt   time.Time                `json:"created_at"`
 }
 
+type RoutingReleaseApproval struct {
+	ID          string    `json:"id"`
+	ReleaseID   int64     `json:"release_id"`
+	SnapshotID  string    `json:"snapshot_id"`
+	ProfileCode string    `json:"profile_code"`
+	RoutingHash string    `json:"routing_hash"`
+	Operator    string    `json:"operator"`
+	Reason      string    `json:"reason"`
+	ConfirmedAt time.Time `json:"confirmed_at"`
+}
+
+type RoutingRollbackAudit struct {
+	ID                  string                `json:"id"`
+	ReleaseID           int64                 `json:"release_id"`
+	ProfileCode         string                `json:"profile_code"`
+	RoutingHash         string                `json:"routing_hash"`
+	Operator            string                `json:"operator"`
+	Reason              string                `json:"reason"`
+	BeforeMode          string                `json:"before_mode"`
+	AfterMode           string                `json:"after_mode"`
+	BeforeReleaseStatus string                `json:"before_release_status"`
+	AfterReleaseStatus  string                `json:"after_release_status"`
+	Summary             string                `json:"summary"`
+	Alerts              []RoutingReleaseAlert `json:"alerts"`
+	CreatedAt           time.Time             `json:"created_at"`
+}
+
 type RoutingReleaseReport struct {
 	ProfileCode string
 	RoutingHash string
@@ -283,6 +310,8 @@ type RoutingReleaseReport struct {
 	Gate        *RoutingReleaseGate
 	Alerts      []RoutingReleaseAlert
 	Snapshots   []RoutingReleaseAuditSnapshot
+	Approvals   []RoutingReleaseApproval
+	Rollbacks   []RoutingRollbackAudit
 	GeneratedAt time.Time
 }
 
@@ -290,6 +319,8 @@ type routingGrayReleaseMetadata struct {
 	Basis          string                        `json:"basis,omitempty"`
 	Thresholds     *RoutingReleaseThresholds     `json:"thresholds,omitempty"`
 	AuditSnapshots []RoutingReleaseAuditSnapshot `json:"audit_snapshots,omitempty"`
+	Approvals      []RoutingReleaseApproval      `json:"approvals,omitempty"`
+	RollbackAudits []RoutingRollbackAudit        `json:"rollback_audits,omitempty"`
 }
 
 type RoutingEnforceGuard struct {
@@ -403,10 +434,15 @@ func (uc *RoutingUsecase) UpdateProfile(ctx context.Context, item *RouteProfile)
 	if err := validateProfile(item); err != nil {
 		return nil, err
 	}
-	if found, err := uc.repo.FindProfileByID(ctx, item.ID); err != nil {
+	found, err := uc.repo.FindProfileByID(ctx, item.ID)
+	if err != nil {
 		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
-	} else if found == nil {
+	}
+	if found == nil {
 		return nil, responsecode.NewKratosError(responsecode.ErrSystemNotFound)
+	}
+	if isEnforceTransition(found, item) && !uc.profileHasValidReleaseApproval(ctx, item) {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
 	}
 	result, err := uc.repo.UpdateProfile(ctx, item)
 	if err != nil {
@@ -762,6 +798,7 @@ func (uc *RoutingUsecase) ReleaseReport(ctx context.Context, releaseID int64, pr
 		return nil, err
 	}
 	snapshots := uc.auditSnapshotsForReport(ctx, release, profileCode)
+	approvals, rollbacks := uc.releaseAuditTrailForReport(ctx, release, profileCode)
 	return &RoutingReleaseReport{
 		ProfileCode: profileCode,
 		RoutingHash: routingHash,
@@ -769,6 +806,8 @@ func (uc *RoutingUsecase) ReleaseReport(ctx context.Context, releaseID int64, pr
 		Gate:        gate,
 		Alerts:      releaseAlertsFromGate(gate),
 		Snapshots:   snapshots,
+		Approvals:   approvals,
+		Rollbacks:   rollbacks,
 		GeneratedAt: now,
 	}, nil
 }
@@ -817,6 +856,126 @@ func (uc *RoutingUsecase) SnapshotReleaseAudit(ctx context.Context, releaseID in
 		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseUpdate)
 	}
 	return &snapshot, nil
+}
+
+func (uc *RoutingUsecase) ConfirmReleaseEnforce(ctx context.Context, releaseID int64, snapshotID, profileCode, routingHash, operator, reason string) (*RoutingReleaseApproval, error) {
+	if releaseID <= 0 || strings.TrimSpace(snapshotID) == "" {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	release, err := uc.repo.FindGrayReleaseByID(ctx, releaseID)
+	if err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+	}
+	if release == nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrSystemNotFound)
+	}
+	if release.Status != "running" {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	metadata := parseGrayReleaseMetadata(release.ReleaseJSON)
+	snapshot := findAuditSnapshot(metadata.AuditSnapshots, snapshotID)
+	if snapshot == nil || !snapshot.Allowed || snapshotExpired(*snapshot, time.Now()) {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	profileCode = firstNonEmpty(strings.TrimSpace(profileCode), snapshot.ProfileCode, release.ProfileCode)
+	routingHash = firstNonEmpty(strings.TrimSpace(routingHash), snapshot.RoutingHash)
+	if snapshot.ProfileCode != "" && snapshot.ProfileCode != profileCode {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	if snapshot.RoutingHash != "" && routingHash != "" && snapshot.RoutingHash != routingHash {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	profile := uc.findProfileByCode(ctx, profileCode)
+	if profile == nil || !profile.Enabled || isGlobalProfile(profile) {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	now := time.Now()
+	approval := RoutingReleaseApproval{
+		ID:          fmt.Sprintf("approval-%d-%d", releaseID, now.Unix()),
+		ReleaseID:   releaseID,
+		SnapshotID:  snapshot.ID,
+		ProfileCode: profileCode,
+		RoutingHash: routingHash,
+		Operator:    strings.TrimSpace(operator),
+		Reason:      strings.TrimSpace(reason),
+		ConfirmedAt: now,
+	}
+	metadata.Approvals = append([]RoutingReleaseApproval{approval}, metadata.Approvals...)
+	if len(metadata.Approvals) > 20 {
+		metadata.Approvals = metadata.Approvals[:20]
+	}
+	release.ReleaseJSON = encodeGrayReleaseMetadata(metadata)
+	release.Operator = approval.Operator
+	updatedRelease, err := uc.repo.UpdateGrayRelease(ctx, release)
+	if err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseUpdate)
+	}
+	if updatedRelease != nil {
+		release = updatedRelease
+	}
+	profile.Mode = "enforce"
+	profile.ProfileJSON = profileJSONWithReleaseApproval(profile.ProfileJSON, approval)
+	if _, err := uc.UpdateProfile(ctx, profile); err != nil {
+		return nil, err
+	}
+	return &approval, nil
+}
+
+func (uc *RoutingUsecase) RollbackReleaseAudit(ctx context.Context, releaseID int64, profileCode, routingHash string, windowMinutes int, operator, reason string) (*RoutingRollbackAudit, error) {
+	if releaseID <= 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	release, err := uc.repo.FindGrayReleaseByID(ctx, releaseID)
+	if err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+	}
+	if release == nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrSystemNotFound)
+	}
+	profileCode = firstNonEmpty(strings.TrimSpace(profileCode), release.ProfileCode)
+	profile := uc.findProfileByCode(ctx, profileCode)
+	if profile == nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrSystemNotFound)
+	}
+	report, err := uc.ReleaseReport(ctx, releaseID, profileCode, routingHash, windowMinutes, RoutingReleaseThresholds{})
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	audit := RoutingRollbackAudit{
+		ID:                  fmt.Sprintf("rollback-%d-%d", releaseID, now.Unix()),
+		ReleaseID:           releaseID,
+		ProfileCode:         profileCode,
+		RoutingHash:         firstNonEmpty(strings.TrimSpace(routingHash), report.RoutingHash),
+		Operator:            strings.TrimSpace(operator),
+		Reason:              strings.TrimSpace(reason),
+		BeforeMode:          profile.Mode,
+		AfterMode:           publicrouting.ModeObserve,
+		BeforeReleaseStatus: release.Status,
+		AfterReleaseStatus:  "rolled_back",
+		Summary:             rollbackSummary(report),
+		Alerts:              report.Alerts,
+		CreatedAt:           now,
+	}
+	metadata := parseGrayReleaseMetadata(release.ReleaseJSON)
+	metadata.RollbackAudits = append([]RoutingRollbackAudit{audit}, metadata.RollbackAudits...)
+	if len(metadata.RollbackAudits) > 20 {
+		metadata.RollbackAudits = metadata.RollbackAudits[:20]
+	}
+	release.Status = "rolled_back"
+	release.RollbackReason = audit.Reason
+	release.EndedAt = now
+	release.Operator = audit.Operator
+	release.ReleaseJSON = encodeGrayReleaseMetadata(metadata)
+	if _, err := uc.repo.UpdateGrayRelease(ctx, release); err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseUpdate)
+	}
+	profile.Mode = publicrouting.ModeObserve
+	profile.ProfileJSON = profileJSONWithRollbackAudit(profile.ProfileJSON, audit)
+	if _, err := uc.UpdateProfile(ctx, profile); err != nil {
+		return nil, err
+	}
+	return &audit, nil
 }
 
 func (uc *RoutingUsecase) E2EChecklist(ctx context.Context, profileCode string) (*RoutingE2EChecklist, error) {
@@ -1759,6 +1918,179 @@ func (uc *RoutingUsecase) auditSnapshotsForReport(ctx context.Context, release *
 		snapshots = snapshots[:20]
 	}
 	return snapshots
+}
+
+func (uc *RoutingUsecase) releaseAuditTrailForReport(ctx context.Context, release *RoutingGrayRelease, profileCode string) ([]RoutingReleaseApproval, []RoutingRollbackAudit) {
+	if release != nil {
+		metadata := parseGrayReleaseMetadata(release.ReleaseJSON)
+		return metadata.Approvals, metadata.RollbackAudits
+	}
+	releases, _, err := uc.repo.ListGrayReleases(ctx, 1, 20, profileCode, "")
+	if err != nil {
+		return nil, nil
+	}
+	var approvals []RoutingReleaseApproval
+	var rollbacks []RoutingRollbackAudit
+	for _, item := range releases {
+		if item == nil {
+			continue
+		}
+		metadata := parseGrayReleaseMetadata(item.ReleaseJSON)
+		approvals = append(approvals, metadata.Approvals...)
+		rollbacks = append(rollbacks, metadata.RollbackAudits...)
+	}
+	sort.SliceStable(approvals, func(i, j int) bool { return approvals[i].ConfirmedAt.After(approvals[j].ConfirmedAt) })
+	sort.SliceStable(rollbacks, func(i, j int) bool { return rollbacks[i].CreatedAt.After(rollbacks[j].CreatedAt) })
+	if len(approvals) > 20 {
+		approvals = approvals[:20]
+	}
+	if len(rollbacks) > 20 {
+		rollbacks = rollbacks[:20]
+	}
+	return approvals, rollbacks
+}
+
+func isEnforceTransition(found, next *RouteProfile) bool {
+	if found == nil || next == nil {
+		return false
+	}
+	return found.Mode != "enforce" && next.Mode == "enforce"
+}
+
+func (uc *RoutingUsecase) profileHasValidReleaseApproval(ctx context.Context, profile *RouteProfile) bool {
+	approval := releaseApprovalFromProfileJSON(profile.ProfileJSON)
+	if approval.ReleaseID <= 0 || approval.ID == "" || approval.SnapshotID == "" {
+		return false
+	}
+	if approval.ProfileCode != "" && approval.ProfileCode != profile.Code {
+		return false
+	}
+	release, err := uc.repo.FindGrayReleaseByID(ctx, approval.ReleaseID)
+	if err != nil || release == nil {
+		return false
+	}
+	metadata := parseGrayReleaseMetadata(release.ReleaseJSON)
+	for _, item := range metadata.Approvals {
+		if item.ID == approval.ID &&
+			item.SnapshotID == approval.SnapshotID &&
+			item.ProfileCode == profile.Code &&
+			item.RoutingHash == approval.RoutingHash &&
+			!item.ConfirmedAt.IsZero() {
+			return true
+		}
+	}
+	return false
+}
+
+func findAuditSnapshot(items []RoutingReleaseAuditSnapshot, id string) *RoutingReleaseAuditSnapshot {
+	id = strings.TrimSpace(id)
+	for i := range items {
+		if items[i].ID == id {
+			return &items[i]
+		}
+	}
+	return nil
+}
+
+func snapshotExpired(item RoutingReleaseAuditSnapshot, now time.Time) bool {
+	if item.CreatedAt.IsZero() {
+		return true
+	}
+	return now.Sub(item.CreatedAt) > 24*time.Hour
+}
+
+func profileJSONWithReleaseApproval(raw string, approval RoutingReleaseApproval) string {
+	payload := jsonObjectFromRaw(raw)
+	payload["release_approval"] = map[string]any{
+		"id":           approval.ID,
+		"release_id":   approval.ReleaseID,
+		"snapshot_id":  approval.SnapshotID,
+		"profile_code": approval.ProfileCode,
+		"routing_hash": approval.RoutingHash,
+		"operator":     approval.Operator,
+		"confirmed_at": approval.ConfirmedAt.UTC().Format(time.RFC3339),
+	}
+	return encodeJSONObject(payload)
+}
+
+func profileJSONWithRollbackAudit(raw string, audit RoutingRollbackAudit) string {
+	payload := jsonObjectFromRaw(raw)
+	payload["last_rollback_audit"] = map[string]any{
+		"id":            audit.ID,
+		"release_id":    audit.ReleaseID,
+		"profile_code":  audit.ProfileCode,
+		"routing_hash":  audit.RoutingHash,
+		"operator":      audit.Operator,
+		"before_mode":   audit.BeforeMode,
+		"after_mode":    audit.AfterMode,
+		"rollback_at":   audit.CreatedAt.UTC().Format(time.RFC3339),
+		"rollback_note": audit.Reason,
+	}
+	return encodeJSONObject(payload)
+}
+
+func releaseApprovalFromProfileJSON(raw string) RoutingReleaseApproval {
+	payload := jsonObjectFromRaw(raw)
+	rawApproval, ok := payload["release_approval"].(map[string]any)
+	if !ok {
+		return RoutingReleaseApproval{}
+	}
+	return RoutingReleaseApproval{
+		ID:          stringFromMap(rawApproval, "id"),
+		ReleaseID:   int64FromMap(rawApproval, "release_id"),
+		SnapshotID:  stringFromMap(rawApproval, "snapshot_id"),
+		ProfileCode: stringFromMap(rawApproval, "profile_code"),
+		RoutingHash: stringFromMap(rawApproval, "routing_hash"),
+	}
+}
+
+func jsonObjectFromRaw(raw string) map[string]any {
+	payload := map[string]any{}
+	_ = json.Unmarshal([]byte(normalizeJSONWithDefault(raw, "{}")), &payload)
+	if payload == nil {
+		return map[string]any{}
+	}
+	return payload
+}
+
+func encodeJSONObject(payload map[string]any) string {
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}
+
+func stringFromMap(payload map[string]any, key string) string {
+	value, _ := payload[key].(string)
+	return strings.TrimSpace(value)
+}
+
+func int64FromMap(payload map[string]any, key string) int64 {
+	switch value := payload[key].(type) {
+	case float64:
+		return int64(value)
+	case int64:
+		return value
+	case json.Number:
+		parsed, _ := value.Int64()
+		return parsed
+	case string:
+		parsed, _ := strconv.ParseInt(strings.TrimSpace(value), 10, 64)
+		return parsed
+	default:
+		return 0
+	}
+}
+
+func rollbackSummary(report *RoutingReleaseReport) string {
+	if report == nil || report.Gate == nil {
+		return "rollback requested; release report unavailable"
+	}
+	if len(report.Alerts) == 0 {
+		return "rollback requested; no active release alerts"
+	}
+	return fmt.Sprintf("rollback requested with %d release alerts", len(report.Alerts))
 }
 
 func matchesRoutingHash(value, expected string) bool {

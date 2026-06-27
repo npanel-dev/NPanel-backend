@@ -172,6 +172,20 @@ service RoutingService {
       body: "*"
     };
   }
+
+  rpc ConfirmRoutingReleaseEnforce(ConfirmRoutingReleaseEnforceRequest) returns (ConfirmRoutingReleaseEnforceReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/routing/release_confirm"
+      body: "*"
+    };
+  }
+
+  rpc RollbackRoutingReleaseAudit(RollbackRoutingReleaseAuditRequest) returns (RollbackRoutingReleaseAuditReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/routing/release_rollback"
+      body: "*"
+    };
+  }
 }
 
 message RouteProfile {
@@ -614,6 +628,33 @@ message RoutingReleaseAuditSnapshot {
   int64 created_at = 12;
 }
 
+message RoutingReleaseApproval {
+  string id = 1;
+  int64 release_id = 2;
+  string snapshot_id = 3;
+  string profile_code = 4;
+  string routing_hash = 5;
+  string operator = 6;
+  string reason = 7;
+  int64 confirmed_at = 8;
+}
+
+message RoutingRollbackAudit {
+  string id = 1;
+  int64 release_id = 2;
+  string profile_code = 3;
+  string routing_hash = 4;
+  string operator = 5;
+  string reason = 6;
+  string before_mode = 7;
+  string after_mode = 8;
+  string before_release_status = 9;
+  string after_release_status = 10;
+  string summary = 11;
+  repeated RoutingReleaseAlert alerts = 12;
+  int64 created_at = 13;
+}
+
 message RoutingReleaseReport {
   string profile_code = 1;
   string routing_hash = 2;
@@ -622,6 +663,8 @@ message RoutingReleaseReport {
   repeated RoutingReleaseAlert alerts = 5;
   repeated RoutingReleaseAuditSnapshot snapshots = 6;
   int64 generated_at = 7;
+  repeated RoutingReleaseApproval approvals = 8;
+  repeated RoutingRollbackAudit rollback_audits = 9;
 }
 
 message GetRoutingReleaseReportRequest {
@@ -657,6 +700,36 @@ message SnapshotRoutingReleaseAuditReply {
   int32 code = 1;
   string message = 2;
   RoutingReleaseAuditSnapshot data = 3;
+}
+
+message ConfirmRoutingReleaseEnforceRequest {
+  int64 release_id = 1;
+  string snapshot_id = 2;
+  string profile_code = 3;
+  string routing_hash = 4;
+  string operator = 5;
+  string reason = 6;
+}
+
+message ConfirmRoutingReleaseEnforceReply {
+  int32 code = 1;
+  string message = 2;
+  RoutingReleaseApproval data = 3;
+}
+
+message RollbackRoutingReleaseAuditRequest {
+  int64 release_id = 1;
+  string profile_code = 2;
+  string routing_hash = 3;
+  int64 window_minutes = 4;
+  string operator = 5;
+  string reason = 6;
+}
+
+message RollbackRoutingReleaseAuditReply {
+  int32 code = 1;
+  string message = 2;
+  RoutingRollbackAudit data = 3;
 }
 
 message RoutingHealthItem {

@@ -20,6 +20,7 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationRoutingServiceActRoutingGrayRelease = "/api.admin.routing.v1.RoutingService/ActRoutingGrayRelease"
+const OperationRoutingServiceConfirmRoutingReleaseEnforce = "/api.admin.routing.v1.RoutingService/ConfirmRoutingReleaseEnforce"
 const OperationRoutingServiceCreateDnsResolver = "/api.admin.routing.v1.RoutingService/CreateDnsResolver"
 const OperationRoutingServiceCreateRouteOutbound = "/api.admin.routing.v1.RoutingService/CreateRouteOutbound"
 const OperationRoutingServiceCreateRouteProfile = "/api.admin.routing.v1.RoutingService/CreateRouteProfile"
@@ -47,6 +48,7 @@ const OperationRoutingServiceListRoutingHealthReports = "/api.admin.routing.v1.R
 const OperationRoutingServiceListRoutingRouteEvents = "/api.admin.routing.v1.RoutingService/ListRoutingRouteEvents"
 const OperationRoutingServiceListUnlockServices = "/api.admin.routing.v1.RoutingService/ListUnlockServices"
 const OperationRoutingServicePreviewRouteConfig = "/api.admin.routing.v1.RoutingService/PreviewRouteConfig"
+const OperationRoutingServiceRollbackRoutingReleaseAudit = "/api.admin.routing.v1.RoutingService/RollbackRoutingReleaseAudit"
 const OperationRoutingServiceSnapshotRoutingReleaseAudit = "/api.admin.routing.v1.RoutingService/SnapshotRoutingReleaseAudit"
 const OperationRoutingServiceUpdateDnsResolver = "/api.admin.routing.v1.RoutingService/UpdateDnsResolver"
 const OperationRoutingServiceUpdateRouteOutbound = "/api.admin.routing.v1.RoutingService/UpdateRouteOutbound"
@@ -57,6 +59,7 @@ const OperationRoutingServiceUpdateUnlockService = "/api.admin.routing.v1.Routin
 
 type RoutingServiceHTTPServer interface {
 	ActRoutingGrayRelease(context.Context, *ActRoutingGrayReleaseRequest) (*RoutingGrayReleaseReply, error)
+	ConfirmRoutingReleaseEnforce(context.Context, *ConfirmRoutingReleaseEnforceRequest) (*ConfirmRoutingReleaseEnforceReply, error)
 	CreateDnsResolver(context.Context, *CreateDnsResolverRequest) (*DnsResolverReply, error)
 	CreateRouteOutbound(context.Context, *CreateRouteOutboundRequest) (*RouteOutboundReply, error)
 	CreateRouteProfile(context.Context, *CreateRouteProfileRequest) (*RouteProfileReply, error)
@@ -84,6 +87,7 @@ type RoutingServiceHTTPServer interface {
 	ListRoutingRouteEvents(context.Context, *ListRoutingRouteEventsRequest) (*ListRoutingRouteEventsReply, error)
 	ListUnlockServices(context.Context, *ListUnlockServicesRequest) (*ListUnlockServicesReply, error)
 	PreviewRouteConfig(context.Context, *PreviewRouteConfigRequest) (*PreviewRouteConfigReply, error)
+	RollbackRoutingReleaseAudit(context.Context, *RollbackRoutingReleaseAuditRequest) (*RollbackRoutingReleaseAuditReply, error)
 	SnapshotRoutingReleaseAudit(context.Context, *SnapshotRoutingReleaseAuditRequest) (*SnapshotRoutingReleaseAuditReply, error)
 	UpdateDnsResolver(context.Context, *UpdateDnsResolverRequest) (*DnsResolverReply, error)
 	UpdateRouteOutbound(context.Context, *UpdateRouteOutboundRequest) (*RouteOutboundReply, error)
@@ -130,6 +134,8 @@ func RegisterRoutingServiceHTTPServer(s *http.Server, srv RoutingServiceHTTPServ
 	r.GET("/v1/admin/routing/capability_matrix", _RoutingService_GetRoutingCapabilityMatrix0_HTTP_Handler(srv))
 	r.GET("/v1/admin/routing/release_report", _RoutingService_GetRoutingReleaseReport0_HTTP_Handler(srv))
 	r.POST("/v1/admin/routing/release_audit_snapshot", _RoutingService_SnapshotRoutingReleaseAudit0_HTTP_Handler(srv))
+	r.POST("/v1/admin/routing/release_confirm", _RoutingService_ConfirmRoutingReleaseEnforce0_HTTP_Handler(srv))
+	r.POST("/v1/admin/routing/release_rollback", _RoutingService_RollbackRoutingReleaseAudit0_HTTP_Handler(srv))
 }
 
 func _RoutingService_ListRouteProfiles0_HTTP_Handler(srv RoutingServiceHTTPServer) func(ctx http.Context) error {
@@ -842,8 +848,53 @@ func _RoutingService_SnapshotRoutingReleaseAudit0_HTTP_Handler(srv RoutingServic
 	}
 }
 
+func _RoutingService_ConfirmRoutingReleaseEnforce0_HTTP_Handler(srv RoutingServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ConfirmRoutingReleaseEnforceRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationRoutingServiceConfirmRoutingReleaseEnforce)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ConfirmRoutingReleaseEnforce(ctx, req.(*ConfirmRoutingReleaseEnforceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ConfirmRoutingReleaseEnforceReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _RoutingService_RollbackRoutingReleaseAudit0_HTTP_Handler(srv RoutingServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RollbackRoutingReleaseAuditRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationRoutingServiceRollbackRoutingReleaseAudit)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RollbackRoutingReleaseAudit(ctx, req.(*RollbackRoutingReleaseAuditRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RollbackRoutingReleaseAuditReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type RoutingServiceHTTPClient interface {
 	ActRoutingGrayRelease(ctx context.Context, req *ActRoutingGrayReleaseRequest, opts ...http.CallOption) (rsp *RoutingGrayReleaseReply, err error)
+	ConfirmRoutingReleaseEnforce(ctx context.Context, req *ConfirmRoutingReleaseEnforceRequest, opts ...http.CallOption) (rsp *ConfirmRoutingReleaseEnforceReply, err error)
 	CreateDnsResolver(ctx context.Context, req *CreateDnsResolverRequest, opts ...http.CallOption) (rsp *DnsResolverReply, err error)
 	CreateRouteOutbound(ctx context.Context, req *CreateRouteOutboundRequest, opts ...http.CallOption) (rsp *RouteOutboundReply, err error)
 	CreateRouteProfile(ctx context.Context, req *CreateRouteProfileRequest, opts ...http.CallOption) (rsp *RouteProfileReply, err error)
@@ -871,6 +922,7 @@ type RoutingServiceHTTPClient interface {
 	ListRoutingRouteEvents(ctx context.Context, req *ListRoutingRouteEventsRequest, opts ...http.CallOption) (rsp *ListRoutingRouteEventsReply, err error)
 	ListUnlockServices(ctx context.Context, req *ListUnlockServicesRequest, opts ...http.CallOption) (rsp *ListUnlockServicesReply, err error)
 	PreviewRouteConfig(ctx context.Context, req *PreviewRouteConfigRequest, opts ...http.CallOption) (rsp *PreviewRouteConfigReply, err error)
+	RollbackRoutingReleaseAudit(ctx context.Context, req *RollbackRoutingReleaseAuditRequest, opts ...http.CallOption) (rsp *RollbackRoutingReleaseAuditReply, err error)
 	SnapshotRoutingReleaseAudit(ctx context.Context, req *SnapshotRoutingReleaseAuditRequest, opts ...http.CallOption) (rsp *SnapshotRoutingReleaseAuditReply, err error)
 	UpdateDnsResolver(ctx context.Context, req *UpdateDnsResolverRequest, opts ...http.CallOption) (rsp *DnsResolverReply, err error)
 	UpdateRouteOutbound(ctx context.Context, req *UpdateRouteOutboundRequest, opts ...http.CallOption) (rsp *RouteOutboundReply, err error)
@@ -893,6 +945,19 @@ func (c *RoutingServiceHTTPClientImpl) ActRoutingGrayRelease(ctx context.Context
 	pattern := "/v1/admin/routing/gray_release/action"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationRoutingServiceActRoutingGrayRelease))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *RoutingServiceHTTPClientImpl) ConfirmRoutingReleaseEnforce(ctx context.Context, in *ConfirmRoutingReleaseEnforceRequest, opts ...http.CallOption) (*ConfirmRoutingReleaseEnforceReply, error) {
+	var out ConfirmRoutingReleaseEnforceReply
+	pattern := "/v1/admin/routing/release_confirm"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationRoutingServiceConfirmRoutingReleaseEnforce))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
@@ -1244,6 +1309,19 @@ func (c *RoutingServiceHTTPClientImpl) PreviewRouteConfig(ctx context.Context, i
 	pattern := "/v1/admin/routing/preview"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationRoutingServicePreviewRouteConfig))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *RoutingServiceHTTPClientImpl) RollbackRoutingReleaseAudit(ctx context.Context, in *RollbackRoutingReleaseAuditRequest, opts ...http.CallOption) (*RollbackRoutingReleaseAuditReply, error) {
+	var out RollbackRoutingReleaseAuditReply
+	pattern := "/v1/admin/routing/release_rollback"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationRoutingServiceRollbackRoutingReleaseAudit))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
