@@ -32,6 +32,18 @@ func convertPortalSubscribe(item *portalBiz.SubscribeInfo) *v1.SubscribeInfo {
 	if item.Description != nil {
 		description = *item.Description
 	}
+	shortDescription := ""
+	if item.ShortDescription != nil {
+		shortDescription = *item.ShortDescription
+	}
+	features := ""
+	if item.Features != nil {
+		features = *item.Features
+	}
+	detailContent := ""
+	if item.DetailContent != nil {
+		detailContent = *item.DetailContent
+	}
 
 	discounts := make([]*v1.SubscribeDiscount, 0, len(item.Discount))
 	for _, discount := range item.Discount {
@@ -46,6 +58,10 @@ func convertPortalSubscribe(item *portalBiz.SubscribeInfo) *v1.SubscribeInfo {
 		Name:              item.Name,
 		Language:          item.Language,
 		Description:       description,
+		ShortDescription:  shortDescription,
+		Features:          features,
+		DetailFormat:      item.DetailFormat,
+		DetailContent:     detailContent,
 		UnitPrice:         item.UnitPrice,
 		UnitTime:          item.UnitTime,
 		Discount:          discounts,

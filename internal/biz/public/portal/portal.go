@@ -52,6 +52,10 @@ type SubscribeInfo struct {
 	Name              string
 	Language          string
 	Description       *string
+	ShortDescription  *string
+	Features          *string
+	DetailFormat      string
+	DetailContent     *string
 	UnitPrice         int64
 	UnitTime          string
 	Discount          []SubscribeDiscount

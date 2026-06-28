@@ -97,6 +97,10 @@ message SubscribeInfo {
   int64 created_at = 27;
   int64 updated_at = 28;
   repeated SubscribePriceOption price_options = 31;
+  string short_description = 40;
+  string features = 41;
+  string detail_format = 42;
+  string detail_content = 43;
 }
 
 message SubscribePriceOption {
