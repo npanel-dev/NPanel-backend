@@ -1019,6 +1019,7 @@ func convertPriceOptionsToModel(items []*v1.SubscribePriceOption) ([]model.Subsc
 	hasDefault := false
 	firstSellableIndex := -1
 	seenCodes := make(map[string]struct{}, len(items))
+	seenVisibleDurations := make(map[string]struct{}, len(items))
 	for i, item := range items {
 		if item == nil {
 			return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
@@ -1073,6 +1074,13 @@ func convertPriceOptionsToModel(items []*v1.SubscribePriceOption) ([]model.Subsc
 			UpdatedAt:     item.UpdatedAt,
 		}
 		isSellableDuration := option.Type == "duration" && option.Sell
+		if isSellableDuration && option.Show {
+			durationKey := fmt.Sprintf("%s:%d", option.DurationUnit, option.DurationValue)
+			if _, ok := seenVisibleDurations[durationKey]; ok {
+				return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+			}
+			seenVisibleDurations[durationKey] = struct{}{}
+		}
 		if option.Name == "" {
 			if unit == "NoLimit" {
 				option.Name = "NoLimit"
