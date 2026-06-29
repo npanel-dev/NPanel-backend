@@ -93,7 +93,7 @@ func (u *compatLegacyOnlineUser) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	u.SID = compatLegacyInt64Field(raw, "uid")
+	u.SID = compatLegacyInt64Field(raw, "uid", "sid")
 	u.IP = compatLegacyStringField(raw, "ip")
 	return nil
 }
