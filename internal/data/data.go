@@ -158,11 +158,17 @@ func NewData(c *conf.Data, serverConf *conf.Server, appConf *conf.Application, l
 	}
 
 	if existingLegacySchema {
-		log.NewHelper(logger).Info("existing legacy schema detected; skipping ent schema auto migration to avoid modifying imported old-project tables")
-		if hasMigrationsTable, err := hasDatabaseTable(bootstrapCtx, c.Database.Driver, c.Database.Source, "schema_migrations"); err != nil {
+		log.NewHelper(logger).Info("existing legacy schema detected; running safe ent schema compatibility migration")
+		hasMigrationsTable, err := hasDatabaseTable(bootstrapCtx, c.Database.Driver, c.Database.Source, "schema_migrations")
+		if err != nil {
 			log.NewHelper(logger).Errorf("failed checking schema_migrations table: %v", err)
 			return nil, nil, err
-		} else if hasMigrationsTable {
+		}
+		if err := migrator.AutoMigrateLegacySchema(bootstrapCtx); err != nil {
+			log.NewHelper(logger).Errorf("failed to migrate legacy compatible schema: %v", err)
+			return nil, nil, fmt.Errorf("failed to migrate legacy compatible schema: %w", err)
+		}
+		if hasMigrationsTable {
 			if err := migrator.InitBasicData(bootstrapCtx); err != nil {
 				log.NewHelper(logger).Errorf("failed to initialize legacy default data: %v", err)
 				return nil, nil, fmt.Errorf("failed to initialize legacy default data: %w", err)
