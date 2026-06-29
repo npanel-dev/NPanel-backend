@@ -11297,6 +11297,8 @@ components:
                 simnetClientMaxUdpSessions:
                     type: integer
                     format: int32
+                proxyProtocol:
+                    type: boolean
                 omniflowCarrier:
                     type: string
                     description: OmniFlow 基础配置
@@ -15928,6 +15930,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.public.portal.v1.SubscribePriceOption'
+                shortDescription:
+                    type: string
+                features:
+                    type: string
+                detailFormat:
+                    type: string
+                detailContent:
+                    type: string
         api.public.portal.v1.SubscribePriceOption:
             type: object
             properties:
@@ -17301,6 +17311,8 @@ components:
                 simnetClientMaxUdpSessions:
                     type: integer
                     format: int32
+                proxyProtocol:
+                    type: boolean
                 omniflowCarrier:
                     type: string
                     description: OmniFlow 基础配置

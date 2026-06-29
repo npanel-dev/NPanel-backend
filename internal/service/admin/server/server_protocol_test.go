@@ -20,6 +20,7 @@ func TestAdminProtocolConversionKeepsMxMundoFields(t *testing.T) {
 		MundoFakeMessage:            "Access denied",
 		MundoAcceptProxyProtocol:    true,
 		MundoUseTlsCertificate:      true,
+		ProxyProtocol:               true,
 	}
 
 	model := protoToModelProtocol(input)
@@ -31,7 +32,8 @@ func TestAdminProtocolConversionKeepsMxMundoFields(t *testing.T) {
 		model.MundoFakeTitle != "Remote Desktop" ||
 		model.MundoFakeMessage != "Access denied" ||
 		!model.MundoAcceptProxyProtocol ||
-		!model.MundoUseTLSCertificate {
+		!model.MundoUseTLSCertificate ||
+		!model.ProxyProtocol {
 		t.Fatalf("model lost Mundo fields: %+v", model)
 	}
 
@@ -41,7 +43,8 @@ func TestAdminProtocolConversionKeepsMxMundoFields(t *testing.T) {
 		output.MundoFakeTitle != input.MundoFakeTitle ||
 		output.MundoFakeMessage != input.MundoFakeMessage ||
 		output.MundoAcceptProxyProtocol != input.MundoAcceptProxyProtocol ||
-		output.MundoUseTlsCertificate != input.MundoUseTlsCertificate {
+		output.MundoUseTlsCertificate != input.MundoUseTlsCertificate ||
+		output.ProxyProtocol != input.ProxyProtocol {
 		t.Fatalf("proto round-trip lost Mundo fields: input=%+v output=%+v", input, output)
 	}
 }

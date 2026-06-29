@@ -111,6 +111,7 @@ type Protocol struct {
 	MundoFakeMessage                       string
 	MundoAcceptProxyProtocol               bool
 	MundoUseTLSCertificate                 bool
+	ProxyProtocol                          bool
 	Cipher                                 string
 	ServerKey                              string
 	Flow                                   string

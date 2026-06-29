@@ -567,6 +567,7 @@ func (r *serverNodeRepo) QueryServerProtocolConfig(ctx context.Context, serverID
 			MundoFakeMessage:                       serverNodeFirstString(p, "mundo_fake_message", "mundoFakeMessage", "fakeMessage"),
 			MundoAcceptProxyProtocol:               serverNodeFirstBool(p, "mundo_accept_proxy_protocol", "mundoAcceptProxyProtocol", "acceptProxyProtocol"),
 			MundoUseTLSCertificate:                 serverNodeFirstBool(p, "mundo_use_tls_certificate", "mundoUseTLSCertificate", "useTLSCertificate"),
+			ProxyProtocol:                          serverNodeFirstBool(p, "proxy_protocol", "proxyProtocol"),
 			Cipher:                                 serverNodeMapString(p["cipher"]),
 			ServerKey:                              serverNodeMapString(p["server_key"]),
 			Flow:                                   serverNodeMapString(p["flow"]),
