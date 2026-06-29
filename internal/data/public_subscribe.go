@@ -2,7 +2,9 @@ package data
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -690,7 +692,10 @@ func buildLegacyNodeInfos(ctx context.Context, d *Data, userSub *ent.ProxyUserSu
 		if server == nil {
 			continue
 		}
-		protocols := cleanLegacyNodeProtocolInstance(server.Protocol, node.Protocol, node.Port)
+		protocols := injectLegacySimnetUserCredentialsForClient(
+			cleanLegacyNodeProtocolInstance(server.Protocol, node.Protocol, node.Port),
+			userSub,
+		)
 		nodeInfo := &subscribeBiz.UserSubscribeNodeInfo{
 			ID:              node.ID,
 			Name:            node.Name,
@@ -789,6 +794,164 @@ func cleanLegacyNodeProtocolInstance(raw string, nodeProtocol string, nodePort u
 		return raw
 	}
 	return string(cleaned)
+}
+
+func injectLegacySimnetUserCredentialsForClient(raw string, userSub *ent.ProxyUserSubscribe) string {
+	if strings.TrimSpace(raw) == "" || userSub == nil {
+		return raw
+	}
+	userPSK := deriveLegacySimnetUserPSK(stringValue(userSub.UUID))
+	if userPSK == "" {
+		return raw
+	}
+	userKeyID := legacySimnetUserKeyID(userSub.ID)
+	var protocols []map[string]any
+	if err := json.Unmarshal([]byte(raw), &protocols); err != nil {
+		return raw
+	}
+	changed := false
+	for _, protocol := range protocols {
+		if !isLegacySimnetProtocolMap(protocol) {
+			continue
+		}
+		if serverPSK := firstStringFromMap(protocol, "simnet_server_psk", "simnetServerPsk", "simnet_psk", "simnetPsk"); serverPSK != "" {
+			protocol["simnet_server_psk"] = serverPSK
+		}
+		protocol["simnet_server_key_id"] = firstIntFromMap(protocol, 0, "simnet_server_key_id", "simnetServerKeyId", "simnet_key_id", "simnetKeyId")
+		protocol["simnet_user_psk"] = userPSK
+		protocol["simnet_user_key_id"] = userKeyID
+		changed = true
+	}
+	if !changed {
+		return raw
+	}
+	encoded, err := json.Marshal(protocols)
+	if err != nil {
+		return raw
+	}
+	return string(encoded)
+}
+
+func isLegacySimnetProtocolMap(protocol map[string]any) bool {
+	return strings.EqualFold(firstStringFromMap(protocol, "type", "protocol"), "simnet")
+}
+
+func legacySimnetUserKeyID(id int64) int64 {
+	keyID := id % (1<<31 - 1)
+	if keyID == 0 {
+		return 1
+	}
+	return keyID
+}
+
+func deriveLegacySimnetUserPSK(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if isCanonicalLegacyUUID(trimmed) {
+		return strings.ToLower(strings.ReplaceAll(trimmed, "-", ""))
+	}
+	if len(trimmed) == 32 && isLegacyASCIIHex(trimmed) {
+		return strings.ToLower(trimmed)
+	}
+	return hex.EncodeToString([]byte(trimmed))
+}
+
+func isCanonicalLegacyUUID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+	for idx, ch := range value {
+		switch idx {
+		case 8, 13, 18, 23:
+			if ch != '-' {
+				return false
+			}
+		default:
+			if !isLegacyASCIIHexRune(ch) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func isLegacyASCIIHex(value string) bool {
+	for _, ch := range value {
+		if !isLegacyASCIIHexRune(ch) {
+			return false
+		}
+	}
+	return true
+}
+
+func isLegacyASCIIHexRune(ch rune) bool {
+	return (ch >= '0' && ch <= '9') ||
+		(ch >= 'a' && ch <= 'f') ||
+		(ch >= 'A' && ch <= 'F')
+}
+
+func firstStringFromMap(values map[string]any, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := values[key]; ok {
+			if trimmed := strings.TrimSpace(stringFromAny(value)); trimmed != "" {
+				return trimmed
+			}
+		}
+	}
+	return ""
+}
+
+func stringFromAny(value any) string {
+	switch v := value.(type) {
+	case string:
+		return v
+	case nil:
+		return ""
+	default:
+		return strings.TrimSpace(fmt.Sprint(v))
+	}
+}
+
+func firstIntFromMap(values map[string]any, fallback int64, keys ...string) int64 {
+	for _, key := range keys {
+		value, ok := values[key]
+		if !ok {
+			continue
+		}
+		switch v := value.(type) {
+		case int:
+			return int64(v)
+		case int64:
+			return v
+		case int32:
+			return int64(v)
+		case float64:
+			return int64(v)
+		case json.Number:
+			if parsed, err := v.Int64(); err == nil {
+				return parsed
+			}
+		case string:
+			if parsed, ok := parseLegacyIntString(v); ok {
+				return parsed
+			}
+		}
+	}
+	return fallback
+}
+
+func parseLegacyIntString(value string) (int64, bool) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return 0, false
+	}
+	var result int64
+	for _, ch := range trimmed {
+		if ch < '0' || ch > '9' {
+			return 0, false
+		}
+		result = result*10 + int64(ch-'0')
+	}
+	return result, true
 }
 
 func cleanSimnetProtocolForClient(protocol *servermodel.Protocol) {
