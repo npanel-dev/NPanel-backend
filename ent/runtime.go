@@ -452,15 +452,15 @@ func init() {
 	// proxynode.DefaultIsHidden holds the default value on creation for the is_hidden field.
 	proxynode.DefaultIsHidden = proxynodeDescIsHidden.Default.(bool)
 	// proxynodeDescSort is the schema descriptor for sort field.
-	proxynodeDescSort := proxynodeFields[10].Descriptor()
+	proxynodeDescSort := proxynodeFields[11].Descriptor()
 	// proxynode.DefaultSort holds the default value on creation for the sort field.
 	proxynode.DefaultSort = proxynodeDescSort.Default.(int32)
 	// proxynodeDescCreatedAt is the schema descriptor for created_at field.
-	proxynodeDescCreatedAt := proxynodeFields[12].Descriptor()
+	proxynodeDescCreatedAt := proxynodeFields[13].Descriptor()
 	// proxynode.DefaultCreatedAt holds the default value on creation for the created_at field.
 	proxynode.DefaultCreatedAt = proxynodeDescCreatedAt.Default.(func() time.Time)
 	// proxynodeDescUpdatedAt is the schema descriptor for updated_at field.
-	proxynodeDescUpdatedAt := proxynodeFields[13].Descriptor()
+	proxynodeDescUpdatedAt := proxynodeFields[14].Descriptor()
 	// proxynode.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	proxynode.DefaultUpdatedAt = proxynodeDescUpdatedAt.Default.(func() time.Time)
 	// proxynode.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

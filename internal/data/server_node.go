@@ -151,6 +151,7 @@ func (r *serverNodeRepo) GetServerUserList(ctx context.Context, serverID int64, 
 	predicates := []predicate.ProxyNode{
 		proxynode.ServerIDEQ(serverID),
 		proxynode.ProtocolEQ(protocol),
+		proxynode.NodeTypeNEQ(deliveryNodeTypeFront),
 	}
 	if port > 0 {
 		predicates = append(predicates, proxynode.PortEQ(port))

@@ -125,7 +125,7 @@ func TestAdminCreateNodeRequiresEnabledProtocolPortInstance(t *testing.T) {
 	}
 	uc := NewNodeUsecase(repo, log.DefaultLogger)
 
-	node, err := uc.CreateNode(context.Background(), "VLESS 8443", nil, 8443, "node.example.com", 1, "vless", nil, "backend", nil, nil)
+	node, err := uc.CreateNode(context.Background(), "VLESS 8443", nil, 8443, "node.example.com", 1, "vless", nil, "backend", nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateNode returned error: %v", err)
 	}
@@ -133,12 +133,12 @@ func TestAdminCreateNodeRequiresEnabledProtocolPortInstance(t *testing.T) {
 		t.Fatalf("created node = %+v, want vless:8443", node)
 	}
 
-	_, err = uc.CreateNode(context.Background(), "VLESS missing", nil, 9443, "node.example.com", 1, "vless", nil, "backend", nil, nil)
+	_, err = uc.CreateNode(context.Background(), "VLESS missing", nil, 9443, "node.example.com", 1, "vless", nil, "backend", nil, nil, nil)
 	if !errors.Is(err, servermodel.ErrInvalidProtocolConfig) {
 		t.Fatalf("CreateNode error = %v, want ErrInvalidProtocolConfig", err)
 	}
 
-	_, err = uc.CreateNode(context.Background(), "SS disabled", nil, 9443, "node.example.com", 1, "shadowsocks", nil, "backend", nil, nil)
+	_, err = uc.CreateNode(context.Background(), "SS disabled", nil, 9443, "node.example.com", 1, "shadowsocks", nil, "backend", nil, nil, nil)
 	if !errors.Is(err, servermodel.ErrInvalidProtocolConfig) {
 		t.Fatalf("CreateNode error = %v, want ErrInvalidProtocolConfig", err)
 	}
@@ -146,6 +146,7 @@ func TestAdminCreateNodeRequiresEnabledProtocolPortInstance(t *testing.T) {
 
 type adminNodeRepoStub struct {
 	protocols []*servermodel.Protocol
+	nodes     map[int64]*Node
 }
 
 func (r *adminNodeRepoStub) CreateNode(ctx context.Context, node *Node) (*Node, error) {
@@ -182,4 +183,52 @@ func (r *adminNodeRepoStub) ClearNodeCache(ctx context.Context, serverIDs []int)
 
 func (r *adminNodeRepoStub) GetServerProtocols(ctx context.Context, id int) ([]*servermodel.Protocol, error) {
 	return r.protocols, nil
+}
+
+func (r *adminNodeRepoStub) GetNodeByID(ctx context.Context, id int64) (*Node, error) {
+	if r.nodes == nil {
+		return nil, nil
+	}
+	return r.nodes[id], nil
+}
+
+func (r *adminNodeRepoStub) CountFrontNodesByTarget(ctx context.Context, targetNodeID int64) (int, error) {
+	return 0, nil
+}
+
+func TestAdminCreateFrontNodeUsesTargetLandingProtocolValidation(t *testing.T) {
+	enabled := true
+	targetID := int64(10)
+	repo := &adminNodeRepoStub{
+		protocols: []*servermodel.Protocol{
+			{Type: "shadowsocks", Port: 443, Enable: true},
+		},
+		nodes: map[int64]*Node{
+			targetID: {
+				ID:       targetID,
+				ServerID: 1,
+				Protocol: "shadowsocks",
+				Port:     443,
+				NodeType: NodeTypeLanding,
+				Enabled:  &enabled,
+			},
+		},
+	}
+	uc := NewNodeUsecase(repo, log.DefaultLogger)
+
+	node, err := uc.CreateNode(context.Background(), "SG relay", nil, 1443, "10.0.0.1", 0, "", nil, NodeTypeFront, nil, nil, &targetID)
+	if err != nil {
+		t.Fatalf("CreateNode front returned error: %v", err)
+	}
+	if node.TargetNodeID == nil || *node.TargetNodeID != targetID {
+		t.Fatalf("front target = %v, want %d", node.TargetNodeID, targetID)
+	}
+	if node.Port != 1443 || node.Protocol != "" || node.ServerID != 0 {
+		t.Fatalf("front node should keep custom entry and no own protocol/server: %+v", node)
+	}
+
+	_, err = uc.CreateNode(context.Background(), "missing target", nil, 1443, "10.0.0.1", 0, "", nil, NodeTypeFront, nil, nil, nil)
+	if !errors.Is(err, servermodel.ErrInvalidProtocolConfig) {
+		t.Fatalf("CreateNode missing target error = %v, want ErrInvalidProtocolConfig", err)
+	}
 }

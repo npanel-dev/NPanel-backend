@@ -11,7 +11,6 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
-	"github.com/npanel-dev/NPanel-backend/ent/proxyserver"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyservergroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
@@ -667,40 +666,27 @@ func buildLegacyNodeInfos(ctx context.Context, d *Data, userSub *ent.ProxyUserSu
 	if len(nodes) == 0 {
 		return []*subscribeBiz.UserSubscribeNodeInfo{}, nil
 	}
-	serverIDs := make([]int64, 0, len(nodes))
-	serverSeen := make(map[int64]struct{}, len(nodes))
-	for _, node := range nodes {
-		if _, ok := serverSeen[node.ServerID]; ok {
-			continue
-		}
-		serverSeen[node.ServerID] = struct{}{}
-		serverIDs = append(serverIDs, node.ServerID)
-	}
-	servers, err := d.db.ProxyServer.Query().
-		Where(proxyserver.IDIn(serverIDs...)).
-		All(ctx)
+	deliveryNodes, err := resolveDeliveryNodes(ctx, d.db, nodes)
 	if err != nil {
 		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
 	}
-	serverMap := make(map[int64]*ent.ProxyServer, len(servers))
-	for _, server := range servers {
-		serverMap[server.ID] = server
-	}
 	result := make([]*subscribeBiz.UserSubscribeNodeInfo, 0, len(nodes))
-	for _, node := range nodes {
-		server := serverMap[node.ServerID]
-		if server == nil {
+	for _, item := range deliveryNodes {
+		if item == nil || item.display == nil || item.landing == nil || item.server == nil {
 			continue
 		}
+		node := item.display
+		landing := item.landing
+		server := item.server
 		protocols := injectLegacySimnetUserCredentialsForClient(
-			cleanLegacyNodeProtocolInstance(server.Protocol, node.Protocol, node.Port),
+			cleanLegacyNodeProtocolInstance(server.Protocol, landing.Protocol, landing.Port),
 			userSub,
 		)
 		nodeInfo := &subscribeBiz.UserSubscribeNodeInfo{
 			ID:              node.ID,
 			Name:            node.Name,
 			Uuid:            stringValue(userSub.UUID),
-			Protocol:        node.Protocol,
+			Protocol:        item.protocol.Type,
 			Protocols:       protocols,
 			Port:            uint32(node.Port),
 			Address:         node.Address,
@@ -713,9 +699,7 @@ func buildLegacyNodeInfos(ctx context.Context, d *Data, userSub *ent.ProxyUserSu
 			LongitudeCenter: server.LongitudeCenter,
 			CreatedAt:       node.CreatedAt.Unix(),
 		}
-		if matched := legacyMatchedServerProtocol(server.Protocol, node.Protocol, node.Port); matched != nil {
-			applyLegacyOmniflowProtocol(nodeInfo, matched)
-		}
+		applyLegacyOmniflowProtocol(nodeInfo, item.protocol)
 		result = append(result, nodeInfo)
 	}
 	return result, nil

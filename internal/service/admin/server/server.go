@@ -78,10 +78,7 @@ func (s *ServerService) GetServerProtocols(ctx context.Context, req *v1.GetServe
 }
 
 func (s *ServerService) CreateNode(ctx context.Context, req *v1.CreateNodeRequest) (*v1.CreateNodeReply, error) {
-	if req.ServerId <= 0 {
-		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
-	}
-	node, err := s.nodeUc.CreateNode(ctx, req.Name, req.Tags, uint16(req.Port), req.Address, req.ServerId, req.Protocol, req.Enabled, req.NodeType, req.IsHidden, req.NodeGroupIds)
+	node, err := s.nodeUc.CreateNode(ctx, req.Name, req.Tags, uint16(req.Port), req.Address, req.ServerId, req.Protocol, req.Enabled, req.NodeType, req.IsHidden, req.NodeGroupIds, req.TargetNodeId)
 	if err != nil {
 		return nil, err
 	}
@@ -89,10 +86,10 @@ func (s *ServerService) CreateNode(ctx context.Context, req *v1.CreateNodeReques
 }
 
 func (s *ServerService) UpdateNode(ctx context.Context, req *v1.UpdateNodeRequest) (*v1.UpdateNodeReply, error) {
-	if req.Id <= 0 || req.ServerId <= 0 {
+	if req.Id <= 0 {
 		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
 	}
-	node, err := s.nodeUc.UpdateNode(ctx, int(req.Id), req.Name, req.Tags, uint16(req.Port), req.Address, req.ServerId, req.Protocol, req.Enabled, req.NodeType, req.IsHidden, req.NodeGroupIds)
+	node, err := s.nodeUc.UpdateNode(ctx, int(req.Id), req.Name, req.Tags, uint16(req.Port), req.Address, req.ServerId, req.Protocol, req.Enabled, req.NodeType, req.IsHidden, req.NodeGroupIds, req.TargetNodeId)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +204,7 @@ func nodeToProto(n *serverbiz.Node) *v1.Node {
 	if n == nil {
 		return nil
 	}
-	return &v1.Node{Id: n.ID, Name: n.Name, Tags: n.Tags, Port: uint32(n.Port), Address: n.Address, ServerId: n.ServerID, Protocol: n.Protocol, Enabled: n.Enabled, Sort: int32(n.Sort), NodeGroupId: n.NodeGroupID, NodeGroupIds: n.NodeGroupIDs, NodeType: n.NodeType, IsHidden: n.IsHidden, CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt}
+	return &v1.Node{Id: n.ID, Name: n.Name, Tags: n.Tags, Port: uint32(n.Port), Address: n.Address, ServerId: n.ServerID, Protocol: n.Protocol, Enabled: n.Enabled, Sort: int32(n.Sort), NodeGroupId: n.NodeGroupID, NodeGroupIds: n.NodeGroupIDs, NodeType: n.NodeType, IsHidden: n.IsHidden, CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt, TargetNodeId: n.TargetNodeID}
 }
 
 func protosToModelProtocols(protos []*v1.Protocol) []*servermodel.Protocol {

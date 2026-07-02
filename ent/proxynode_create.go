@@ -146,6 +146,20 @@ func (_c *ProxyNodeCreate) SetNillableIsHidden(v *bool) *ProxyNodeCreate {
 	return _c
 }
 
+// SetTargetNodeID sets the "target_node_id" field.
+func (_c *ProxyNodeCreate) SetTargetNodeID(v int64) *ProxyNodeCreate {
+	_c.mutation.SetTargetNodeID(v)
+	return _c
+}
+
+// SetNillableTargetNodeID sets the "target_node_id" field if the given value is not nil.
+func (_c *ProxyNodeCreate) SetNillableTargetNodeID(v *int64) *ProxyNodeCreate {
+	if v != nil {
+		_c.SetTargetNodeID(*v)
+	}
+	return _c
+}
+
 // SetSort sets the "sort" field.
 func (_c *ProxyNodeCreate) SetSort(v int32) *ProxyNodeCreate {
 	_c.mutation.SetSort(v)
@@ -415,6 +429,10 @@ func (_c *ProxyNodeCreate) createSpec() (*ProxyNode, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsHidden(); ok {
 		_spec.SetField(proxynode.FieldIsHidden, field.TypeBool, value)
 		_node.IsHidden = value
+	}
+	if value, ok := _c.mutation.TargetNodeID(); ok {
+		_spec.SetField(proxynode.FieldTargetNodeID, field.TypeInt64, value)
+		_node.TargetNodeID = &value
 	}
 	if value, ok := _c.mutation.Sort(); ok {
 		_spec.SetField(proxynode.FieldSort, field.TypeInt32, value)

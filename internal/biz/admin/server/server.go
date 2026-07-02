@@ -61,6 +61,7 @@ type Node struct {
 	Enabled      *bool
 	NodeType     string
 	IsHidden     *bool
+	TargetNodeID *int64
 	Sort         uint32
 	NodeGroupID  int64
 	NodeGroupIDs []int64
@@ -112,6 +113,8 @@ type NodeRepo interface {
 	ResetNodeSort(ctx context.Context, sortItems []*SortItem) error
 	ClearNodeCache(ctx context.Context, serverIDs []int) error
 	GetServerProtocols(ctx context.Context, id int) ([]*server.Protocol, error)
+	GetNodeByID(ctx context.Context, id int64) (*Node, error)
+	CountFrontNodesByTarget(ctx context.Context, targetNodeID int64) (int, error)
 }
 
 type MigrationRepo interface {

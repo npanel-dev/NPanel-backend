@@ -169,6 +169,33 @@ func (_u *ProxyNodeUpdate) SetNillableIsHidden(v *bool) *ProxyNodeUpdate {
 	return _u
 }
 
+// SetTargetNodeID sets the "target_node_id" field.
+func (_u *ProxyNodeUpdate) SetTargetNodeID(v int64) *ProxyNodeUpdate {
+	_u.mutation.ResetTargetNodeID()
+	_u.mutation.SetTargetNodeID(v)
+	return _u
+}
+
+// SetNillableTargetNodeID sets the "target_node_id" field if the given value is not nil.
+func (_u *ProxyNodeUpdate) SetNillableTargetNodeID(v *int64) *ProxyNodeUpdate {
+	if v != nil {
+		_u.SetTargetNodeID(*v)
+	}
+	return _u
+}
+
+// AddTargetNodeID adds value to the "target_node_id" field.
+func (_u *ProxyNodeUpdate) AddTargetNodeID(v int64) *ProxyNodeUpdate {
+	_u.mutation.AddTargetNodeID(v)
+	return _u
+}
+
+// ClearTargetNodeID clears the value of the "target_node_id" field.
+func (_u *ProxyNodeUpdate) ClearTargetNodeID() *ProxyNodeUpdate {
+	_u.mutation.ClearTargetNodeID()
+	return _u
+}
+
 // SetSort sets the "sort" field.
 func (_u *ProxyNodeUpdate) SetSort(v int32) *ProxyNodeUpdate {
 	_u.mutation.ResetSort()
@@ -343,6 +370,15 @@ func (_u *ProxyNodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsHidden(); ok {
 		_spec.SetField(proxynode.FieldIsHidden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TargetNodeID(); ok {
+		_spec.SetField(proxynode.FieldTargetNodeID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetNodeID(); ok {
+		_spec.AddField(proxynode.FieldTargetNodeID, field.TypeInt64, value)
+	}
+	if _u.mutation.TargetNodeIDCleared() {
+		_spec.ClearField(proxynode.FieldTargetNodeID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.Sort(); ok {
 		_spec.SetField(proxynode.FieldSort, field.TypeInt32, value)
@@ -524,6 +560,33 @@ func (_u *ProxyNodeUpdateOne) SetNillableIsHidden(v *bool) *ProxyNodeUpdateOne {
 	if v != nil {
 		_u.SetIsHidden(*v)
 	}
+	return _u
+}
+
+// SetTargetNodeID sets the "target_node_id" field.
+func (_u *ProxyNodeUpdateOne) SetTargetNodeID(v int64) *ProxyNodeUpdateOne {
+	_u.mutation.ResetTargetNodeID()
+	_u.mutation.SetTargetNodeID(v)
+	return _u
+}
+
+// SetNillableTargetNodeID sets the "target_node_id" field if the given value is not nil.
+func (_u *ProxyNodeUpdateOne) SetNillableTargetNodeID(v *int64) *ProxyNodeUpdateOne {
+	if v != nil {
+		_u.SetTargetNodeID(*v)
+	}
+	return _u
+}
+
+// AddTargetNodeID adds value to the "target_node_id" field.
+func (_u *ProxyNodeUpdateOne) AddTargetNodeID(v int64) *ProxyNodeUpdateOne {
+	_u.mutation.AddTargetNodeID(v)
+	return _u
+}
+
+// ClearTargetNodeID clears the value of the "target_node_id" field.
+func (_u *ProxyNodeUpdateOne) ClearTargetNodeID() *ProxyNodeUpdateOne {
+	_u.mutation.ClearTargetNodeID()
 	return _u
 }
 
@@ -731,6 +794,15 @@ func (_u *ProxyNodeUpdateOne) sqlSave(ctx context.Context) (_node *ProxyNode, er
 	}
 	if value, ok := _u.mutation.IsHidden(); ok {
 		_spec.SetField(proxynode.FieldIsHidden, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TargetNodeID(); ok {
+		_spec.SetField(proxynode.FieldTargetNodeID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTargetNodeID(); ok {
+		_spec.AddField(proxynode.FieldTargetNodeID, field.TypeInt64, value)
+	}
+	if _u.mutation.TargetNodeIDCleared() {
+		_spec.ClearField(proxynode.FieldTargetNodeID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.Sort(); ok {
 		_spec.SetField(proxynode.FieldSort, field.TypeInt32, value)

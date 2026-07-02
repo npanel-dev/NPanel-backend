@@ -163,6 +163,7 @@ var (
 		{Name: "enabled", Type: field.TypeBool, Comment: "启用", Default: true},
 		{Name: "node_type", Type: field.TypeString, Size: 20, Comment: "节点类型", Default: "landing"},
 		{Name: "is_hidden", Type: field.TypeBool, Comment: "是否隐藏", Default: false},
+		{Name: "target_node_id", Type: field.TypeInt64, Nullable: true, Comment: "入口节点绑定的落地节点ID"},
 		{Name: "sort", Type: field.TypeInt32, Comment: "排序", Default: 0},
 		{Name: "node_group_ids", Type: field.TypeJSON, Nullable: true, Comment: "节点组ID列表"},
 		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},

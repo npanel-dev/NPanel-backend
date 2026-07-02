@@ -31,6 +31,8 @@ const (
 	FieldNodeType = "node_type"
 	// FieldIsHidden holds the string denoting the is_hidden field in the database.
 	FieldIsHidden = "is_hidden"
+	// FieldTargetNodeID holds the string denoting the target_node_id field in the database.
+	FieldTargetNodeID = "target_node_id"
 	// FieldSort holds the string denoting the sort field in the database.
 	FieldSort = "sort"
 	// FieldNodeGroupIds holds the string denoting the node_group_ids field in the database.
@@ -55,6 +57,7 @@ var Columns = []string{
 	FieldEnabled,
 	FieldNodeType,
 	FieldIsHidden,
+	FieldTargetNodeID,
 	FieldSort,
 	FieldNodeGroupIds,
 	FieldCreatedAt,
@@ -161,6 +164,11 @@ func ByNodeType(opts ...sql.OrderTermOption) OrderOption {
 // ByIsHidden orders the results by the is_hidden field.
 func ByIsHidden(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsHidden, opts...).ToFunc()
+}
+
+// ByTargetNodeID orders the results by the target_node_id field.
+func ByTargetNodeID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTargetNodeID, opts...).ToFunc()
 }
 
 // BySort orders the results by the sort field.

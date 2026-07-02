@@ -331,6 +331,7 @@ message Node {
   optional bool is_hidden = 14;
   int64 created_at = 15;
   int64 updated_at = 16;
+  optional int64 target_node_id = 17;
 }
 
 // Server Requests/Replies
@@ -430,6 +431,7 @@ message CreateNodeRequest {
   string node_type = 8;
   optional bool is_hidden = 9;
   repeated int64 node_group_ids = 10;
+  optional int64 target_node_id = 11;
 }
 
 message CreateNodeData {
@@ -454,6 +456,7 @@ message UpdateNodeRequest {
   string node_type = 9;
   optional bool is_hidden = 10;
   repeated int64 node_group_ids = 11;
+  optional int64 target_node_id = 12;
 }
 
 message UpdateNodeData {

@@ -57,6 +57,7 @@ var legacySQLMigrations = []legacySQLMigration{
 	{version: 2151, path: "legacy_sql/02151_archive_duplicate_duration_price_options.up.sql"},
 	{version: 2152, path: "legacy_sql/02152_unwrap_subscribe_description_json.up.sql"},
 	{version: 2153, path: "legacy_sql/02153_cleanup_inactive_unreferenced_price_options.up.sql"},
+	{version: 2154, path: "legacy_sql/02154_node_target_node_id.up.sql"},
 }
 
 var legacyCompatibilityMigrationVersions = map[int64]struct{}{
@@ -114,6 +115,11 @@ var legacyRequiredSchemaPatches = []legacyRequiredSchemaPatch{
 		table:  "nodes",
 		column: "is_hidden",
 		ddl:    "ALTER TABLE `nodes` ADD COLUMN `is_hidden` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Hidden - users cannot see hidden nodes' AFTER `node_type`",
+	},
+	{
+		table:  "nodes",
+		column: "target_node_id",
+		ddl:    "ALTER TABLE `nodes` ADD COLUMN `target_node_id` bigint NULL COMMENT '入口节点绑定的落地节点ID' AFTER `is_hidden`",
 	},
 }
 
@@ -421,10 +427,12 @@ func shouldIgnoreLegacySQLError(path, stmt string, err error) bool {
 			path == "legacy_sql/02135_add_node_group_type.up.sql" ||
 			path == "legacy_sql/02136_add_node_type_is_hidden.up.sql" ||
 			path == "legacy_sql/02137_payment_sort.up.sql" ||
-			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql"
+			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql" ||
+			path == "legacy_sql/02154_node_target_node_id.up.sql"
 	case 1061:
 		return path == "legacy_sql/02133_add_expired_node_group.up.sql" ||
-			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql"
+			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql" ||
+			path == "legacy_sql/02154_node_target_node_id.up.sql"
 	case 1091:
 		return path == "legacy_sql/02137_payment_sort.up.sql"
 	}
@@ -434,7 +442,8 @@ func shouldIgnoreLegacySQLError(path, stmt string, err error) bool {
 		return strings.HasPrefix(path, "legacy_sql/02133_") ||
 			path == "legacy_sql/02135_add_node_group_type.up.sql" ||
 			path == "legacy_sql/02136_add_node_type_is_hidden.up.sql" ||
-			path == "legacy_sql/02137_payment_sort.up.sql"
+			path == "legacy_sql/02137_payment_sort.up.sql" ||
+			path == "legacy_sql/02154_node_target_node_id.up.sql"
 	}
 
 	return false

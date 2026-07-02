@@ -99,6 +99,11 @@ func IsHidden(v bool) predicate.ProxyNode {
 	return predicate.ProxyNode(sql.FieldEQ(FieldIsHidden, v))
 }
 
+// TargetNodeID applies equality check predicate on the "target_node_id" field. It's identical to TargetNodeIDEQ.
+func TargetNodeID(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldEQ(FieldTargetNodeID, v))
+}
+
 // Sort applies equality check predicate on the "sort" field. It's identical to SortEQ.
 func Sort(v int32) predicate.ProxyNode {
 	return predicate.ProxyNode(sql.FieldEQ(FieldSort, v))
@@ -537,6 +542,56 @@ func IsHiddenEQ(v bool) predicate.ProxyNode {
 // IsHiddenNEQ applies the NEQ predicate on the "is_hidden" field.
 func IsHiddenNEQ(v bool) predicate.ProxyNode {
 	return predicate.ProxyNode(sql.FieldNEQ(FieldIsHidden, v))
+}
+
+// TargetNodeIDEQ applies the EQ predicate on the "target_node_id" field.
+func TargetNodeIDEQ(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldEQ(FieldTargetNodeID, v))
+}
+
+// TargetNodeIDNEQ applies the NEQ predicate on the "target_node_id" field.
+func TargetNodeIDNEQ(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldNEQ(FieldTargetNodeID, v))
+}
+
+// TargetNodeIDIn applies the In predicate on the "target_node_id" field.
+func TargetNodeIDIn(vs ...int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldIn(FieldTargetNodeID, vs...))
+}
+
+// TargetNodeIDNotIn applies the NotIn predicate on the "target_node_id" field.
+func TargetNodeIDNotIn(vs ...int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldNotIn(FieldTargetNodeID, vs...))
+}
+
+// TargetNodeIDGT applies the GT predicate on the "target_node_id" field.
+func TargetNodeIDGT(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldGT(FieldTargetNodeID, v))
+}
+
+// TargetNodeIDGTE applies the GTE predicate on the "target_node_id" field.
+func TargetNodeIDGTE(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldGTE(FieldTargetNodeID, v))
+}
+
+// TargetNodeIDLT applies the LT predicate on the "target_node_id" field.
+func TargetNodeIDLT(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldLT(FieldTargetNodeID, v))
+}
+
+// TargetNodeIDLTE applies the LTE predicate on the "target_node_id" field.
+func TargetNodeIDLTE(v int64) predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldLTE(FieldTargetNodeID, v))
+}
+
+// TargetNodeIDIsNil applies the IsNil predicate on the "target_node_id" field.
+func TargetNodeIDIsNil() predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldIsNull(FieldTargetNodeID))
+}
+
+// TargetNodeIDNotNil applies the NotNil predicate on the "target_node_id" field.
+func TargetNodeIDNotNil() predicate.ProxyNode {
+	return predicate.ProxyNode(sql.FieldNotNull(FieldTargetNodeID))
 }
 
 // SortEQ applies the EQ predicate on the "sort" field.

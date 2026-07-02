@@ -5934,6 +5934,8 @@ type ProxyNodeMutation struct {
 	enabled              *bool
 	node_type            *string
 	is_hidden            *bool
+	target_node_id       *int64
+	addtarget_node_id    *int64
 	sort                 *int32
 	addsort              *int32
 	node_group_ids       *[]int64
@@ -6414,6 +6416,76 @@ func (m *ProxyNodeMutation) ResetIsHidden() {
 	m.is_hidden = nil
 }
 
+// SetTargetNodeID sets the "target_node_id" field.
+func (m *ProxyNodeMutation) SetTargetNodeID(i int64) {
+	m.target_node_id = &i
+	m.addtarget_node_id = nil
+}
+
+// TargetNodeID returns the value of the "target_node_id" field in the mutation.
+func (m *ProxyNodeMutation) TargetNodeID() (r int64, exists bool) {
+	v := m.target_node_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetNodeID returns the old "target_node_id" field's value of the ProxyNode entity.
+// If the ProxyNode object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyNodeMutation) OldTargetNodeID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetNodeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetNodeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetNodeID: %w", err)
+	}
+	return oldValue.TargetNodeID, nil
+}
+
+// AddTargetNodeID adds i to the "target_node_id" field.
+func (m *ProxyNodeMutation) AddTargetNodeID(i int64) {
+	if m.addtarget_node_id != nil {
+		*m.addtarget_node_id += i
+	} else {
+		m.addtarget_node_id = &i
+	}
+}
+
+// AddedTargetNodeID returns the value that was added to the "target_node_id" field in this mutation.
+func (m *ProxyNodeMutation) AddedTargetNodeID() (r int64, exists bool) {
+	v := m.addtarget_node_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTargetNodeID clears the value of the "target_node_id" field.
+func (m *ProxyNodeMutation) ClearTargetNodeID() {
+	m.target_node_id = nil
+	m.addtarget_node_id = nil
+	m.clearedFields[proxynode.FieldTargetNodeID] = struct{}{}
+}
+
+// TargetNodeIDCleared returns if the "target_node_id" field was cleared in this mutation.
+func (m *ProxyNodeMutation) TargetNodeIDCleared() bool {
+	_, ok := m.clearedFields[proxynode.FieldTargetNodeID]
+	return ok
+}
+
+// ResetTargetNodeID resets all changes to the "target_node_id" field.
+func (m *ProxyNodeMutation) ResetTargetNodeID() {
+	m.target_node_id = nil
+	m.addtarget_node_id = nil
+	delete(m.clearedFields, proxynode.FieldTargetNodeID)
+}
+
 // SetSort sets the "sort" field.
 func (m *ProxyNodeMutation) SetSort(i int32) {
 	m.sort = &i
@@ -6641,7 +6713,7 @@ func (m *ProxyNodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProxyNodeMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.name != nil {
 		fields = append(fields, proxynode.FieldName)
 	}
@@ -6668,6 +6740,9 @@ func (m *ProxyNodeMutation) Fields() []string {
 	}
 	if m.is_hidden != nil {
 		fields = append(fields, proxynode.FieldIsHidden)
+	}
+	if m.target_node_id != nil {
+		fields = append(fields, proxynode.FieldTargetNodeID)
 	}
 	if m.sort != nil {
 		fields = append(fields, proxynode.FieldSort)
@@ -6707,6 +6782,8 @@ func (m *ProxyNodeMutation) Field(name string) (ent.Value, bool) {
 		return m.NodeType()
 	case proxynode.FieldIsHidden:
 		return m.IsHidden()
+	case proxynode.FieldTargetNodeID:
+		return m.TargetNodeID()
 	case proxynode.FieldSort:
 		return m.Sort()
 	case proxynode.FieldNodeGroupIds:
@@ -6742,6 +6819,8 @@ func (m *ProxyNodeMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldNodeType(ctx)
 	case proxynode.FieldIsHidden:
 		return m.OldIsHidden(ctx)
+	case proxynode.FieldTargetNodeID:
+		return m.OldTargetNodeID(ctx)
 	case proxynode.FieldSort:
 		return m.OldSort(ctx)
 	case proxynode.FieldNodeGroupIds:
@@ -6822,6 +6901,13 @@ func (m *ProxyNodeMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIsHidden(v)
 		return nil
+	case proxynode.FieldTargetNodeID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetNodeID(v)
+		return nil
 	case proxynode.FieldSort:
 		v, ok := value.(int32)
 		if !ok {
@@ -6864,6 +6950,9 @@ func (m *ProxyNodeMutation) AddedFields() []string {
 	if m.addserver_id != nil {
 		fields = append(fields, proxynode.FieldServerID)
 	}
+	if m.addtarget_node_id != nil {
+		fields = append(fields, proxynode.FieldTargetNodeID)
+	}
 	if m.addsort != nil {
 		fields = append(fields, proxynode.FieldSort)
 	}
@@ -6879,6 +6968,8 @@ func (m *ProxyNodeMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPort()
 	case proxynode.FieldServerID:
 		return m.AddedServerID()
+	case proxynode.FieldTargetNodeID:
+		return m.AddedTargetNodeID()
 	case proxynode.FieldSort:
 		return m.AddedSort()
 	}
@@ -6904,6 +6995,13 @@ func (m *ProxyNodeMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddServerID(v)
 		return nil
+	case proxynode.FieldTargetNodeID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTargetNodeID(v)
+		return nil
 	case proxynode.FieldSort:
 		v, ok := value.(int32)
 		if !ok {
@@ -6919,6 +7017,9 @@ func (m *ProxyNodeMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ProxyNodeMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(proxynode.FieldTargetNodeID) {
+		fields = append(fields, proxynode.FieldTargetNodeID)
+	}
 	if m.FieldCleared(proxynode.FieldNodeGroupIds) {
 		fields = append(fields, proxynode.FieldNodeGroupIds)
 	}
@@ -6936,6 +7037,9 @@ func (m *ProxyNodeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ProxyNodeMutation) ClearField(name string) error {
 	switch name {
+	case proxynode.FieldTargetNodeID:
+		m.ClearTargetNodeID()
+		return nil
 	case proxynode.FieldNodeGroupIds:
 		m.ClearNodeGroupIds()
 		return nil
@@ -6973,6 +7077,9 @@ func (m *ProxyNodeMutation) ResetField(name string) error {
 		return nil
 	case proxynode.FieldIsHidden:
 		m.ResetIsHidden()
+		return nil
+	case proxynode.FieldTargetNodeID:
+		m.ResetTargetNodeID()
 		return nil
 	case proxynode.FieldSort:
 		m.ResetSort()

@@ -30,6 +30,15 @@ func firstNodeGroupID(ids []int64) int64 {
 	return ids[0]
 }
 
+func adminNodeToBiz(node *ent.ProxyNode) *serverbiz.Node {
+	if node == nil {
+		return nil
+	}
+	tags := tool.RemoveDuplicateElements(tool.StringToStringSlice(node.Tags)...)
+	enabled := node.Enabled
+	return &serverbiz.Node{ID: int64(node.ID), Name: node.Name, Tags: tags, Port: uint16(node.Port), Address: node.Address, ServerID: node.ServerID, Protocol: node.Protocol, Enabled: &enabled, NodeType: node.NodeType, IsHidden: &node.IsHidden, TargetNodeID: node.TargetNodeID, Sort: uint32(node.Sort), NodeGroupID: firstNodeGroupID(node.NodeGroupIds), NodeGroupIDs: node.NodeGroupIds, CreatedAt: node.CreatedAt.UnixMilli(), UpdatedAt: node.UpdatedAt.UnixMilli()}
+}
+
 func (r *adminNodeRepo) CreateNode(ctx context.Context, node *serverbiz.Node) (*serverbiz.Node, error) {
 	tagsStr := tool.StringSliceToString(node.Tags)
 	builder := r.data.db.ProxyNode.Create().SetName(node.Name).SetTags(tagsStr).SetPort(node.Port).SetAddress(node.Address).SetServerID(node.ServerID).SetProtocol(node.Protocol).SetNodeType(node.NodeType).SetSort(int32(node.Sort)).SetNodeGroupIds(node.NodeGroupIDs)
@@ -39,13 +48,14 @@ func (r *adminNodeRepo) CreateNode(ctx context.Context, node *serverbiz.Node) (*
 	if node.IsHidden != nil {
 		builder = builder.SetIsHidden(*node.IsHidden)
 	}
+	if node.TargetNodeID != nil && *node.TargetNodeID > 0 {
+		builder = builder.SetTargetNodeID(*node.TargetNodeID)
+	}
 	created, err := builder.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	tags := tool.RemoveDuplicateElements(tool.StringToStringSlice(created.Tags)...)
-	enabled := created.Enabled
-	return &serverbiz.Node{ID: int64(created.ID), Name: created.Name, Tags: tags, Port: uint16(created.Port), Address: created.Address, ServerID: created.ServerID, Protocol: created.Protocol, Enabled: &enabled, NodeType: created.NodeType, IsHidden: &created.IsHidden, Sort: uint32(created.Sort), NodeGroupID: firstNodeGroupID(created.NodeGroupIds), NodeGroupIDs: created.NodeGroupIds, CreatedAt: created.CreatedAt.UnixMilli(), UpdatedAt: created.UpdatedAt.UnixMilli()}, nil
+	return adminNodeToBiz(created), nil
 }
 
 func (r *adminNodeRepo) UpdateNode(ctx context.Context, node *serverbiz.Node) (*serverbiz.Node, error) {
@@ -57,13 +67,16 @@ func (r *adminNodeRepo) UpdateNode(ctx context.Context, node *serverbiz.Node) (*
 	if node.IsHidden != nil {
 		builder = builder.SetIsHidden(*node.IsHidden)
 	}
+	if node.TargetNodeID != nil && *node.TargetNodeID > 0 {
+		builder = builder.SetTargetNodeID(*node.TargetNodeID)
+	} else {
+		builder = builder.ClearTargetNodeID()
+	}
 	updated, err := builder.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	tags := tool.RemoveDuplicateElements(tool.StringToStringSlice(updated.Tags)...)
-	enabled := updated.Enabled
-	return &serverbiz.Node{ID: int64(updated.ID), Name: updated.Name, Tags: tags, Port: uint16(updated.Port), Address: updated.Address, ServerID: updated.ServerID, Protocol: updated.Protocol, Enabled: &enabled, NodeType: updated.NodeType, IsHidden: &updated.IsHidden, Sort: uint32(updated.Sort), NodeGroupID: firstNodeGroupID(updated.NodeGroupIds), NodeGroupIDs: updated.NodeGroupIds, CreatedAt: updated.CreatedAt.UnixMilli(), UpdatedAt: updated.UpdatedAt.UnixMilli()}, nil
+	return adminNodeToBiz(updated), nil
 }
 
 func (r *adminNodeRepo) DeleteNode(ctx context.Context, id int) error {
@@ -73,6 +86,13 @@ func (r *adminNodeRepo) DeleteNode(ctx context.Context, id int) error {
 			return nil
 		}
 		return err
+	}
+	referenceCount, err := r.data.db.ProxyNode.Query().Where(proxynode.TargetNodeIDEQ(int64(id))).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if referenceCount > 0 {
+		return fmt.Errorf("node %d is referenced by %d front nodes", id, referenceCount)
 	}
 	if err := r.data.db.ProxyNode.DeleteOneID(int64(id)).Exec(ctx); err != nil {
 		return err
@@ -117,9 +137,7 @@ func (r *adminNodeRepo) FilterNodeList(ctx context.Context, page, size int32, se
 	}
 	nodes := make([]*serverbiz.Node, 0, len(list))
 	for _, item := range list {
-		tags := tool.RemoveDuplicateElements(tool.StringToStringSlice(item.Tags)...)
-		enabled := item.Enabled
-		nodes = append(nodes, &serverbiz.Node{ID: int64(item.ID), Name: item.Name, Tags: tags, Port: uint16(item.Port), Address: item.Address, ServerID: item.ServerID, Protocol: item.Protocol, Enabled: &enabled, NodeType: item.NodeType, IsHidden: &item.IsHidden, Sort: uint32(item.Sort), NodeGroupID: firstNodeGroupID(item.NodeGroupIds), NodeGroupIDs: item.NodeGroupIds, CreatedAt: item.CreatedAt.UnixMilli(), UpdatedAt: item.UpdatedAt.UnixMilli()})
+		nodes = append(nodes, adminNodeToBiz(item))
 	}
 	return int32(total), nodes, nil
 }
@@ -132,9 +150,7 @@ func (r *adminNodeRepo) ToggleNodeStatus(ctx context.Context, id int, enable *bo
 	if err != nil {
 		return nil, err
 	}
-	tags := tool.RemoveDuplicateElements(tool.StringToStringSlice(updated.Tags)...)
-	enabled := updated.Enabled
-	return &serverbiz.Node{ID: int64(updated.ID), Name: updated.Name, Tags: tags, Port: uint16(updated.Port), Address: updated.Address, ServerID: updated.ServerID, Protocol: updated.Protocol, Enabled: &enabled, NodeType: updated.NodeType, IsHidden: &updated.IsHidden, Sort: uint32(updated.Sort), NodeGroupID: firstNodeGroupID(updated.NodeGroupIds), NodeGroupIDs: updated.NodeGroupIds, CreatedAt: updated.CreatedAt.UnixMilli(), UpdatedAt: updated.UpdatedAt.UnixMilli()}, nil
+	return adminNodeToBiz(updated), nil
 }
 
 func (r *adminNodeRepo) QueryNodeTags(ctx context.Context) ([]string, error) {
@@ -165,6 +181,21 @@ func (r *adminNodeRepo) GetServerProtocols(ctx context.Context, id int) ([]*serv
 	return servermodel.UnmarshalProtocols(server.Protocol)
 }
 
+func (r *adminNodeRepo) GetNodeByID(ctx context.Context, id int64) (*serverbiz.Node, error) {
+	node, err := r.data.db.ProxyNode.Query().Where(proxynode.ID(id)).Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return adminNodeToBiz(node), nil
+}
+
+func (r *adminNodeRepo) CountFrontNodesByTarget(ctx context.Context, targetNodeID int64) (int, error) {
+	return r.data.db.ProxyNode.Query().Where(proxynode.TargetNodeIDEQ(targetNodeID)).Count(ctx)
+}
+
 func (r *adminNodeRepo) ResetNodeSort(ctx context.Context, sortItems []*serverbiz.SortItem) error {
 	if len(sortItems) == 0 {
 		return nil
@@ -193,6 +224,9 @@ func (r *adminNodeRepo) ResetNodeSort(ctx context.Context, sortItems []*serverbi
 }
 
 func (r *adminNodeRepo) ClearNodeCache(ctx context.Context, serverIDs []int) error {
+	if len(serverIDs) == 0 {
+		return nil
+	}
 	serverIDsAny := make([]any, len(serverIDs))
 	for i, id := range serverIDs {
 		serverIDsAny[i] = id

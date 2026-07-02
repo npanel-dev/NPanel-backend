@@ -11007,6 +11007,8 @@ components:
                     type: array
                     items:
                         type: string
+                targetNodeId:
+                    type: string
             description: Node Requests/Replies
         api.admin.server.v1.CreateServerData:
             type: object
@@ -11212,6 +11214,8 @@ components:
                 createdAt:
                     type: string
                 updatedAt:
+                    type: string
+                targetNodeId:
                     type: string
         api.admin.server.v1.Protocol:
             type: object
@@ -11732,6 +11736,8 @@ components:
                     type: array
                     items:
                         type: string
+                targetNodeId:
+                    type: string
         api.admin.server.v1.UpdateServerData:
             type: object
             properties:

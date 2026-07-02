@@ -7,12 +7,9 @@ import (
 
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
-	"github.com/npanel-dev/NPanel-backend/ent/proxyserver"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribeapplication"
 	applicationbiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/application"
 	publicsubscriptionbiz "github.com/npanel-dev/NPanel-backend/internal/biz/public/subscription"
-	servermodel "github.com/npanel-dev/NPanel-backend/internal/model/server"
-	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 )
 
 type subscribeApplicationRepo struct {
@@ -196,107 +193,14 @@ func (r *subscribeApplicationRepo) GetPreviewNodes(ctx context.Context) ([]*publ
 	}
 
 	result := make([]*publicsubscriptionbiz.NodeInfo, 0, len(nodes))
-	for _, node := range nodes {
-		server, err := r.data.db.ProxyServer.Query().
-			Where(proxyserver.IDEQ(node.ServerID)).
-			Only(ctx)
-		if err != nil {
-			r.log.Warnf("preview skip node %d: query server failed: %v", node.ID, err)
-			continue
+	deliveryNodes, err := resolveDeliveryNodes(ctx, r.data.db, nodes)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range deliveryNodes {
+		if nodeInfo := deliveryNodeToSubscriptionNodeInfo(item, 0); nodeInfo != nil {
+			result = append(result, nodeInfo)
 		}
-
-		protocols, err := servermodel.UnmarshalProtocols(server.Protocol)
-		if err != nil {
-			r.log.Warnf("preview skip server %d: unmarshal protocols failed: %v", server.ID, err)
-			continue
-		}
-
-		matched, _, _ := matchNodeProtocolConfig(protocols, node.Protocol, node.Port)
-		if matched == nil {
-			r.log.Warnf("preview skip node %d: no protocol match for %s", node.ID, node.Protocol)
-			continue
-		}
-
-		nodeInfo := &publicsubscriptionbiz.NodeInfo{
-			ID:          node.ID,
-			Sort:        int(node.Sort),
-			Name:        node.Name,
-			Server:      node.Address,
-			Port:        node.Port,
-			Type:        node.Protocol,
-			Tags:        tool.StringToStringSlice(node.Tags),
-			NodeGroupID: 0,
-
-			Security:                           matched.Security,
-			SNI:                                matched.SNI,
-			AllowInsecure:                      matched.AllowInsecure,
-			Fingerprint:                        matched.Fingerprint,
-			RealityServerAddr:                  matched.RealityServerAddr,
-			RealityServerPort:                  int(matched.RealityServerPort),
-			RealityPrivateKey:                  matched.RealityPrivateKey,
-			RealityPublicKey:                   matched.RealityPublicKey,
-			RealityShortId:                     matched.RealityShortId,
-			Transport:                          matched.Transport,
-			Host:                               matched.Host,
-			Path:                               matched.Path,
-			ServiceName:                        matched.ServiceName,
-			Mc1Mode:                            matched.Mc1Mode,
-			Mc1CidrSegments:                    matched.Mc1CidrSegments,
-			MundoUsername:                      matched.MundoUsername,
-			MundoCertificateFingerprint:        matched.MundoCertificateFingerprint,
-			MundoFakeTitle:                     matched.MundoFakeTitle,
-			MundoFakeMessage:                   matched.MundoFakeMessage,
-			MundoAcceptProxyProtocol:           matched.MundoAcceptProxyProtocol,
-			MundoUseTLSCertificate:             matched.MundoUseTLSCertificate,
-			Method:                             matched.Cipher,
-			ServerKey:                          matched.ServerKey,
-			Flow:                               matched.Flow,
-			HopPorts:                           matched.HopPorts,
-			HopInterval:                        int(matched.HopInterval),
-			ObfsPassword:                       matched.ObfsPassword,
-			UpMbps:                             int(matched.UpMbps),
-			DownMbps:                           int(matched.DownMbps),
-			DisableSNI:                         matched.DisableSNI,
-			ReduceRtt:                          matched.ReduceRtt,
-			UDPRelayMode:                       matched.UDPRelayMode,
-			CongestionController:               matched.CongestionController,
-			PaddingScheme:                      matched.PaddingScheme,
-			Multiplex:                          matched.Multiplex,
-			XhttpMode:                          matched.XhttpMode,
-			XhttpExtra:                         matched.XhttpExtra,
-			Encryption:                         matched.Encryption,
-			EncryptionMode:                     matched.EncryptionMode,
-			EncryptionRtt:                      matched.EncryptionRtt,
-			EncryptionTicket:                   matched.EncryptionTicket,
-			EncryptionServerPadding:            matched.EncryptionServerPadding,
-			EncryptionPrivateKey:               matched.EncryptionPrivateKey,
-			EncryptionClientPadding:            matched.EncryptionClientPadding,
-			EncryptionPassword:                 matched.EncryptionPassword,
-			Ratio:                              matched.Ratio,
-			CertMode:                           matched.CertMode,
-			CertDNSProvider:                    matched.CertDNSProvider,
-			CertDNSEnv:                         matched.CertDNSEnv,
-			SimnetPsk:                          matched.SimnetPsk,
-			SimnetKeyID:                        int(matched.SimnetKeyID),
-			SimnetTicketID:                     matched.SimnetTicketID,
-			SimnetPath:                         matched.SimnetPath,
-			SimnetCarrier:                      matched.SimnetCarrier,
-			SimnetAfEnabled:                    matched.SimnetAfEnabled,
-			SimnetAfPathMode:                   matched.SimnetAfPathMode,
-			SimnetAfPathPrefix:                 matched.SimnetAfPathPrefix,
-			SimnetAfPathSuffix:                 matched.SimnetAfPathSuffix,
-			SimnetAfMagicMode:                  matched.SimnetAfMagicMode,
-			SimnetAfResponseJitterMs:           int(matched.SimnetAfResponseJitterMs),
-			SimnetAfHandshakePolymorphism:      matched.SimnetAfHandshakePolymorphism,
-			SimnetAfSettingsJitter:             matched.SimnetAfSettingsJitter,
-			SimnetAfFakeHeaderInjection:        matched.SimnetAfFakeHeaderInjection,
-			SimnetClientMaxConcurrentStreams:   int(matched.SimnetClientMaxConcurrentStreams),
-			SimnetClientMaxStreamsPerSession:   int(matched.SimnetClientMaxStreamsPerSession),
-			SimnetClientSessionIdleTimeoutSecs: int(matched.SimnetClientSessionIdleTimeoutSecs),
-			SimnetClientMaxUDPSessions:         int(matched.SimnetClientMaxUDPSessions),
-		}
-		nodeInfo.NormalizeSimnet()
-		result = append(result, nodeInfo)
 	}
 
 	return result, nil

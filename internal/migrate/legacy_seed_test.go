@@ -22,7 +22,7 @@ func TestNormalizeLegacyStatementUsesInsertIgnoreForSubscribeApplication(t *test
 }
 
 func TestLegacySQLMigrationsIncludeSyncedLatestVersions(t *testing.T) {
-	want := []int64{2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150, 2151, 2152, 2153}
+	want := []int64{2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150, 2151, 2152, 2153, 2154}
 	got := make([]int64, 0, len(want))
 	for _, migration := range legacySQLMigrations {
 		if migration.version >= 2133 {
@@ -58,6 +58,7 @@ func TestLegacyRequiredSchemaPatchesCoverServerAndNodeListColumns(t *testing.T) 
 		"nodes.node_group_ids":     false,
 		"nodes.node_type":          false,
 		"nodes.is_hidden":          false,
+		"nodes.target_node_id":     false,
 	}
 
 	for _, patch := range legacyRequiredSchemaPatches {
