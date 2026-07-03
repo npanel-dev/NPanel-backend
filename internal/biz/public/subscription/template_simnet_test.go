@@ -39,6 +39,8 @@ func TestBuildOmnxtProtocolLinksIncludesOnlySimnetClientBackpressure(t *testing.
 	}
 
 	values := decodeSimnetLinkPayload(t, links[0])
+	assertQueryValue(t, values, "simnet_key_id", "7")
+	assertQueryValue(t, values, "simnet_psk", "757365722d736563726574")
 	assertQueryValue(t, values, "simnet_client_max_concurrent_streams", "48")
 	assertQueryValue(t, values, "simnet_client_max_streams_per_session", "768")
 	assertQueryValue(t, values, "simnet_client_session_idle_timeout_secs", "120")
@@ -74,6 +76,34 @@ func TestBuildOmnxtProtocolLinksDefaultsSimnetClientBackpressure(t *testing.T) {
 	assertQueryValue(t, values, "simnet_client_max_streams_per_session", "512")
 	assertQueryValue(t, values, "simnet_client_session_idle_timeout_secs", "90")
 	assertQueryValue(t, values, "simnet_client_max_udp_sessions", "64")
+}
+
+func TestBuildOmnxtProtocolLinksUsesSubscribeIDAndCompactUUIDPSK(t *testing.T) {
+	links := buildOmnxtProtocolLinks([]map[string]interface{}{
+		{
+			"Type":        "simnet",
+			"Name":        "simnet-node",
+			"Server":      "edge.example.com",
+			"Port":        443,
+			"SimnetPsk":   "server-secret",
+			"SimnetKeyID": 0,
+		},
+	}, UserInfo{
+		ID:          99,
+		SubscribeID: 16,
+		Password:    "019e21e0-48f7-7c70-afa6-f1e8ab98bd73",
+	}, map[string]string{})
+	if len(links) != 1 {
+		t.Fatalf("expected one simnet link, got %d", len(links))
+	}
+
+	values := decodeSimnetLinkPayload(t, links[0])
+	assertQueryValue(t, values, "simnet_key_id", "16")
+	assertQueryValue(t, values, "simnet_psk", "019e21e048f77c70afa6f1e8ab98bd73")
+	assertQueryValue(t, values, "simnet_server_psk", "server-secret")
+	if values.Get("simnet_key_id") == values.Get("simnet_server_key_id") {
+		t.Fatalf("user key_id must not collapse to server key_id: %s", values.Encode())
+	}
 }
 
 func decodeSimnetLinkPayload(t *testing.T, link string) url.Values {

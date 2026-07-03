@@ -2,6 +2,9 @@ package data
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -423,6 +426,61 @@ func (r *publicUserRepo) QueryUserInfo(ctx context.Context, userID int) (*userBi
 	}, nil
 }
 
+func (r *publicUserRepo) GetTawkIdentity(ctx context.Context, userID int) (*userBiz.TawkIdentity, error) {
+	userInfo, err := r.data.db.ProxyUser.Query().
+		Where(proxyuser.IDEQ(int64(userID))).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, responsecode.NewKratosError(responsecode.ErrUserNotFound)
+		}
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+	}
+
+	email := ""
+	methods, err := r.data.db.ProxyUserAuthMethod.Query().
+		Where(
+			proxyuserauthmethod.UserIDEQ(int64(userID)),
+			proxyuserauthmethod.AuthTypeEQ("email"),
+		).
+		Order(ent.Desc(proxyuserauthmethod.FieldVerified), ent.Asc(proxyuserauthmethod.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
+	}
+	if len(methods) > 0 {
+		email = strings.TrimSpace(methods[0].AuthIdentifier)
+	}
+
+	tawkConfig, err := loadSystemConfigMap(ctx, r.data.db, "tawk")
+	if err != nil {
+		r.logger.Warnw("GetTawkIdentity load tawk config failed", "error", err)
+		tawkConfig = map[string]string{}
+	}
+
+	userIDText := strconv.FormatInt(userInfo.ID, 10)
+	identity := &userBiz.TawkIdentity{
+		Name:   "User " + userIDText,
+		Email:  email,
+		UserID: userIDText,
+	}
+
+	if systemConfigBool(tawkConfig, false, "SecureMode", "secure_mode") {
+		secret := strings.TrimSpace(systemConfigString(tawkConfig, "SecretKey", "secret_key"))
+		if secret != "" && email != "" {
+			identity.Hash = tawkSecureHash(email, secret)
+		}
+	}
+
+	return identity, nil
+}
+
+func tawkSecureHash(email, secret string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(email))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
 func (r *publicUserRepo) GetLoginLog(ctx context.Context, userID int, page, size int) ([]*userBiz.LoginLog, int32, error) {
 	query := r.data.db.ProxySystemLog.Query().
 		Where(
@@ -555,6 +613,9 @@ func (r *publicUserRepo) QueryUserAffiliate(ctx context.Context, userID int) (in
 	for _, datum := range logs {
 		var content systemlog.Commission
 		if err := content.Unmarshal([]byte(datum.Content)); err != nil {
+			continue
+		}
+		if content.Type != systemlog.CommissionTypePurchase && content.Type != systemlog.CommissionTypeRenewal {
 			continue
 		}
 		totalCommission += content.Amount

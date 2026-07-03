@@ -98,6 +98,21 @@ service SystemService {
     };
   }
 
+  // GetTawkConfig 获取Tawk客服配置
+  rpc GetTawkConfig(GetTawkConfigRequest) returns (GetTawkConfigReply) {
+    option (google.api.http) = {
+      get: "/v1/admin/system/tawk_config"
+    };
+  }
+
+  // UpdateTawkConfig 更新Tawk客服配置
+  rpc UpdateTawkConfig(UpdateTawkConfigRequest) returns (UpdateTawkConfigReply) {
+    option (google.api.http) = {
+      put: "/v1/admin/system/tawk_config"
+      body: "*"
+    };
+  }
+
   // UpdateSiteConfig 更新站点配置
   rpc UpdateSiteConfig(UpdateSiteConfigRequest) returns (UpdateSiteConfigReply) {
     option (google.api.http) = {
@@ -223,6 +238,8 @@ message InviteConfig {
   bool forced_invite = 1;         // 是否强制邀请
   int64 referral_percentage = 2;  // 返利百分比
   bool only_first_purchase = 3;   // 是否仅首次购买
+  int64 withdrawal_min_amount = 4; // 最低提现金额（分）
+  string withdrawal_methods = 5;   // 提现方式配置 JSON
 }
 
 // GetCurrencyConfig
@@ -265,6 +282,8 @@ message UpdateInviteConfigRequest {
   bool forced_invite = 1;
   int64 referral_percentage = 2;
   bool only_first_purchase = 3;
+  int64 withdrawal_min_amount = 4;
+  string withdrawal_methods = 5;
 }
 
 message UpdateInviteConfigData {
@@ -394,6 +413,16 @@ message SiteConfig {
   string custom_data = 7;    // 自定义数据
 }
 
+// AdminTawkConfig Tawk客服配置
+message AdminTawkConfig {
+  bool enabled = 1;            // 是否启用
+  string property_id = 2;      // Tawk Property ID
+  string widget_id = 3;        // Tawk Widget ID
+  bool identify_user = 4;      // 是否识别已登录用户
+  bool secure_mode = 5;        // 是否启用Secure Mode
+  string secret_key = 6;       // Secure Mode密钥
+}
+
 // GetRegisterConfig
 message GetRegisterConfigRequest {}
 
@@ -454,6 +483,35 @@ message UpdateSiteConfigReply {
   int32 code = 1;        // 状态码
   string message = 2;    // 消息内容
   UpdateSiteConfigData data = 3; // 响应数据
+}
+
+// GetTawkConfig
+message GetTawkConfigRequest {}
+
+message GetTawkConfigReply {
+  int32 code = 1;        // 状态码
+  string message = 2;    // 消息内容
+  AdminTawkConfig data = 3;   // 响应数据
+}
+
+// UpdateTawkConfig
+message UpdateTawkConfigRequest {
+  bool enabled = 1;
+  string property_id = 2;
+  string widget_id = 3;
+  bool identify_user = 4;
+  bool secure_mode = 5;
+  string secret_key = 6;
+}
+
+message UpdateTawkConfigData {
+  bool success = 1;
+}
+
+message UpdateTawkConfigReply {
+  int32 code = 1;        // 状态码
+  string message = 2;    // 消息内容
+  UpdateTawkConfigData data = 3; // 响应数据
 }
 
 // SubscribeConfig 订阅配置

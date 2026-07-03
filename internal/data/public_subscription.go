@@ -11,14 +11,12 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 
 	"github.com/npanel-dev/NPanel-backend/ent"
-	"github.com/npanel-dev/NPanel-backend/ent/proxyserver"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribeapplication"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuserauthmethod"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	subscriptionbiz "github.com/npanel-dev/NPanel-backend/internal/biz/public/subscription"
-	servermodel "github.com/npanel-dev/NPanel-backend/internal/model/server"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
 )
 
@@ -164,128 +162,14 @@ func (r *publicSubscriptionRepo) GetAvailableNodes(ctx context.Context, userSubs
 	// 4. 转换为NodeInfo并获取服务器信息
 	nodeInfos := make([]*subscriptionbiz.NodeInfo, 0, len(nodes))
 	effectiveNodeGroupID, _ := resolveSubscriptionNodeGroupID(userSubscribe, subscribePlan)
-
-	for _, node := range nodes {
-		// 获取服务器信息
-		server, err := r.data.db.ProxyServer.Query().
-			Where(proxyserver.IDEQ(node.ServerID)).
-			Only(ctx)
-
-		if err != nil {
-			r.log.Warnf("Failed to query server for node %d: %v", node.ID, err)
-			continue
+	deliveryNodes, err := resolveDeliveryNodes(ctx, r.data.db, nodes)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range deliveryNodes {
+		if nodeInfo := deliveryNodeToSubscriptionNodeInfo(item, effectiveNodeGroupID); nodeInfo != nil {
+			nodeInfos = append(nodeInfos, nodeInfo)
 		}
-
-		protocols, err := servermodel.UnmarshalProtocols(server.Protocol)
-		if err != nil {
-			r.log.Warnf("Failed to unmarshal server protocols for server %d: %v", server.ID, err)
-			continue
-		}
-
-		matched, _, _ := matchNodeProtocolConfig(protocols, node.Protocol, node.Port)
-		if matched == nil {
-			r.log.Warnf("No protocol config found for node %d with protocol %s port %d", node.ID, node.Protocol, node.Port)
-			continue
-		}
-
-		nodeInfo := &subscriptionbiz.NodeInfo{
-			ID:          int64(node.ID),
-			Sort:        int(node.Sort),
-			Name:        node.Name,
-			Server:      node.Address,
-			Port:        node.Port,
-			Type:        matched.Type,
-			Tags:        tool.StringToStringSlice(node.Tags),
-			NodeGroupID: resolveNodeGroupID(node.NodeGroupIds, effectiveNodeGroupID),
-
-			Security:                           matched.Security,
-			SNI:                                matched.SNI,
-			AllowInsecure:                      matched.AllowInsecure,
-			Fingerprint:                        matched.Fingerprint,
-			RealityServerAddr:                  matched.RealityServerAddr,
-			RealityServerPort:                  int(matched.RealityServerPort),
-			RealityPrivateKey:                  matched.RealityPrivateKey,
-			RealityPublicKey:                   matched.RealityPublicKey,
-			RealityShortId:                     matched.RealityShortId,
-			Transport:                          matched.Transport,
-			Host:                               matched.Host,
-			Path:                               matched.Path,
-			ServiceName:                        matched.ServiceName,
-			Mc1Mode:                            matched.Mc1Mode,
-			Mc1CidrSegments:                    matched.Mc1CidrSegments,
-			MundoUsername:                      matched.MundoUsername,
-			MundoCertificateFingerprint:        matched.MundoCertificateFingerprint,
-			MundoFakeTitle:                     matched.MundoFakeTitle,
-			MundoFakeMessage:                   matched.MundoFakeMessage,
-			MundoAcceptProxyProtocol:           matched.MundoAcceptProxyProtocol,
-			MundoUseTLSCertificate:             matched.MundoUseTLSCertificate,
-			Method:                             matched.Cipher,
-			ServerKey:                          matched.ServerKey,
-			Flow:                               matched.Flow,
-			HopPorts:                           matched.HopPorts,
-			HopInterval:                        int(matched.HopInterval),
-			ObfsPassword:                       matched.ObfsPassword,
-			UpMbps:                             int(matched.UpMbps),
-			DownMbps:                           int(matched.DownMbps),
-			DisableSNI:                         matched.DisableSNI,
-			ReduceRtt:                          matched.ReduceRtt,
-			UDPRelayMode:                       matched.UDPRelayMode,
-			CongestionController:               matched.CongestionController,
-			PaddingScheme:                      matched.PaddingScheme,
-			Multiplex:                          matched.Multiplex,
-			XhttpMode:                          matched.XhttpMode,
-			XhttpExtra:                         matched.XhttpExtra,
-			Encryption:                         matched.Encryption,
-			EncryptionMode:                     matched.EncryptionMode,
-			EncryptionRtt:                      matched.EncryptionRtt,
-			EncryptionTicket:                   matched.EncryptionTicket,
-			EncryptionServerPadding:            matched.EncryptionServerPadding,
-			EncryptionPrivateKey:               matched.EncryptionPrivateKey,
-			EncryptionClientPadding:            matched.EncryptionClientPadding,
-			EncryptionPassword:                 matched.EncryptionPassword,
-			Ratio:                              matched.Ratio,
-			CertMode:                           matched.CertMode,
-			CertDNSProvider:                    matched.CertDNSProvider,
-			CertDNSEnv:                         matched.CertDNSEnv,
-			SimnetPsk:                          matched.SimnetPsk,
-			SimnetKeyID:                        int(matched.SimnetKeyID),
-			SimnetTicketID:                     matched.SimnetTicketID,
-			SimnetPath:                         matched.SimnetPath,
-			SimnetCarrier:                      matched.SimnetCarrier,
-			SimnetAfEnabled:                    matched.SimnetAfEnabled,
-			SimnetAfPathMode:                   matched.SimnetAfPathMode,
-			SimnetAfPathPrefix:                 matched.SimnetAfPathPrefix,
-			SimnetAfPathSuffix:                 matched.SimnetAfPathSuffix,
-			SimnetAfMagicMode:                  matched.SimnetAfMagicMode,
-			SimnetAfResponseJitterMs:           int(matched.SimnetAfResponseJitterMs),
-			SimnetAfHandshakePolymorphism:      matched.SimnetAfHandshakePolymorphism,
-			SimnetAfSettingsJitter:             matched.SimnetAfSettingsJitter,
-			SimnetAfFakeHeaderInjection:        matched.SimnetAfFakeHeaderInjection,
-			SimnetClientMaxConcurrentStreams:   int(matched.SimnetClientMaxConcurrentStreams),
-			SimnetClientMaxStreamsPerSession:   int(matched.SimnetClientMaxStreamsPerSession),
-			SimnetClientSessionIdleTimeoutSecs: int(matched.SimnetClientSessionIdleTimeoutSecs),
-			SimnetClientMaxUDPSessions:         int(matched.SimnetClientMaxUDPSessions),
-			OmniflowCarrier:                    matched.OmniflowCarrier,
-			OmniflowPath:                       matched.OmniflowPath,
-			OmniflowContentType:                matched.OmniflowContentType,
-			OmniflowProfileJson:                matched.OmniflowProfileJson,
-			OmniflowCaCertPath:                 matched.OmniflowCaCertPath,
-			OmniflowTargetMeta:                 matched.OmniflowTargetMeta,
-			OmniflowSpkiPin:                    matched.OmniflowSpkiPin,
-			OmniflowAdaptiveTlsEnabled:         matched.OmniflowAdaptiveTlsEnabled,
-			OmniflowTlsFingerprint:             matched.OmniflowTlsFingerprint,
-			OmniflowSniMode:                    matched.OmniflowSniMode,
-			OmniflowPaddingMode:                matched.OmniflowPaddingMode,
-			OmniflowAfEnabled:                  matched.OmniflowAfEnabled,
-			OmniflowAfPathMode:                 matched.OmniflowAfPathMode,
-			OmniflowAfPathPrefix:               matched.OmniflowAfPathPrefix,
-			OmniflowAfPathSuffix:               matched.OmniflowAfPathSuffix,
-			OmniflowAfPathRotationSecs:         int(matched.OmniflowAfPathRotationSecs),
-			OmniflowAfPathSkewSlots:            int(matched.OmniflowAfPathSkewSlots),
-		}
-
-		nodeInfo.NormalizeSimnet()
-		nodeInfos = append(nodeInfos, nodeInfo)
 	}
 
 	return nodeInfos, nil

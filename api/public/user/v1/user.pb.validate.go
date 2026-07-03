@@ -241,6 +241,116 @@ var _ interface {
 	ErrorName() string
 } = UserValidationError{}
 
+// Validate checks the field values on TawkIdentityReply with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *TawkIdentityReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TawkIdentityReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// TawkIdentityReplyMultiError, or nil if none found.
+func (m *TawkIdentityReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TawkIdentityReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Email
+
+	// no validation rules for UserId
+
+	// no validation rules for Hash
+
+	if len(errors) > 0 {
+		return TawkIdentityReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// TawkIdentityReplyMultiError is an error wrapping multiple validation errors
+// returned by TawkIdentityReply.ValidateAll() if the designated constraints
+// aren't met.
+type TawkIdentityReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TawkIdentityReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TawkIdentityReplyMultiError) AllErrors() []error { return m }
+
+// TawkIdentityReplyValidationError is the validation error returned by
+// TawkIdentityReply.Validate if the designated constraints aren't met.
+type TawkIdentityReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TawkIdentityReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TawkIdentityReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TawkIdentityReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TawkIdentityReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TawkIdentityReplyValidationError) ErrorName() string {
+	return "TawkIdentityReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e TawkIdentityReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTawkIdentityReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TawkIdentityReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TawkIdentityReplyValidationError{}
+
 // Validate checks the field values on UserAuthMethod with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -5425,6 +5535,8 @@ func (m *CommissionWithdrawRequest) validate(all bool) error {
 
 	// no validation rules for Content
 
+	// no validation rules for Method
+
 	if len(errors) > 0 {
 		return CommissionWithdrawRequestMultiError(errors)
 	}
@@ -5543,6 +5655,10 @@ func (m *WithdrawalLog) validate(all bool) error {
 
 	// no validation rules for UpdatedAt
 
+	// no validation rules for Method
+
+	// no validation rules for ProcessedAt
+
 	if len(errors) > 0 {
 		return WithdrawalLogMultiError(errors)
 	}
@@ -5620,6 +5736,113 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = WithdrawalLogValidationError{}
+
+// Validate checks the field values on TransferCommissionToBalanceRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *TransferCommissionToBalanceRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TransferCommissionToBalanceRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// TransferCommissionToBalanceRequestMultiError, or nil if none found.
+func (m *TransferCommissionToBalanceRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TransferCommissionToBalanceRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Amount
+
+	if len(errors) > 0 {
+		return TransferCommissionToBalanceRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// TransferCommissionToBalanceRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// TransferCommissionToBalanceRequest.ValidateAll() if the designated
+// constraints aren't met.
+type TransferCommissionToBalanceRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TransferCommissionToBalanceRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TransferCommissionToBalanceRequestMultiError) AllErrors() []error { return m }
+
+// TransferCommissionToBalanceRequestValidationError is the validation error
+// returned by TransferCommissionToBalanceRequest.Validate if the designated
+// constraints aren't met.
+type TransferCommissionToBalanceRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TransferCommissionToBalanceRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TransferCommissionToBalanceRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TransferCommissionToBalanceRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TransferCommissionToBalanceRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TransferCommissionToBalanceRequestValidationError) ErrorName() string {
+	return "TransferCommissionToBalanceRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e TransferCommissionToBalanceRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTransferCommissionToBalanceRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TransferCommissionToBalanceRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TransferCommissionToBalanceRequestValidationError{}
 
 // Validate checks the field values on QueryWithdrawalLogRequest with the rules
 // defined in the proto definition for this message. If any rules are

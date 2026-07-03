@@ -64,6 +64,54 @@ func TestUnmarshalProtocolsMundoAliases(t *testing.T) {
 	}
 }
 
+func TestUnmarshalProtocolsProxyProtocolAliases(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		json string
+	}{
+		{
+			name: "snake",
+			json: `[{"type":"vless","port":443,"enable":true,"transport":"tcp","proxy_protocol":true}]`,
+		},
+		{
+			name: "camel",
+			json: `[{"type":"vless","port":443,"enable":true,"transport":"tcp","proxyProtocol":true}]`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			protocols, err := UnmarshalProtocols(tc.json)
+			if err != nil {
+				t.Fatalf("UnmarshalProtocols returned error: %v", err)
+			}
+			if len(protocols) != 1 {
+				t.Fatalf("protocol count = %d, want 1", len(protocols))
+			}
+			if !protocols[0].ProxyProtocol {
+				t.Fatalf("ProxyProtocol = false, want true: %+v", protocols[0])
+			}
+			if protocols[0].MundoAcceptProxyProtocol {
+				t.Fatalf("ProxyProtocol should not set MundoAcceptProxyProtocol: %+v", protocols[0])
+			}
+		})
+	}
+}
+
+func TestUnmarshalProtocolsAcceptProxyProtocolRemainsMundoAlias(t *testing.T) {
+	protocols, err := UnmarshalProtocols(`[{"type":"vless","port":443,"enable":true,"transport":"tcp","acceptProxyProtocol":true}]`)
+	if err != nil {
+		t.Fatalf("UnmarshalProtocols returned error: %v", err)
+	}
+	if len(protocols) != 1 {
+		t.Fatalf("protocol count = %d, want 1", len(protocols))
+	}
+	if protocols[0].ProxyProtocol {
+		t.Fatalf("acceptProxyProtocol should not set generic ProxyProtocol: %+v", protocols[0])
+	}
+	if !protocols[0].MundoAcceptProxyProtocol {
+		t.Fatalf("existing Mundo acceptProxyProtocol alias was not preserved: %+v", protocols[0])
+	}
+}
+
 func TestValidateProtocolsAllowsSameTypeDifferentPorts(t *testing.T) {
 	err := ValidateProtocols([]*Protocol{
 		{Type: "mx", Port: 443, Transport: "mc1", Enable: true},

@@ -23,6 +23,7 @@ import (
 	adminticket "github.com/npanel-dev/NPanel-backend/internal/service/admin/ticket"
 	admintool "github.com/npanel-dev/NPanel-backend/internal/service/admin/tool"
 	adminuser "github.com/npanel-dev/NPanel-backend/internal/service/admin/user"
+	adminwithdrawal "github.com/npanel-dev/NPanel-backend/internal/service/admin/withdrawal"
 	"github.com/npanel-dev/NPanel-backend/internal/service/auth"
 	authoauth "github.com/npanel-dev/NPanel-backend/internal/service/auth/oauth"
 	"github.com/npanel-dev/NPanel-backend/internal/service/common"
@@ -60,6 +61,7 @@ var ProviderSet = wire.NewSet(
 	adminticket.NewTicketService,
 	adminredemption.NewRedemptionService,
 	admintool.NewToolService,
+	adminwithdrawal.NewWithdrawalService,
 	maingroup.NewGroupService,
 	// Admin User模块服务
 	adminuser.NewUserService,

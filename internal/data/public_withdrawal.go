@@ -2,13 +2,17 @@ package data
 
 import (
 	"context"
+	"strconv"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuserwithdrawal"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/public/withdrawal"
 	systemlog "github.com/npanel-dev/NPanel-backend/internal/model/log"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
 )
 
 // withdrawalRepo 提现数据仓储
@@ -25,28 +29,22 @@ func NewWithdrawalRepo(data *Data, logger log.Logger) withdrawal.WithdrawalRepo 
 	}
 }
 
-// CreateWithdrawal 创建提现记录
-func (r *withdrawalRepo) CreateWithdrawal(ctx context.Context, userID int64, amount int64, content string) error {
-	_, err := r.data.db.ProxyUserWithdrawal.Create().
-		SetUserID(userID).
-		SetAmount(amount).
-		SetContent(content).
-		SetStatus(0).
-		SetReason("").
-		Save(ctx)
-	return err
-}
-
-func (r *withdrawalRepo) ProcessCommissionWithdraw(ctx context.Context, userID int64, amount int64, content string, commission int64) error {
-	return r.data.db.TX(ctx, func(tx *ent.Tx) error {
-		if err := tx.ProxyUser.UpdateOneID(userID).
-			SetCommission(commission).
-			Exec(ctx); err != nil {
+func (r *withdrawalRepo) ProcessCommissionWithdraw(ctx context.Context, userID int64, amount int64, method string, content string) (*withdrawal.Withdrawal, error) {
+	var created *ent.ProxyUserWithdrawal
+	err := r.data.db.TX(ctx, func(tx *ent.Tx) error {
+		affected, err := tx.ProxyUser.Update().
+			Where(proxyuser.IDEQ(userID), proxyuser.CommissionGTE(amount)).
+			AddCommission(-amount).
+			Save(ctx)
+		if err != nil {
 			return err
+		}
+		if affected == 0 {
+			return responsecode.NewKratosError(responsecode.ErrUserCommissionNotEnough)
 		}
 
 		payload, err := (&systemlog.Commission{
-			Type:      systemlog.CommissionTypeConvertBalance,
+			Type:      systemlog.CommissionTypeWithdraw,
 			Amount:    amount,
 			Timestamp: time.Now().UnixMilli(),
 		}).Marshal()
@@ -64,17 +62,84 @@ func (r *withdrawalRepo) ProcessCommissionWithdraw(ctx context.Context, userID i
 			return err
 		}
 
-		if _, err := tx.ProxyUserWithdrawal.Create().
+		created, err = tx.ProxyUserWithdrawal.Create().
 			SetUserID(userID).
 			SetAmount(amount).
+			SetMethod(method).
 			SetContent(content).
 			SetStatus(0).
 			SetReason("").
-			Save(ctx); err != nil {
+			Save(ctx)
+		if err != nil {
 			return err
 		}
 
 		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.convertToModel(created), nil
+}
+
+func (r *withdrawalRepo) TransferCommissionToBalance(ctx context.Context, userID int64, amount int64) error {
+	now := time.Now()
+	return r.data.db.TX(ctx, func(tx *ent.Tx) error {
+		affected, err := tx.ProxyUser.Update().
+			Where(proxyuser.IDEQ(userID), proxyuser.CommissionGTE(amount)).
+			AddCommission(-amount).
+			AddBalance(amount).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return responsecode.NewKratosError(responsecode.ErrUserCommissionNotEnough)
+		}
+
+		commissionPayload, err := (&systemlog.Commission{
+			Type:      systemlog.CommissionTypeConvertBalance,
+			Amount:    amount,
+			Timestamp: now.UnixMilli(),
+		}).Marshal()
+		if err != nil {
+			return err
+		}
+		if _, err := tx.ProxySystemLog.Create().
+			SetType(int8(systemlog.TypeCommission)).
+			SetDate(now.Format(time.DateOnly)).
+			SetObjectID(userID).
+			SetContent(string(commissionPayload)).
+			SetCreatedAt(now).
+			Save(ctx); err != nil {
+			return err
+		}
+
+		user, err := tx.ProxyUser.Get(ctx, userID)
+		if err != nil {
+			return err
+		}
+		balance := int64(0)
+		if user.Balance != nil {
+			balance = *user.Balance
+		}
+		balancePayload, err := (&systemlog.Balance{
+			Type:      systemlog.BalanceTypeCommissionTransfer,
+			Amount:    amount,
+			Balance:   balance,
+			Timestamp: now.UnixMilli(),
+		}).Marshal()
+		if err != nil {
+			return err
+		}
+		_, err = tx.ProxySystemLog.Create().
+			SetType(int8(systemlog.TypeBalance)).
+			SetDate(now.Format(time.DateOnly)).
+			SetObjectID(userID).
+			SetContent(string(balancePayload)).
+			SetCreatedAt(now).
+			Save(ctx)
+		return err
 	})
 }
 
@@ -137,6 +202,28 @@ func (r *withdrawalRepo) GetUserByID(ctx context.Context, userID int64) (*withdr
 	}, nil
 }
 
+func (r *withdrawalRepo) GetInviteConfig(ctx context.Context) (*withdrawal.InviteConfig, error) {
+	entries, err := r.data.db.ProxySystem.Query().
+		Where(proxysystem.CategoryEQ("invite")).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	config := &withdrawal.InviteConfig{}
+	for _, entry := range entries {
+		switch entry.Key {
+		case "WithdrawalMinAmount", "withdrawal_min_amount":
+			value, err := strconv.ParseInt(entry.Value, 10, 64)
+			if err == nil {
+				config.WithdrawalMinAmount = value
+			}
+		case "WithdrawalMethods", "withdrawal_methods", "WithdrawalMethod":
+			config.WithdrawalMethods = entry.Value
+		}
+	}
+	return config, nil
+}
+
 // convertToModel 转换为业务模型
 func (r *withdrawalRepo) convertToModel(entity *ent.ProxyUserWithdrawal) *withdrawal.Withdrawal {
 	content := ""
@@ -148,13 +235,22 @@ func (r *withdrawalRepo) convertToModel(entity *ent.ProxyUserWithdrawal) *withdr
 		reason = *entity.Reason
 	}
 	return &withdrawal.Withdrawal{
-		ID:        entity.ID,
-		UserID:    entity.UserID,
-		Amount:    entity.Amount,
-		Content:   content,
-		Status:    int8(entity.Status),
-		Reason:    reason,
-		CreatedAt: entity.CreatedAt,
-		UpdatedAt: entity.UpdatedAt,
+		ID:          entity.ID,
+		UserID:      entity.UserID,
+		Amount:      entity.Amount,
+		Method:      valueOrEmpty(entity.Method),
+		Content:     content,
+		Status:      int8(entity.Status),
+		Reason:      reason,
+		CreatedAt:   entity.CreatedAt,
+		UpdatedAt:   entity.UpdatedAt,
+		ProcessedAt: entity.ProcessedAt,
 	}
+}
+
+func valueOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }

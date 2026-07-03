@@ -28,6 +28,7 @@ const OperationSystemServiceGetRegisterConfig = "/api.admin.system.v1.SystemServ
 const OperationSystemServiceGetSiteConfig = "/api.admin.system.v1.SystemService/GetSiteConfig"
 const OperationSystemServiceGetSubscribeConfig = "/api.admin.system.v1.SystemService/GetSubscribeConfig"
 const OperationSystemServiceGetSystemModule = "/api.admin.system.v1.SystemService/GetSystemModule"
+const OperationSystemServiceGetTawkConfig = "/api.admin.system.v1.SystemService/GetTawkConfig"
 const OperationSystemServiceGetTosConfig = "/api.admin.system.v1.SystemService/GetTosConfig"
 const OperationSystemServiceGetVerifyCodeConfig = "/api.admin.system.v1.SystemService/GetVerifyCodeConfig"
 const OperationSystemServiceGetVerifyConfig = "/api.admin.system.v1.SystemService/GetVerifyConfig"
@@ -41,6 +42,7 @@ const OperationSystemServiceUpdatePrivacyPolicyConfig = "/api.admin.system.v1.Sy
 const OperationSystemServiceUpdateRegisterConfig = "/api.admin.system.v1.SystemService/UpdateRegisterConfig"
 const OperationSystemServiceUpdateSiteConfig = "/api.admin.system.v1.SystemService/UpdateSiteConfig"
 const OperationSystemServiceUpdateSubscribeConfig = "/api.admin.system.v1.SystemService/UpdateSubscribeConfig"
+const OperationSystemServiceUpdateTawkConfig = "/api.admin.system.v1.SystemService/UpdateTawkConfig"
 const OperationSystemServiceUpdateTosConfig = "/api.admin.system.v1.SystemService/UpdateTosConfig"
 const OperationSystemServiceUpdateVerifyCodeConfig = "/api.admin.system.v1.SystemService/UpdateVerifyCodeConfig"
 const OperationSystemServiceUpdateVerifyConfig = "/api.admin.system.v1.SystemService/UpdateVerifyConfig"
@@ -64,6 +66,8 @@ type SystemServiceHTTPServer interface {
 	GetSubscribeConfig(context.Context, *GetSubscribeConfigRequest) (*GetSubscribeConfigReply, error)
 	// GetSystemModule GetSystemModule 获取系统模块信息
 	GetSystemModule(context.Context, *GetSystemModuleRequest) (*GetSystemModuleReply, error)
+	// GetTawkConfig GetTawkConfig 获取Tawk客服配置
+	GetTawkConfig(context.Context, *GetTawkConfigRequest) (*GetTawkConfigReply, error)
 	// GetTosConfig GetTosConfig 获取服务条款配置
 	GetTosConfig(context.Context, *GetTosConfigRequest) (*GetTosConfigReply, error)
 	// GetVerifyCodeConfig GetVerifyCodeConfig 获取验证码配置
@@ -90,6 +94,8 @@ type SystemServiceHTTPServer interface {
 	UpdateSiteConfig(context.Context, *UpdateSiteConfigRequest) (*UpdateSiteConfigReply, error)
 	// UpdateSubscribeConfig UpdateSubscribeConfig 更新订阅配置
 	UpdateSubscribeConfig(context.Context, *UpdateSubscribeConfigRequest) (*UpdateSubscribeConfigReply, error)
+	// UpdateTawkConfig UpdateTawkConfig 更新Tawk客服配置
+	UpdateTawkConfig(context.Context, *UpdateTawkConfigRequest) (*UpdateTawkConfigReply, error)
 	// UpdateTosConfig UpdateTosConfig 更新服务条款配置
 	UpdateTosConfig(context.Context, *UpdateTosConfigRequest) (*UpdateTosConfigReply, error)
 	// UpdateVerifyCodeConfig UpdateVerifyCodeConfig 更新验证码配置
@@ -112,6 +118,8 @@ func RegisterSystemServiceHTTPServer(s *http.Server, srv SystemServiceHTTPServer
 	r.GET("/v1/admin/system/register_config", _SystemService_GetRegisterConfig0_HTTP_Handler(srv))
 	r.PUT("/v1/admin/system/register_config", _SystemService_UpdateRegisterConfig0_HTTP_Handler(srv))
 	r.GET("/v1/admin/system/site_config", _SystemService_GetSiteConfig0_HTTP_Handler(srv))
+	r.GET("/v1/admin/system/tawk_config", _SystemService_GetTawkConfig0_HTTP_Handler(srv))
+	r.PUT("/v1/admin/system/tawk_config", _SystemService_UpdateTawkConfig0_HTTP_Handler(srv))
 	r.PUT("/v1/admin/system/site_config", _SystemService_UpdateSiteConfig0_HTTP_Handler(srv))
 	r.GET("/v1/admin/system/subscribe_config", _SystemService_GetSubscribeConfig0_HTTP_Handler(srv))
 	r.PUT("/v1/admin/system/subscribe_config", _SystemService_UpdateSubscribeConfig0_HTTP_Handler(srv))
@@ -366,6 +374,47 @@ func _SystemService_GetSiteConfig0_HTTP_Handler(srv SystemServiceHTTPServer) fun
 			return err
 		}
 		reply := out.(*GetSiteConfigReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SystemService_GetTawkConfig0_HTTP_Handler(srv SystemServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetTawkConfigRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSystemServiceGetTawkConfig)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetTawkConfig(ctx, req.(*GetTawkConfigRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetTawkConfigReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SystemService_UpdateTawkConfig0_HTTP_Handler(srv SystemServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateTawkConfigRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSystemServiceUpdateTawkConfig)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateTawkConfig(ctx, req.(*UpdateTawkConfigRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateTawkConfigReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -657,6 +706,8 @@ type SystemServiceHTTPClient interface {
 	GetSubscribeConfig(ctx context.Context, req *GetSubscribeConfigRequest, opts ...http.CallOption) (rsp *GetSubscribeConfigReply, err error)
 	// GetSystemModule GetSystemModule 获取系统模块信息
 	GetSystemModule(ctx context.Context, req *GetSystemModuleRequest, opts ...http.CallOption) (rsp *GetSystemModuleReply, err error)
+	// GetTawkConfig GetTawkConfig 获取Tawk客服配置
+	GetTawkConfig(ctx context.Context, req *GetTawkConfigRequest, opts ...http.CallOption) (rsp *GetTawkConfigReply, err error)
 	// GetTosConfig GetTosConfig 获取服务条款配置
 	GetTosConfig(ctx context.Context, req *GetTosConfigRequest, opts ...http.CallOption) (rsp *GetTosConfigReply, err error)
 	// GetVerifyCodeConfig GetVerifyCodeConfig 获取验证码配置
@@ -683,6 +734,8 @@ type SystemServiceHTTPClient interface {
 	UpdateSiteConfig(ctx context.Context, req *UpdateSiteConfigRequest, opts ...http.CallOption) (rsp *UpdateSiteConfigReply, err error)
 	// UpdateSubscribeConfig UpdateSubscribeConfig 更新订阅配置
 	UpdateSubscribeConfig(ctx context.Context, req *UpdateSubscribeConfigRequest, opts ...http.CallOption) (rsp *UpdateSubscribeConfigReply, err error)
+	// UpdateTawkConfig UpdateTawkConfig 更新Tawk客服配置
+	UpdateTawkConfig(ctx context.Context, req *UpdateTawkConfigRequest, opts ...http.CallOption) (rsp *UpdateTawkConfigReply, err error)
 	// UpdateTosConfig UpdateTosConfig 更新服务条款配置
 	UpdateTosConfig(ctx context.Context, req *UpdateTosConfigRequest, opts ...http.CallOption) (rsp *UpdateTosConfigReply, err error)
 	// UpdateVerifyCodeConfig UpdateVerifyCodeConfig 更新验证码配置
@@ -817,6 +870,20 @@ func (c *SystemServiceHTTPClientImpl) GetSystemModule(ctx context.Context, in *G
 	pattern := "/v1/admin/system/module"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationSystemServiceGetSystemModule))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetTawkConfig GetTawkConfig 获取Tawk客服配置
+func (c *SystemServiceHTTPClientImpl) GetTawkConfig(ctx context.Context, in *GetTawkConfigRequest, opts ...http.CallOption) (*GetTawkConfigReply, error) {
+	var out GetTawkConfigReply
+	pattern := "/v1/admin/system/tawk_config"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationSystemServiceGetTawkConfig))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
@@ -999,6 +1066,20 @@ func (c *SystemServiceHTTPClientImpl) UpdateSubscribeConfig(ctx context.Context,
 	pattern := "/v1/admin/system/subscribe_config"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationSystemServiceUpdateSubscribeConfig))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateTawkConfig UpdateTawkConfig 更新Tawk客服配置
+func (c *SystemServiceHTTPClientImpl) UpdateTawkConfig(ctx context.Context, in *UpdateTawkConfigRequest, opts ...http.CallOption) (*UpdateTawkConfigReply, error) {
+	var out UpdateTawkConfigReply
+	pattern := "/v1/admin/system/tawk_config"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationSystemServiceUpdateTawkConfig))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {

@@ -18,12 +18,16 @@ const (
 	FieldUserID = "user_id"
 	// FieldAmount holds the string denoting the amount field in the database.
 	FieldAmount = "amount"
+	// FieldMethod holds the string denoting the method field in the database.
+	FieldMethod = "method"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldReason holds the string denoting the reason field in the database.
 	FieldReason = "reason"
+	// FieldProcessedAt holds the string denoting the processed_at field in the database.
+	FieldProcessedAt = "processed_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -46,9 +50,11 @@ var Columns = []string{
 	FieldID,
 	FieldUserID,
 	FieldAmount,
+	FieldMethod,
 	FieldContent,
 	FieldStatus,
 	FieldReason,
+	FieldProcessedAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -64,6 +70,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// MethodValidator is a validator for the "method" field. It is called by the builders before save.
+	MethodValidator func(string) error
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus int8
 	// ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
@@ -96,6 +104,11 @@ func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAmount, opts...).ToFunc()
 }
 
+// ByMethod orders the results by the method field.
+func ByMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMethod, opts...).ToFunc()
+}
+
 // ByContent orders the results by the content field.
 func ByContent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContent, opts...).ToFunc()
@@ -109,6 +122,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByReason orders the results by the reason field.
 func ByReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReason, opts...).ToFunc()
+}
+
+// ByProcessedAt orders the results by the processed_at field.
+func ByProcessedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProcessedAt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

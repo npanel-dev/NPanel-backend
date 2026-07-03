@@ -28,6 +28,7 @@ func (ProxyUser) Fields() []ent.Field {
 		field.String("password").MaxLen(100).NotEmpty().Comment("用户密码"),
 		field.String("algo").MaxLen(20).Default("default").Comment("加密算法"),
 		field.String("salt").MaxLen(20).Optional().Nillable().Comment("密码盐值"),
+		field.String("source_panel").MaxLen(64).Default("npanel").Comment("账号来源面板"),
 		field.Text("avatar").Optional().Nillable().Comment("用户头像"),
 		field.Int64("balance").Optional().Nillable().Default(0).Comment("用户余额"),
 		field.Int64("telegram").Optional().Nillable().Comment("Telegram 账号"),

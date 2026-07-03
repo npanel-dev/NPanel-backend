@@ -192,9 +192,11 @@ func (s *CommonService) GetGlobalConfig(ctx context.Context, req *pb.GetGlobalCo
 	// Invite config
 	if config.Invite != nil {
 		configData.Invite = &pb.InviteConfig{
-			ForcedInvite:       config.Invite.ForcedInvite,
-			ReferralPercentage: config.Invite.ReferralPercentage,
-			OnlyFirstPurchase:  config.Invite.OnlyFirstPurchase,
+			ForcedInvite:        config.Invite.ForcedInvite,
+			ReferralPercentage:  config.Invite.ReferralPercentage,
+			OnlyFirstPurchase:   config.Invite.OnlyFirstPurchase,
+			WithdrawalMinAmount: config.Invite.WithdrawalMinAmount,
+			WithdrawalMethods:   config.Invite.WithdrawalMethods,
 		}
 	} else {
 		configData.Invite = &pb.InviteConfig{}
@@ -218,6 +220,19 @@ func (s *CommonService) GetGlobalConfig(ctx context.Context, req *pb.GetGlobalCo
 		}
 	} else {
 		configData.Subscribe = &pb.SubscribeConfig{}
+	}
+
+	// Tawk config. Secret key is intentionally not exposed in public config.
+	if config.Tawk != nil {
+		configData.Tawk = &pb.PublicTawkConfig{
+			Enabled:      config.Tawk.Enabled,
+			PropertyId:   config.Tawk.PropertyID,
+			WidgetId:     config.Tawk.WidgetID,
+			IdentifyUser: config.Tawk.IdentifyUser,
+			SecureMode:   config.Tawk.SecureMode,
+		}
+	} else {
+		configData.Tawk = &pb.PublicTawkConfig{}
 	}
 
 	// Verify code config

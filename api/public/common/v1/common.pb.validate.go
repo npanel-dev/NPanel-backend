@@ -2284,6 +2284,10 @@ func (m *InviteConfig) validate(all bool) error {
 
 	// no validation rules for OnlyFirstPurchase
 
+	// no validation rules for WithdrawalMinAmount
+
+	// no validation rules for WithdrawalMethods
+
 	if len(errors) > 0 {
 		return InviteConfigMultiError(errors)
 	}
@@ -2576,6 +2580,116 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SubscribeConfigValidationError{}
+
+// Validate checks the field values on PublicTawkConfig with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *PublicTawkConfig) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on PublicTawkConfig with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// PublicTawkConfigMultiError, or nil if none found.
+func (m *PublicTawkConfig) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *PublicTawkConfig) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Enabled
+
+	// no validation rules for PropertyId
+
+	// no validation rules for WidgetId
+
+	// no validation rules for IdentifyUser
+
+	// no validation rules for SecureMode
+
+	if len(errors) > 0 {
+		return PublicTawkConfigMultiError(errors)
+	}
+
+	return nil
+}
+
+// PublicTawkConfigMultiError is an error wrapping multiple validation errors
+// returned by PublicTawkConfig.ValidateAll() if the designated constraints
+// aren't met.
+type PublicTawkConfigMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m PublicTawkConfigMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m PublicTawkConfigMultiError) AllErrors() []error { return m }
+
+// PublicTawkConfigValidationError is the validation error returned by
+// PublicTawkConfig.Validate if the designated constraints aren't met.
+type PublicTawkConfigValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e PublicTawkConfigValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e PublicTawkConfigValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e PublicTawkConfigValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e PublicTawkConfigValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e PublicTawkConfigValidationError) ErrorName() string { return "PublicTawkConfigValidationError" }
+
+// Error satisfies the builtin error interface
+func (e PublicTawkConfigValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPublicTawkConfig.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = PublicTawkConfigValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = PublicTawkConfigValidationError{}
 
 // Validate checks the field values on PublicVerifyCodeConfig with the rules
 // defined in the proto definition for this message. If any rules are
@@ -2907,6 +3021,35 @@ func (m *GetGlobalConfigReply) validate(all bool) error {
 	}
 
 	// no validation rules for WebAd
+
+	if all {
+		switch v := interface{}(m.GetTawk()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GetGlobalConfigReplyValidationError{
+					field:  "Tawk",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GetGlobalConfigReplyValidationError{
+					field:  "Tawk",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTawk()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GetGlobalConfigReplyValidationError{
+				field:  "Tawk",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
 		return GetGlobalConfigReplyMultiError(errors)

@@ -65,6 +65,11 @@ func Amount(v int64) predicate.ProxyUserWithdrawal {
 	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldAmount, v))
 }
 
+// Method applies equality check predicate on the "method" field. It's identical to MethodEQ.
+func Method(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldMethod, v))
+}
+
 // Content applies equality check predicate on the "content" field. It's identical to ContentEQ.
 func Content(v string) predicate.ProxyUserWithdrawal {
 	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldContent, v))
@@ -78,6 +83,11 @@ func Status(v int8) predicate.ProxyUserWithdrawal {
 // Reason applies equality check predicate on the "reason" field. It's identical to ReasonEQ.
 func Reason(v string) predicate.ProxyUserWithdrawal {
 	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldReason, v))
+}
+
+// ProcessedAt applies equality check predicate on the "processed_at" field. It's identical to ProcessedAtEQ.
+func ProcessedAt(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldProcessedAt, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
@@ -148,6 +158,81 @@ func AmountLT(v int64) predicate.ProxyUserWithdrawal {
 // AmountLTE applies the LTE predicate on the "amount" field.
 func AmountLTE(v int64) predicate.ProxyUserWithdrawal {
 	return predicate.ProxyUserWithdrawal(sql.FieldLTE(FieldAmount, v))
+}
+
+// MethodEQ applies the EQ predicate on the "method" field.
+func MethodEQ(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldMethod, v))
+}
+
+// MethodNEQ applies the NEQ predicate on the "method" field.
+func MethodNEQ(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldNEQ(FieldMethod, v))
+}
+
+// MethodIn applies the In predicate on the "method" field.
+func MethodIn(vs ...string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldIn(FieldMethod, vs...))
+}
+
+// MethodNotIn applies the NotIn predicate on the "method" field.
+func MethodNotIn(vs ...string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldNotIn(FieldMethod, vs...))
+}
+
+// MethodGT applies the GT predicate on the "method" field.
+func MethodGT(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldGT(FieldMethod, v))
+}
+
+// MethodGTE applies the GTE predicate on the "method" field.
+func MethodGTE(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldGTE(FieldMethod, v))
+}
+
+// MethodLT applies the LT predicate on the "method" field.
+func MethodLT(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldLT(FieldMethod, v))
+}
+
+// MethodLTE applies the LTE predicate on the "method" field.
+func MethodLTE(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldLTE(FieldMethod, v))
+}
+
+// MethodContains applies the Contains predicate on the "method" field.
+func MethodContains(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldContains(FieldMethod, v))
+}
+
+// MethodHasPrefix applies the HasPrefix predicate on the "method" field.
+func MethodHasPrefix(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldHasPrefix(FieldMethod, v))
+}
+
+// MethodHasSuffix applies the HasSuffix predicate on the "method" field.
+func MethodHasSuffix(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldHasSuffix(FieldMethod, v))
+}
+
+// MethodIsNil applies the IsNil predicate on the "method" field.
+func MethodIsNil() predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldIsNull(FieldMethod))
+}
+
+// MethodNotNil applies the NotNil predicate on the "method" field.
+func MethodNotNil() predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldNotNull(FieldMethod))
+}
+
+// MethodEqualFold applies the EqualFold predicate on the "method" field.
+func MethodEqualFold(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldEqualFold(FieldMethod, v))
+}
+
+// MethodContainsFold applies the ContainsFold predicate on the "method" field.
+func MethodContainsFold(v string) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldContainsFold(FieldMethod, v))
 }
 
 // ContentEQ applies the EQ predicate on the "content" field.
@@ -338,6 +423,56 @@ func ReasonEqualFold(v string) predicate.ProxyUserWithdrawal {
 // ReasonContainsFold applies the ContainsFold predicate on the "reason" field.
 func ReasonContainsFold(v string) predicate.ProxyUserWithdrawal {
 	return predicate.ProxyUserWithdrawal(sql.FieldContainsFold(FieldReason, v))
+}
+
+// ProcessedAtEQ applies the EQ predicate on the "processed_at" field.
+func ProcessedAtEQ(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldEQ(FieldProcessedAt, v))
+}
+
+// ProcessedAtNEQ applies the NEQ predicate on the "processed_at" field.
+func ProcessedAtNEQ(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldNEQ(FieldProcessedAt, v))
+}
+
+// ProcessedAtIn applies the In predicate on the "processed_at" field.
+func ProcessedAtIn(vs ...time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldIn(FieldProcessedAt, vs...))
+}
+
+// ProcessedAtNotIn applies the NotIn predicate on the "processed_at" field.
+func ProcessedAtNotIn(vs ...time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldNotIn(FieldProcessedAt, vs...))
+}
+
+// ProcessedAtGT applies the GT predicate on the "processed_at" field.
+func ProcessedAtGT(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldGT(FieldProcessedAt, v))
+}
+
+// ProcessedAtGTE applies the GTE predicate on the "processed_at" field.
+func ProcessedAtGTE(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldGTE(FieldProcessedAt, v))
+}
+
+// ProcessedAtLT applies the LT predicate on the "processed_at" field.
+func ProcessedAtLT(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldLT(FieldProcessedAt, v))
+}
+
+// ProcessedAtLTE applies the LTE predicate on the "processed_at" field.
+func ProcessedAtLTE(v time.Time) predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldLTE(FieldProcessedAt, v))
+}
+
+// ProcessedAtIsNil applies the IsNil predicate on the "processed_at" field.
+func ProcessedAtIsNil() predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldIsNull(FieldProcessedAt))
+}
+
+// ProcessedAtNotNil applies the NotNil predicate on the "processed_at" field.
+func ProcessedAtNotNil() predicate.ProxyUserWithdrawal {
+	return predicate.ProxyUserWithdrawal(sql.FieldNotNull(FieldProcessedAt))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

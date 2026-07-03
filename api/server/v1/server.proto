@@ -322,6 +322,7 @@ message Protocol {
 	int32 simnet_client_session_idle_timeout_secs = 138;
 	int32 simnet_inbound_max_udp_streams_per_session = 139;
 	int32 simnet_client_max_udp_sessions = 140;
+	bool proxy_protocol = 141;
 
 	// OmniFlow 基础配置
 	string omniflow_carrier = 73;                    // h2 或 h3

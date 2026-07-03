@@ -3856,6 +3856,37 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.system.v1.UpdateSubscribeConfigReply'
+    /v1/admin/system/tawk_config:
+        get:
+            tags:
+                - SystemService
+            description: GetTawkConfig 获取Tawk客服配置
+            operationId: SystemService_GetTawkConfig
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.system.v1.GetTawkConfigReply'
+        put:
+            tags:
+                - SystemService
+            description: UpdateTawkConfig 更新Tawk客服配置
+            operationId: SystemService_UpdateTawkConfig
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.system.v1.UpdateTawkConfigRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.system.v1.UpdateTawkConfigReply'
     /v1/admin/system/tos_config:
         get:
             tags:
@@ -4736,6 +4767,76 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.user.v1.GetUserSubscribeTrafficLogsReply'
+    /v1/admin/withdrawal/approve:
+        post:
+            tags:
+                - WithdrawalService
+            operationId: WithdrawalService_ApproveWithdrawal
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.withdrawal.v1.ApproveWithdrawalRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.withdrawal.v1.ApproveWithdrawalReply'
+    /v1/admin/withdrawal/list:
+        get:
+            tags:
+                - WithdrawalService
+            operationId: WithdrawalService_GetWithdrawalList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: size
+                  in: query
+                  schema:
+                    type: string
+                - name: userId
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: method
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.withdrawal.v1.GetWithdrawalListReply'
+    /v1/admin/withdrawal/reject:
+        post:
+            tags:
+                - WithdrawalService
+            operationId: WithdrawalService_RejectWithdrawal
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.withdrawal.v1.RejectWithdrawalRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.withdrawal.v1.RejectWithdrawalReply'
     /v1/auth/admin/captcha/generate:
         post:
             tags:
@@ -6068,6 +6169,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.public.user.v1.BindTelegramReply'
+    /v1/public/user/commission/transfer_balance:
+        post:
+            tags:
+                - PublicUser
+            description: TransferCommissionToBalance 佣金划转到余额
+            operationId: PublicUser_TransferCommissionToBalance
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.public.user.v1.TransferCommissionToBalanceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /v1/public/user/commission_log:
         get:
             tags:
@@ -6328,6 +6445,19 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /v1/public/user/tawk_identity:
+        get:
+            tags:
+                - PublicUser
+            description: GetTawkIdentity 获取Tawk访客身份签名
+            operationId: PublicUser_GetTawkIdentity
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.public.user.v1.TawkIdentityReply'
     /v1/public/user/traffic_stats:
         get:
             tags:
@@ -10877,6 +11007,8 @@ components:
                     type: array
                     items:
                         type: string
+                targetNodeId:
+                    type: string
             description: Node Requests/Replies
         api.admin.server.v1.CreateServerData:
             type: object
@@ -11082,6 +11214,8 @@ components:
                 createdAt:
                     type: string
                 updatedAt:
+                    type: string
+                targetNodeId:
                     type: string
         api.admin.server.v1.Protocol:
             type: object
@@ -11297,6 +11431,8 @@ components:
                 simnetClientMaxUdpSessions:
                     type: integer
                     format: int32
+                proxyProtocol:
+                    type: boolean
                 omniflowCarrier:
                     type: string
                     description: OmniFlow 基础配置
@@ -11600,6 +11736,8 @@ components:
                     type: array
                     items:
                         type: string
+                targetNodeId:
+                    type: string
         api.admin.server.v1.UpdateServerData:
             type: object
             properties:
@@ -12551,6 +12689,22 @@ components:
                 detailContent:
                     type: string
             description: UpdateSubscribeRequest 更新订阅套餐请求
+        api.admin.system.v1.AdminTawkConfig:
+            type: object
+            properties:
+                enabled:
+                    type: boolean
+                propertyId:
+                    type: string
+                widgetId:
+                    type: string
+                identifyUser:
+                    type: boolean
+                secureMode:
+                    type: boolean
+                secretKey:
+                    type: string
+            description: AdminTawkConfig Tawk客服配置
         api.admin.system.v1.CurrencyConfig:
             type: object
             properties:
@@ -12658,6 +12812,16 @@ components:
                     type: string
                 data:
                     $ref: '#/components/schemas/api.admin.system.v1.SystemModule'
+        api.admin.system.v1.GetTawkConfigReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.system.v1.AdminTawkConfig'
         api.admin.system.v1.GetTosConfigReply:
             type: object
             properties:
@@ -12697,6 +12861,10 @@ components:
                     type: string
                 onlyFirstPurchase:
                     type: boolean
+                withdrawalMinAmount:
+                    type: string
+                withdrawalMethods:
+                    type: string
             description: InviteConfig 邀请配置
         api.admin.system.v1.NodeConfig:
             type: object
@@ -12955,6 +13123,10 @@ components:
                     type: string
                 onlyFirstPurchase:
                     type: boolean
+                withdrawalMinAmount:
+                    type: string
+                withdrawalMethods:
+                    type: string
             description: UpdateInviteConfig
         api.admin.system.v1.UpdateNodeConfigData:
             type: object
@@ -13123,6 +13295,37 @@ components:
                 userAgentList:
                     type: string
             description: UpdateSubscribeConfig
+        api.admin.system.v1.UpdateTawkConfigData:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.admin.system.v1.UpdateTawkConfigReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.system.v1.UpdateTawkConfigData'
+        api.admin.system.v1.UpdateTawkConfigRequest:
+            type: object
+            properties:
+                enabled:
+                    type: boolean
+                propertyId:
+                    type: string
+                widgetId:
+                    type: string
+                identifyUser:
+                    type: boolean
+                secureMode:
+                    type: boolean
+                secretKey:
+                    type: string
+            description: UpdateTawkConfig
         api.admin.system.v1.UpdateTosConfigData:
             type: object
             properties:
@@ -14446,6 +14649,87 @@ components:
                     type: string
                 download:
                     type: string
+        api.admin.withdrawal.v1.ApproveWithdrawalReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.withdrawal.v1.OperationData'
+        api.admin.withdrawal.v1.ApproveWithdrawalRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.admin.withdrawal.v1.GetWithdrawalListReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.withdrawal.v1.WithdrawalListData'
+        api.admin.withdrawal.v1.OperationData:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.admin.withdrawal.v1.RejectWithdrawalReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.withdrawal.v1.OperationData'
+        api.admin.withdrawal.v1.RejectWithdrawalRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                reason:
+                    type: string
+        api.admin.withdrawal.v1.Withdrawal:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                amount:
+                    type: string
+                method:
+                    type: string
+                content:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+                reason:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+                processedAt:
+                    type: string
+        api.admin.withdrawal.v1.WithdrawalListData:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.withdrawal.v1.Withdrawal'
+                total:
+                    type: integer
+                    format: int32
         api.auth.oauth.v1.AppleLoginCallbackRequest:
             type: object
             properties:
@@ -15045,6 +15329,8 @@ components:
                         type: string
                 webAd:
                     type: boolean
+                tawk:
+                    $ref: '#/components/schemas/api.public.common.v1.PublicTawkConfig'
             description: GetGlobalConfig Reply
         api.public.common.v1.GetPrivacyPolicyReply:
             type: object
@@ -15091,6 +15377,10 @@ components:
                     type: string
                 onlyFirstPurchase:
                     type: boolean
+                withdrawalMinAmount:
+                    type: string
+                withdrawalMethods:
+                    type: string
             description: Invite configuration
         api.public.common.v1.MobileAuthConfig:
             type: object
@@ -15104,6 +15394,20 @@ components:
                     items:
                         type: string
             description: Mobile auth configuration
+        api.public.common.v1.PublicTawkConfig:
+            type: object
+            properties:
+                enabled:
+                    type: boolean
+                propertyId:
+                    type: string
+                widgetId:
+                    type: string
+                identifyUser:
+                    type: boolean
+                secureMode:
+                    type: boolean
+            description: Public tawk customer service configuration
         api.public.common.v1.PublicVerifyCodeConfig:
             type: object
             properties:
@@ -15928,6 +16232,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/api.public.portal.v1.SubscribePriceOption'
+                shortDescription:
+                    type: string
+                features:
+                    type: string
+                detailFormat:
+                    type: string
+                detailContent:
+                    type: string
         api.public.portal.v1.SubscribePriceOption:
             type: object
             properties:
@@ -16468,6 +16780,8 @@ components:
                     type: string
                 content:
                     type: string
+                method:
+                    type: string
             description: CommissionWithdrawRequest 佣金提现请求
         api.public.user.v1.ConnectionRecords:
             type: object
@@ -16750,6 +17064,17 @@ components:
                     type: string
                 type:
                     type: string
+        api.public.user.v1.TawkIdentityReply:
+            type: object
+            properties:
+                name:
+                    type: string
+                email:
+                    type: string
+                userId:
+                    type: string
+                hash:
+                    type: string
         api.public.user.v1.TrafficLimit:
             type: object
             properties:
@@ -16762,6 +17087,11 @@ components:
                 speedLimit:
                     type: integer
                     format: int32
+        api.public.user.v1.TransferCommissionToBalanceRequest:
+            type: object
+            properties:
+                amount:
+                    type: string
         api.public.user.v1.UnbindDeviceRequest:
             type: object
             properties:
@@ -17024,6 +17354,10 @@ components:
                 createdAt:
                     type: string
                 updatedAt:
+                    type: string
+                method:
+                    type: string
+                processedAt:
                     type: string
         api.server.v1.GetServerConfigReply:
             type: object
@@ -17301,6 +17635,8 @@ components:
                 simnetClientMaxUdpSessions:
                     type: integer
                     format: int32
+                proxyProtocol:
+                    type: boolean
                 omniflowCarrier:
                     type: string
                     description: OmniFlow 基础配置
@@ -17629,8 +17965,8 @@ tags:
     - name: AnnouncementService
       description: 公告服务
     - name: Auth
-      description: Auth service for user authentication
     - name: Auth
+      description: Auth service for user authentication
     - name: AuthMethodService
       description: 认证方法服务
     - name: Common
@@ -17679,8 +18015,8 @@ tags:
          订阅配置服务 - 生成客户端配置
     - name: SystemService
     - name: Ticket
-    - name: Ticket
       description: Ticket service for users
+    - name: Ticket
     - name: Tool
     - name: UserAuthMethodService
       description: UserAuthMethodService 用户认证方法管理服务
@@ -17690,3 +18026,4 @@ tags:
       description: UserService 用户基本管理服务
     - name: UserSubscribeService
       description: UserSubscribeService 用户订阅管理服务
+    - name: WithdrawalService

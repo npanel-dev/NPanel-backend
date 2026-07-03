@@ -12,6 +12,9 @@ type UserRepo interface {
 	// AuthMethods需要按照email、mobile优先级排序
 	QueryUserInfo(ctx context.Context, userID int) (*UserInfo, error)
 
+	// GetTawkIdentity 获取Tawk访客身份信息和Secure Mode签名
+	GetTawkIdentity(ctx context.Context, userID int) (*TawkIdentity, error)
+
 	// GetLoginLog 获取登录日志
 	// 从proxy_system_log表查询type=6(Login)的日志
 	GetLoginLog(ctx context.Context, userID int, page, size int) ([]*LoginLog, int32, error)
@@ -168,6 +171,14 @@ type UserInfo struct {
 	UpdatedAt             int64
 	DeletedAt             int64
 	IsDel                 bool
+}
+
+// TawkIdentity Tawk访客身份信息
+type TawkIdentity struct {
+	Name   string
+	Email  string
+	UserID string
+	Hash   string
 }
 
 // AuthMethod 认证方法
@@ -372,6 +383,11 @@ func NewUserUseCase(repo UserRepo) *UserUseCase {
 // QueryUserInfo 查询用户信息
 func (uc *UserUseCase) QueryUserInfo(ctx context.Context, userID int) (*UserInfo, error) {
 	return uc.repo.QueryUserInfo(ctx, userID)
+}
+
+// GetTawkIdentity 获取Tawk访客身份信息和Secure Mode签名
+func (uc *UserUseCase) GetTawkIdentity(ctx context.Context, userID int) (*TawkIdentity, error) {
+	return uc.repo.GetTawkIdentity(ctx, userID)
 }
 
 // GetLoginLog 获取登录日志

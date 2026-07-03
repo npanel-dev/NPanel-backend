@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/npanel-dev/NPanel-backend/ent"
 	servermodel "github.com/npanel-dev/NPanel-backend/internal/model/server"
 )
 
@@ -157,5 +158,51 @@ func TestCleanLegacyNodeProtocolInstanceKeepsOnlyMatchedPort(t *testing.T) {
 	}
 	if protocols[0].Port != 8443 || protocols[0].Cipher != "aes-256-gcm" {
 		t.Fatalf("matched protocol = %+v, want shadowsocks:8443/aes-256-gcm", protocols[0])
+	}
+}
+
+func TestInjectLegacySimnetUserCredentialsForClient(t *testing.T) {
+	uuid := "019EF9DF-8AEC-7EFF-AEA8-2B2F4860622E"
+	raw, err := json.Marshal([]*servermodel.Protocol{
+		{
+			Type:        "simnet",
+			Port:        443,
+			Enable:      true,
+			SimnetPsk:   " server-psk ",
+			SimnetKeyID: 0,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cleaned := cleanLegacyNodeProtocolInstance(string(raw), "simnet", 443)
+	enriched := injectLegacySimnetUserCredentialsForClient(cleaned, &ent.ProxyUserSubscribe{
+		ID:   5,
+		UUID: &uuid,
+	})
+
+	var protocols []map[string]any
+	if err := json.Unmarshal([]byte(enriched), &protocols); err != nil {
+		t.Fatalf("enriched protocols should be valid json: %v\n%s", err, enriched)
+	}
+	if len(protocols) != 1 {
+		t.Fatalf("expected one protocol, got %d", len(protocols))
+	}
+	protocol := protocols[0]
+	if protocol["simnet_psk"] != "server-psk" {
+		t.Fatalf("expected legacy simnet_psk to remain server psk, got %#v", protocol["simnet_psk"])
+	}
+	if protocol["simnet_server_psk"] != "server-psk" {
+		t.Fatalf("expected server psk alias, got %#v", protocol["simnet_server_psk"])
+	}
+	if protocol["simnet_server_key_id"].(float64) != 0 {
+		t.Fatalf("expected server key id 0, got %#v", protocol["simnet_server_key_id"])
+	}
+	if protocol["simnet_user_psk"] != "019ef9df8aec7effaea82b2f4860622e" {
+		t.Fatalf("expected compact uuid user psk, got %#v", protocol["simnet_user_psk"])
+	}
+	if protocol["simnet_user_key_id"].(float64) != 5 {
+		t.Fatalf("expected user subscribe id as user key id, got %#v", protocol["simnet_user_key_id"])
 	}
 }

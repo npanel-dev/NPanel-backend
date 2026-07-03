@@ -246,7 +246,11 @@ func (r *subscribeRepo) GetSubscribePriceOptionsBySubscribeIDs(ctx context.Conte
 		return result, nil
 	}
 	items, err := r.data.db.ProxySubscribePriceOption.Query().
-		Where(proxysubscribepriceoption.SubscribeIDIn(ids...)).
+		Where(
+			proxysubscribepriceoption.SubscribeIDIn(ids...),
+			proxysubscribepriceoption.Show(true),
+			proxysubscribepriceoption.Sell(true),
+		).
 		Order(ent.Desc(proxysubscribepriceoption.FieldSort), ent.Asc(proxysubscribepriceoption.FieldID)).
 		All(ctx)
 	if err != nil {
@@ -269,6 +273,7 @@ func (r *subscribeRepo) syncSubscribePriceOptions(ctx context.Context, tx *ent.T
 	for _, item := range existing {
 		existingByID[item.ID] = item
 	}
+	submittedIDs := make(map[int64]struct{}, len(options))
 	for _, option := range options {
 		if option.ID > 0 {
 			existingOption, ok := existingByID[option.ID]
@@ -278,6 +283,7 @@ func (r *subscribeRepo) syncSubscribePriceOptions(ctx context.Context, tx *ent.T
 			if existingOption.SubscribeID != subscribeID {
 				return fmt.Errorf("price option %d does not belong to subscribe %d", option.ID, subscribeID)
 			}
+			submittedIDs[option.ID] = struct{}{}
 			if option.UpdatedAt > 0 && existingOption.UpdatedAt.Unix() > option.UpdatedAt {
 				return model.ErrSubscribePriceOptionModified
 			}
@@ -329,6 +335,29 @@ func (r *subscribeRepo) syncSubscribePriceOptions(ctx context.Context, tx *ent.T
 			SetVersion(1).
 			Save(ctx)
 		if err != nil {
+			return err
+		}
+	}
+	archiveIDs := make([]int64, 0)
+	for _, item := range existing {
+		if _, ok := submittedIDs[item.ID]; !ok {
+			if !item.Show && !item.Sell && !item.IsDefault {
+				continue
+			}
+			archiveIDs = append(archiveIDs, item.ID)
+		}
+	}
+	if len(archiveIDs) > 0 {
+		if err := tx.ProxySubscribePriceOption.Update().
+			Where(
+				proxysubscribepriceoption.SubscribeIDEQ(subscribeID),
+				proxysubscribepriceoption.IDIn(archiveIDs...),
+			).
+			SetShow(false).
+			SetSell(false).
+			SetIsDefault(false).
+			AddVersion(1).
+			Exec(ctx); err != nil {
 			return err
 		}
 	}

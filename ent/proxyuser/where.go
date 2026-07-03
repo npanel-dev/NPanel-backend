@@ -70,6 +70,11 @@ func Salt(v string) predicate.ProxyUser {
 	return predicate.ProxyUser(sql.FieldEQ(FieldSalt, v))
 }
 
+// SourcePanel applies equality check predicate on the "source_panel" field. It's identical to SourcePanelEQ.
+func SourcePanel(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldEQ(FieldSourcePanel, v))
+}
+
 // Avatar applies equality check predicate on the "avatar" field. It's identical to AvatarEQ.
 func Avatar(v string) predicate.ProxyUser {
 	return predicate.ProxyUser(sql.FieldEQ(FieldAvatar, v))
@@ -388,6 +393,71 @@ func SaltEqualFold(v string) predicate.ProxyUser {
 // SaltContainsFold applies the ContainsFold predicate on the "salt" field.
 func SaltContainsFold(v string) predicate.ProxyUser {
 	return predicate.ProxyUser(sql.FieldContainsFold(FieldSalt, v))
+}
+
+// SourcePanelEQ applies the EQ predicate on the "source_panel" field.
+func SourcePanelEQ(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldEQ(FieldSourcePanel, v))
+}
+
+// SourcePanelNEQ applies the NEQ predicate on the "source_panel" field.
+func SourcePanelNEQ(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldNEQ(FieldSourcePanel, v))
+}
+
+// SourcePanelIn applies the In predicate on the "source_panel" field.
+func SourcePanelIn(vs ...string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldIn(FieldSourcePanel, vs...))
+}
+
+// SourcePanelNotIn applies the NotIn predicate on the "source_panel" field.
+func SourcePanelNotIn(vs ...string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldNotIn(FieldSourcePanel, vs...))
+}
+
+// SourcePanelGT applies the GT predicate on the "source_panel" field.
+func SourcePanelGT(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldGT(FieldSourcePanel, v))
+}
+
+// SourcePanelGTE applies the GTE predicate on the "source_panel" field.
+func SourcePanelGTE(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldGTE(FieldSourcePanel, v))
+}
+
+// SourcePanelLT applies the LT predicate on the "source_panel" field.
+func SourcePanelLT(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldLT(FieldSourcePanel, v))
+}
+
+// SourcePanelLTE applies the LTE predicate on the "source_panel" field.
+func SourcePanelLTE(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldLTE(FieldSourcePanel, v))
+}
+
+// SourcePanelContains applies the Contains predicate on the "source_panel" field.
+func SourcePanelContains(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldContains(FieldSourcePanel, v))
+}
+
+// SourcePanelHasPrefix applies the HasPrefix predicate on the "source_panel" field.
+func SourcePanelHasPrefix(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldHasPrefix(FieldSourcePanel, v))
+}
+
+// SourcePanelHasSuffix applies the HasSuffix predicate on the "source_panel" field.
+func SourcePanelHasSuffix(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldHasSuffix(FieldSourcePanel, v))
+}
+
+// SourcePanelEqualFold applies the EqualFold predicate on the "source_panel" field.
+func SourcePanelEqualFold(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldEqualFold(FieldSourcePanel, v))
+}
+
+// SourcePanelContainsFold applies the ContainsFold predicate on the "source_panel" field.
+func SourcePanelContainsFold(v string) predicate.ProxyUser {
+	return predicate.ProxyUser(sql.FieldContainsFold(FieldSourcePanel, v))
 }
 
 // AvatarEQ applies the EQ predicate on the "avatar" field.

@@ -20,6 +20,13 @@ service PublicUser {
     };
   }
 
+  // GetTawkIdentity 获取Tawk访客身份签名
+  rpc GetTawkIdentity (google.protobuf.Empty) returns (TawkIdentityReply) {
+    option (google.api.http) = {
+      get: "/v1/public/user/tawk_identity"
+    };
+  }
+
   // GetLoginLog 获取登录日志
   rpc GetLoginLog (GetLoginLogRequest) returns (GetLoginLogReply) {
     option (google.api.http) = {
@@ -213,6 +220,14 @@ service PublicUser {
     };
   }
 
+  // TransferCommissionToBalance 佣金划转到余额
+  rpc TransferCommissionToBalance (TransferCommissionToBalanceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/public/user/commission/transfer_balance"
+      body: "*"
+    };
+  }
+
   // QueryWithdrawalLog 查询提现日志
   rpc QueryWithdrawalLog (QueryWithdrawalLogRequest) returns (QueryWithdrawalLogReply) {
     option (google.api.http) = {
@@ -279,6 +294,13 @@ message User {
   int64 updated_at = 21;
   int64 deleted_at = 22;
   bool is_del = 23;
+}
+
+message TawkIdentityReply {
+  string name = 1;
+  string email = 2;
+  string user_id = 3;
+  string hash = 4;
 }
 
 // UserAuthMethod 用户认证方法
@@ -703,6 +725,7 @@ message GetDeviceOnlineStatisticsReply {
 message CommissionWithdrawRequest {
   int64 amount = 1;
   string content = 2; // 提现内容（如提现账号信息）
+  string method = 3;  // 提现方式
 }
 
 message WithdrawalLog {
@@ -714,6 +737,12 @@ message WithdrawalLog {
   string reason = 6;
   int64 created_at = 7;
   int64 updated_at = 8;
+  string method = 9;
+  int64 processed_at = 10;
+}
+
+message TransferCommissionToBalanceRequest {
+  int64 amount = 1;
 }
 
 // ============================================================================
@@ -770,4 +799,3 @@ message GetUserTrafficStatsReply {
   int64 total_download = 3;
   int64 total_traffic = 4;
 }
-

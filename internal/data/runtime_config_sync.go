@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyauthmethod"
 	"github.com/npanel-dev/NPanel-backend/internal/conf"
 	authmodel "github.com/npanel-dev/NPanel-backend/internal/model/auth"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 // syncRuntimeAppConfig keeps the in-memory application config aligned with the
@@ -70,9 +70,11 @@ func syncRuntimeSystemConfig(ctx context.Context, client *ent.Client, appConf *c
 		logger.Warnw("sync runtime invite config failed", "error", err)
 	} else if len(values) > 0 {
 		appConf.Invite = &conf.Invite{
-			ForcedInvite:       getBoolConfig(values, false, "ForcedInvite", "forced_invite"),
-			ReferralPercentage: getInt64Config(values, 0, "ReferralPercentage", "referral_percentage"),
-			OnlyFirstPurchase:  getBoolConfig(values, false, "OnlyFirstPurchase", "only_first_purchase"),
+			ForcedInvite:        getBoolConfig(values, false, "ForcedInvite", "forced_invite"),
+			ReferralPercentage:  getInt64Config(values, 0, "ReferralPercentage", "referral_percentage"),
+			OnlyFirstPurchase:   getBoolConfig(values, false, "OnlyFirstPurchase", "only_first_purchase"),
+			WithdrawalMinAmount: getInt64Config(values, 0, "WithdrawalMinAmount", "withdrawal_min_amount"),
+			WithdrawalMethods:   getStringConfigWithDefault(values, "", "WithdrawalMethods", "withdrawal_methods", "WithdrawalMethod"),
 		}
 	}
 

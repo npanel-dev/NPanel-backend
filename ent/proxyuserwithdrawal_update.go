@@ -64,6 +64,26 @@ func (_u *ProxyUserWithdrawalUpdate) AddAmount(v int64) *ProxyUserWithdrawalUpda
 	return _u
 }
 
+// SetMethod sets the "method" field.
+func (_u *ProxyUserWithdrawalUpdate) SetMethod(v string) *ProxyUserWithdrawalUpdate {
+	_u.mutation.SetMethod(v)
+	return _u
+}
+
+// SetNillableMethod sets the "method" field if the given value is not nil.
+func (_u *ProxyUserWithdrawalUpdate) SetNillableMethod(v *string) *ProxyUserWithdrawalUpdate {
+	if v != nil {
+		_u.SetMethod(*v)
+	}
+	return _u
+}
+
+// ClearMethod clears the value of the "method" field.
+func (_u *ProxyUserWithdrawalUpdate) ClearMethod() *ProxyUserWithdrawalUpdate {
+	_u.mutation.ClearMethod()
+	return _u
+}
+
 // SetContent sets the "content" field.
 func (_u *ProxyUserWithdrawalUpdate) SetContent(v string) *ProxyUserWithdrawalUpdate {
 	_u.mutation.SetContent(v)
@@ -122,6 +142,26 @@ func (_u *ProxyUserWithdrawalUpdate) SetNillableReason(v *string) *ProxyUserWith
 // ClearReason clears the value of the "reason" field.
 func (_u *ProxyUserWithdrawalUpdate) ClearReason() *ProxyUserWithdrawalUpdate {
 	_u.mutation.ClearReason()
+	return _u
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (_u *ProxyUserWithdrawalUpdate) SetProcessedAt(v time.Time) *ProxyUserWithdrawalUpdate {
+	_u.mutation.SetProcessedAt(v)
+	return _u
+}
+
+// SetNillableProcessedAt sets the "processed_at" field if the given value is not nil.
+func (_u *ProxyUserWithdrawalUpdate) SetNillableProcessedAt(v *time.Time) *ProxyUserWithdrawalUpdate {
+	if v != nil {
+		_u.SetProcessedAt(*v)
+	}
+	return _u
+}
+
+// ClearProcessedAt clears the value of the "processed_at" field.
+func (_u *ProxyUserWithdrawalUpdate) ClearProcessedAt() *ProxyUserWithdrawalUpdate {
+	_u.mutation.ClearProcessedAt()
 	return _u
 }
 
@@ -185,6 +225,11 @@ func (_u *ProxyUserWithdrawalUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ProxyUserWithdrawalUpdate) check() error {
+	if v, ok := _u.mutation.Method(); ok {
+		if err := proxyuserwithdrawal.MethodValidator(v); err != nil {
+			return &ValidationError{Name: "method", err: fmt.Errorf(`ent: validator failed for field "ProxyUserWithdrawal.method": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Reason(); ok {
 		if err := proxyuserwithdrawal.ReasonValidator(v); err != nil {
 			return &ValidationError{Name: "reason", err: fmt.Errorf(`ent: validator failed for field "ProxyUserWithdrawal.reason": %w`, err)}
@@ -214,6 +259,12 @@ func (_u *ProxyUserWithdrawalUpdate) sqlSave(ctx context.Context) (_node int, er
 	if value, ok := _u.mutation.AddedAmount(); ok {
 		_spec.AddField(proxyuserwithdrawal.FieldAmount, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.Method(); ok {
+		_spec.SetField(proxyuserwithdrawal.FieldMethod, field.TypeString, value)
+	}
+	if _u.mutation.MethodCleared() {
+		_spec.ClearField(proxyuserwithdrawal.FieldMethod, field.TypeString)
+	}
 	if value, ok := _u.mutation.Content(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldContent, field.TypeString, value)
 	}
@@ -231,6 +282,12 @@ func (_u *ProxyUserWithdrawalUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if _u.mutation.ReasonCleared() {
 		_spec.ClearField(proxyuserwithdrawal.FieldReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.ProcessedAt(); ok {
+		_spec.SetField(proxyuserwithdrawal.FieldProcessedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProcessedAtCleared() {
+		_spec.ClearField(proxyuserwithdrawal.FieldProcessedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldUpdatedAt, field.TypeTime, value)
@@ -319,6 +376,26 @@ func (_u *ProxyUserWithdrawalUpdateOne) AddAmount(v int64) *ProxyUserWithdrawalU
 	return _u
 }
 
+// SetMethod sets the "method" field.
+func (_u *ProxyUserWithdrawalUpdateOne) SetMethod(v string) *ProxyUserWithdrawalUpdateOne {
+	_u.mutation.SetMethod(v)
+	return _u
+}
+
+// SetNillableMethod sets the "method" field if the given value is not nil.
+func (_u *ProxyUserWithdrawalUpdateOne) SetNillableMethod(v *string) *ProxyUserWithdrawalUpdateOne {
+	if v != nil {
+		_u.SetMethod(*v)
+	}
+	return _u
+}
+
+// ClearMethod clears the value of the "method" field.
+func (_u *ProxyUserWithdrawalUpdateOne) ClearMethod() *ProxyUserWithdrawalUpdateOne {
+	_u.mutation.ClearMethod()
+	return _u
+}
+
 // SetContent sets the "content" field.
 func (_u *ProxyUserWithdrawalUpdateOne) SetContent(v string) *ProxyUserWithdrawalUpdateOne {
 	_u.mutation.SetContent(v)
@@ -377,6 +454,26 @@ func (_u *ProxyUserWithdrawalUpdateOne) SetNillableReason(v *string) *ProxyUserW
 // ClearReason clears the value of the "reason" field.
 func (_u *ProxyUserWithdrawalUpdateOne) ClearReason() *ProxyUserWithdrawalUpdateOne {
 	_u.mutation.ClearReason()
+	return _u
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (_u *ProxyUserWithdrawalUpdateOne) SetProcessedAt(v time.Time) *ProxyUserWithdrawalUpdateOne {
+	_u.mutation.SetProcessedAt(v)
+	return _u
+}
+
+// SetNillableProcessedAt sets the "processed_at" field if the given value is not nil.
+func (_u *ProxyUserWithdrawalUpdateOne) SetNillableProcessedAt(v *time.Time) *ProxyUserWithdrawalUpdateOne {
+	if v != nil {
+		_u.SetProcessedAt(*v)
+	}
+	return _u
+}
+
+// ClearProcessedAt clears the value of the "processed_at" field.
+func (_u *ProxyUserWithdrawalUpdateOne) ClearProcessedAt() *ProxyUserWithdrawalUpdateOne {
+	_u.mutation.ClearProcessedAt()
 	return _u
 }
 
@@ -453,6 +550,11 @@ func (_u *ProxyUserWithdrawalUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ProxyUserWithdrawalUpdateOne) check() error {
+	if v, ok := _u.mutation.Method(); ok {
+		if err := proxyuserwithdrawal.MethodValidator(v); err != nil {
+			return &ValidationError{Name: "method", err: fmt.Errorf(`ent: validator failed for field "ProxyUserWithdrawal.method": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Reason(); ok {
 		if err := proxyuserwithdrawal.ReasonValidator(v); err != nil {
 			return &ValidationError{Name: "reason", err: fmt.Errorf(`ent: validator failed for field "ProxyUserWithdrawal.reason": %w`, err)}
@@ -499,6 +601,12 @@ func (_u *ProxyUserWithdrawalUpdateOne) sqlSave(ctx context.Context) (_node *Pro
 	if value, ok := _u.mutation.AddedAmount(); ok {
 		_spec.AddField(proxyuserwithdrawal.FieldAmount, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.Method(); ok {
+		_spec.SetField(proxyuserwithdrawal.FieldMethod, field.TypeString, value)
+	}
+	if _u.mutation.MethodCleared() {
+		_spec.ClearField(proxyuserwithdrawal.FieldMethod, field.TypeString)
+	}
 	if value, ok := _u.mutation.Content(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldContent, field.TypeString, value)
 	}
@@ -516,6 +624,12 @@ func (_u *ProxyUserWithdrawalUpdateOne) sqlSave(ctx context.Context) (_node *Pro
 	}
 	if _u.mutation.ReasonCleared() {
 		_spec.ClearField(proxyuserwithdrawal.FieldReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.ProcessedAt(); ok {
+		_spec.SetField(proxyuserwithdrawal.FieldProcessedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProcessedAtCleared() {
+		_spec.ClearField(proxyuserwithdrawal.FieldProcessedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldUpdatedAt, field.TypeTime, value)

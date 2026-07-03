@@ -29,6 +29,7 @@ func VerifyPassWord(passwd, EncodePasswd string) bool {
 }
 
 func MultiPasswordVerify(algo, salt, passwordText, hash string) bool {
+	algo = strings.ToLower(strings.TrimSpace(algo))
 	switch algo {
 	case "md5":
 		sum := md5.Sum([]byte(passwordText))
@@ -38,6 +39,9 @@ func MultiPasswordVerify(algo, salt, passwordText, hash string) bool {
 		return hex.EncodeToString(sum[:]) == hash
 	case "md5salt":
 		sum := md5.Sum([]byte(passwordText + salt))
+		return hex.EncodeToString(sum[:]) == hash
+	case "sha256salt":
+		sum := sha256.Sum256([]byte(passwordText + salt))
 		return hex.EncodeToString(sum[:]) == hash
 	case "bcrypt":
 		return bcrypt.CompareHashAndPassword([]byte(hash), []byte(passwordText)) == nil

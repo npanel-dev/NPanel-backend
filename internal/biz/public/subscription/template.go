@@ -131,7 +131,7 @@ func buildOmnxtSimnetConfigs(proxies []map[string]interface{}, userInfo UserInfo
 		}
 	}
 
-	// Per-user authentication: each user gets a unique PSK (hex-encoded UUID)
+	// Per-user authentication: each user gets a unique PSK (compact UUID hex)
 	// and key_id derived from their subscription ID (SID).  The Node registers
 	// all per-user keys in its StaticKeyResolver so the SimNet handshake
 	// authenticates the specific user via the key_id frame header field.
@@ -142,7 +142,7 @@ func buildOmnxtSimnetConfigs(proxies []map[string]interface{}, userInfo UserInfo
 	if userKeyID == 0 {
 		userKeyID = 1 // Avoid collision with server key_id=0
 	}
-	userPSK := simnetHexPSK(hex.EncodeToString([]byte(userInfo.Password)))
+	userPSK := deriveSimnetUserPSK(userInfo.Password)
 
 	for _, proxy := range proxies {
 		if mapString(proxy["Type"]) != "simnet" {
@@ -162,7 +162,7 @@ func buildOmnxtSimnetConfigs(proxies []map[string]interface{}, userInfo UserInfo
 			// Server PSK is needed for AF path/magic/content-type derivation.
 			// The Node uses credentials[0] (server PSK, key_id=0) for AF, so
 			// the SDK must also use the same key material for path matching.
-			"simnet_server_psk":                       mapStringOrNil(proxy["SimnetPSK"]),
+			"simnet_server_psk":                       mapFirstStringOrNil(proxy, "SimnetPsk", "SimnetPSK"),
 			"simnet_server_key_id":                    defaultInt(mapInt(proxy["SimnetKeyID"]), 0),
 			"simnet_ticket_id":                        mapStringOrNil(proxy["SimnetTicketID"]),
 			"simnet_path":                             defaultString(mapString(proxy["SimnetPath"]), "/simnet/session"),
@@ -191,6 +191,54 @@ func buildOmnxtSimnetConfigs(proxies []map[string]interface{}, userInfo UserInfo
 	return result
 }
 
+func deriveSimnetUserPSK(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if isCanonicalUUID(trimmed) {
+		return strings.ToLower(strings.ReplaceAll(trimmed, "-", ""))
+	}
+	if len(trimmed) == 32 && isASCIIHex(trimmed) {
+		return strings.ToLower(trimmed)
+	}
+	return hex.EncodeToString([]byte(trimmed))
+}
+
+func isCanonicalUUID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+	for idx, ch := range value {
+		switch idx {
+		case 8, 13, 18, 23:
+			if ch != '-' {
+				return false
+			}
+		default:
+			if !isASCIIHexRune(ch) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func isASCIIHex(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, ch := range value {
+		if !isASCIIHexRune(ch) {
+			return false
+		}
+	}
+	return true
+}
+
+func isASCIIHexRune(ch rune) bool {
+	return (ch >= '0' && ch <= '9') ||
+		(ch >= 'a' && ch <= 'f') ||
+		(ch >= 'A' && ch <= 'F')
+}
+
 func buildOmnxtProtocolLinks(proxies []map[string]interface{}, userInfo UserInfo, params map[string]string) []string {
 	configs := buildOmnxtSimnetConfigs(proxies, userInfo, params)
 	result := make([]string, 0, len(configs))
@@ -212,6 +260,8 @@ func buildOmnxtProtocolLinks(proxies []map[string]interface{}, userInfo UserInfo
 			"sni":                                   mapString(item["sni"]),
 			"simnet_psk":                            mapString(item["simnet_psk"]),
 			"simnet_key_id":                         mapInt(item["simnet_key_id"]),
+			"simnet_server_psk":                     item["simnet_server_psk"],
+			"simnet_server_key_id":                  mapInt(item["simnet_server_key_id"]),
 			"simnet_ticket_id":                      item["simnet_ticket_id"],
 			"simnet_path":                           item["simnet_path"],
 			"simnet_carrier":                        mapString(item["simnet_carrier"]),
@@ -248,6 +298,15 @@ func findProxyByName(proxies []map[string]interface{}, name string) map[string]i
 	for _, proxy := range proxies {
 		if mapString(proxy["Name"]) == name {
 			return proxy
+		}
+	}
+	return nil
+}
+
+func mapFirstStringOrNil(values map[string]interface{}, keys ...string) interface{} {
+	for _, key := range keys {
+		if value := mapString(values[key]); strings.TrimSpace(value) != "" {
+			return value
 		}
 	}
 	return nil

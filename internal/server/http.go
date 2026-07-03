@@ -31,6 +31,7 @@ import (
 	adminticketv1 "github.com/npanel-dev/NPanel-backend/api/admin/ticket/v1"
 	admintoolv1 "github.com/npanel-dev/NPanel-backend/api/admin/tool/v1"
 	adminuserv1 "github.com/npanel-dev/NPanel-backend/api/admin/user/v1"
+	adminwithdrawalv1 "github.com/npanel-dev/NPanel-backend/api/admin/withdrawal/v1"
 	authoauthv1 "github.com/npanel-dev/NPanel-backend/api/auth/oauth/v1"
 	publicannouncementv1 "github.com/npanel-dev/NPanel-backend/api/public/announcement/v1"
 	publicauthv1 "github.com/npanel-dev/NPanel-backend/api/public/auth/v1"
@@ -70,6 +71,7 @@ import (
 	adminticketservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/ticket"
 	admintoolservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/tool"
 	adminuserservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/user"
+	adminwithdrawalservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/withdrawal"
 	authservice "github.com/npanel-dev/NPanel-backend/internal/service/auth"
 	authoauthservice "github.com/npanel-dev/NPanel-backend/internal/service/auth/oauth"
 	commonservice "github.com/npanel-dev/NPanel-backend/internal/service/common"
@@ -87,7 +89,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server
-func NewHTTPServer(c *conf.Server, appConf *conf.Application, authMiddleware *appmiddleware.ServiceContext, authCompat *data.AuthCompat, d *data.Data, ads *adsservice.AdsService, announcement *announcementservice.AnnouncementService, application *applicationservice.SubscribeApplicationService, authmethod *authmethodservice.AuthMethodService, adminConsole *adminconsoleservice.ConsoleService, adminCoupon *admincouponservice.CouponService, adminDocument *admindocumentservice.DocumentService, adminLog *adminlogservice.LogService, adminMarketing *adminmarketingservice.MarketingService, adminOrder *adminorderservice.OrderService, adminPayment *adminpaymentservice.PaymentService, adminRouting *adminroutingservice.RoutingService, adminServer *adminserverservice.ServerService, adminSubscribe *adminsubscribeservice.SubscribeService, adminSystem *adminsystemservice.SystemService, adminTicket *adminticketservice.TicketService, adminRedemption *adminredemptionservice.RedemptionService, adminTool *admintoolservice.ToolService, adminGroup *maingroupservice.GroupService, adminUser *adminuserservice.UserService, adminUserAuthMethod *adminuserservice.UserAuthMethodService, adminUserDevice *adminuserservice.UserDeviceService, adminUserSubscribe *adminuserservice.UserSubscribeService, auth *authservice.AuthService, oauthSvc *authoauthservice.OAuthService, commonSvc *commonservice.CommonService, publicOrder *publicorderservice.PublicOrderService, publicAnnouncement *publicannouncementservice.AnnouncementService, publicDocument *publicdocumentservice.DocumentService, publicPayment *publicpaymentservice.PaymentService, publicPortal *publicportalservice.PortalService, publicRedemption *publicredemptionservice.RedemptionService, publicSubscribe *publicsubscribeservice.SubscribeService, publicSubscription *publicsubscription.PublicSubscriptionService, publicTicket *publicticketservice.TicketService, publicUser *publicuserservice.UserService, server *serverservice.ServerService, logger log.Logger) *http.Server {
+func NewHTTPServer(c *conf.Server, appConf *conf.Application, authMiddleware *appmiddleware.ServiceContext, authCompat *data.AuthCompat, d *data.Data, ads *adsservice.AdsService, announcement *announcementservice.AnnouncementService, application *applicationservice.SubscribeApplicationService, authmethod *authmethodservice.AuthMethodService, adminConsole *adminconsoleservice.ConsoleService, adminCoupon *admincouponservice.CouponService, adminDocument *admindocumentservice.DocumentService, adminLog *adminlogservice.LogService, adminMarketing *adminmarketingservice.MarketingService, adminOrder *adminorderservice.OrderService, adminPayment *adminpaymentservice.PaymentService, adminRouting *adminroutingservice.RoutingService, adminServer *adminserverservice.ServerService, adminSubscribe *adminsubscribeservice.SubscribeService, adminSystem *adminsystemservice.SystemService, adminTicket *adminticketservice.TicketService, adminRedemption *adminredemptionservice.RedemptionService, adminTool *admintoolservice.ToolService, adminWithdrawal *adminwithdrawalservice.WithdrawalService, adminGroup *maingroupservice.GroupService, adminUser *adminuserservice.UserService, adminUserAuthMethod *adminuserservice.UserAuthMethodService, adminUserDevice *adminuserservice.UserDeviceService, adminUserSubscribe *adminuserservice.UserSubscribeService, auth *authservice.AuthService, oauthSvc *authoauthservice.OAuthService, commonSvc *commonservice.CommonService, publicOrder *publicorderservice.PublicOrderService, publicAnnouncement *publicannouncementservice.AnnouncementService, publicDocument *publicdocumentservice.DocumentService, publicPayment *publicpaymentservice.PaymentService, publicPortal *publicportalservice.PortalService, publicRedemption *publicredemptionservice.RedemptionService, publicSubscribe *publicsubscribeservice.SubscribeService, publicSubscription *publicsubscription.PublicSubscriptionService, publicTicket *publicticketservice.TicketService, publicUser *publicuserservice.UserService, server *serverservice.ServerService, logger log.Logger) *http.Server {
 	if c == nil {
 		c = &conf.Server{}
 	}
@@ -144,6 +146,7 @@ func NewHTTPServer(c *conf.Server, appConf *conf.Application, authMiddleware *ap
 	adminticketv1.RegisterTicketHTTPServer(srv, adminTicket)
 	adminredemptionv1.RegisterRedemptionHTTPServer(srv, adminRedemption)
 	admintoolv1.RegisterToolHTTPServer(srv, adminTool)
+	adminwithdrawalv1.RegisterWithdrawalServiceHTTPServer(srv, adminWithdrawal)
 	maingroupv1.RegisterGroupHTTPServer(srv, adminGroup)
 	// Admin User模块服务注册
 	adminuserv1.RegisterUserServiceHTTPServer(srv, adminUser)

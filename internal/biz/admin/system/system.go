@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/internal/buildmeta"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 // CurrencyConfig 货币配置
@@ -21,9 +21,11 @@ type CurrencyConfig struct {
 
 // InviteConfig 邀请配置
 type InviteConfig struct {
-	ForcedInvite       bool `json:"ForcedInvite"`
-	ReferralPercentage int  `json:"ReferralPercentage"`
-	OnlyFirstPurchase  bool `json:"OnlyFirstPurchase"`
+	ForcedInvite        bool   `json:"ForcedInvite"`
+	ReferralPercentage  int    `json:"ReferralPercentage"`
+	OnlyFirstPurchase   bool   `json:"OnlyFirstPurchase"`
+	WithdrawalMinAmount int64  `json:"WithdrawalMinAmount"`
+	WithdrawalMethods   string `json:"WithdrawalMethods"`
 }
 
 // NodeDNS 节点DNS配置
@@ -84,6 +86,16 @@ type SiteConfig struct {
 	Keywords   string `json:"Keywords"`
 	CustomHTML string `json:"CustomHTML"`
 	CustomData string `json:"CustomData"`
+}
+
+// TawkConfig Tawk客服配置
+type TawkConfig struct {
+	Enabled      bool   `json:"Enabled"`
+	PropertyID   string `json:"PropertyID"`
+	WidgetID     string `json:"WidgetID"`
+	IdentifyUser bool   `json:"IdentifyUser"`
+	SecureMode   bool   `json:"SecureMode"`
+	SecretKey    string `json:"SecretKey"`
 }
 
 // SubscribeConfig 订阅配置
@@ -375,6 +387,44 @@ func (uc *SystemUsecase) UpdateSiteConfig(ctx context.Context, config *SiteConfi
 	}
 
 	return uc.repo.UpdateConfigByCategory(ctx, "site", configs)
+}
+
+// GetTawkConfig 获取Tawk客服配置
+func (uc *SystemUsecase) GetTawkConfig(ctx context.Context) (*TawkConfig, error) {
+	configs, err := uc.repo.GetConfigByCategory(ctx, "tawk")
+	if err != nil {
+		uc.log.Errorf("Failed to get tawk config: %v", err)
+		return nil, err
+	}
+
+	result := &TawkConfig{}
+	tool.SystemConfigSliceReflectToStruct(configs, result)
+
+	return result, nil
+}
+
+// UpdateTawkConfig 更新Tawk客服配置
+func (uc *SystemUsecase) UpdateTawkConfig(ctx context.Context, config *TawkConfig) error {
+	config.PropertyID = strings.TrimSpace(config.PropertyID)
+	config.WidgetID = strings.TrimSpace(config.WidgetID)
+	config.SecretKey = strings.TrimSpace(config.SecretKey)
+
+	v := reflect.ValueOf(*config)
+	t := v.Type()
+
+	configs := make(map[string]*tool.SystemConfig)
+	for i := 0; i < v.NumField(); i++ {
+		fieldName := t.Field(i).Name
+		fieldValue := tool.ConvertValueToString(v.Field(i))
+		fieldType := getFieldTypeString(v.Field(i))
+		configs[fieldName] = &tool.SystemConfig{
+			Key:   fieldName,
+			Value: fieldValue,
+			Type:  fieldType,
+		}
+	}
+
+	return uc.repo.UpdateConfigByCategory(ctx, "tawk", configs)
 }
 
 // GetSubscribeConfig 获取订阅配置

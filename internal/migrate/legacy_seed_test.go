@@ -22,7 +22,7 @@ func TestNormalizeLegacyStatementUsesInsertIgnoreForSubscribeApplication(t *test
 }
 
 func TestLegacySQLMigrationsIncludeSyncedLatestVersions(t *testing.T) {
-	want := []int64{2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150}
+	want := []int64{2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150, 2151, 2152, 2153, 2154}
 	got := make([]int64, 0, len(want))
 	for _, migration := range legacySQLMigrations {
 		if migration.version >= 2133 {
@@ -35,6 +35,42 @@ func TestLegacySQLMigrationsIncludeSyncedLatestVersions(t *testing.T) {
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("unexpected synced migration versions: got %v want %v", got, want)
+		}
+	}
+}
+
+func TestLegacyCompatibilityMigrationVersionsAvoidDestructiveGroupMigration(t *testing.T) {
+	if _, ok := legacyCompatibilityMigrationVersions[2131]; ok {
+		t.Fatal("02131_add_groups must not run as a repeatable compatibility migration because it drops group tables")
+	}
+	if _, ok := legacyCompatibilityMigrationVersions[2141]; !ok {
+		t.Fatal("expected subscribe category migration to remain in compatibility migration set")
+	}
+}
+
+func TestLegacyRequiredSchemaPatchesCoverServerAndNodeListColumns(t *testing.T) {
+	want := map[string]bool{
+		"servers.last_reported_at": false,
+		"servers.longitude":        false,
+		"servers.latitude":         false,
+		"servers.longitude_center": false,
+		"servers.latitude_center":  false,
+		"nodes.node_group_ids":     false,
+		"nodes.node_type":          false,
+		"nodes.is_hidden":          false,
+		"nodes.target_node_id":     false,
+	}
+
+	for _, patch := range legacyRequiredSchemaPatches {
+		key := patch.table + "." + patch.column
+		if _, ok := want[key]; ok {
+			want[key] = true
+		}
+	}
+
+	for key, found := range want {
+		if !found {
+			t.Fatalf("missing legacy required schema patch for %s", key)
 		}
 	}
 }

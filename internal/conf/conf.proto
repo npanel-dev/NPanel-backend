@@ -118,6 +118,8 @@ message Invite {
   bool forced_invite = 1;
   int64 referral_percentage = 2;
   bool only_first_purchase = 3;
+  int64 withdrawal_min_amount = 4;
+  string withdrawal_methods = 5;
 }
 
 message Subscribe {

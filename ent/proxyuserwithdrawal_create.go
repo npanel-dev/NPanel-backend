@@ -33,6 +33,20 @@ func (_c *ProxyUserWithdrawalCreate) SetAmount(v int64) *ProxyUserWithdrawalCrea
 	return _c
 }
 
+// SetMethod sets the "method" field.
+func (_c *ProxyUserWithdrawalCreate) SetMethod(v string) *ProxyUserWithdrawalCreate {
+	_c.mutation.SetMethod(v)
+	return _c
+}
+
+// SetNillableMethod sets the "method" field if the given value is not nil.
+func (_c *ProxyUserWithdrawalCreate) SetNillableMethod(v *string) *ProxyUserWithdrawalCreate {
+	if v != nil {
+		_c.SetMethod(*v)
+	}
+	return _c
+}
+
 // SetContent sets the "content" field.
 func (_c *ProxyUserWithdrawalCreate) SetContent(v string) *ProxyUserWithdrawalCreate {
 	_c.mutation.SetContent(v)
@@ -71,6 +85,20 @@ func (_c *ProxyUserWithdrawalCreate) SetReason(v string) *ProxyUserWithdrawalCre
 func (_c *ProxyUserWithdrawalCreate) SetNillableReason(v *string) *ProxyUserWithdrawalCreate {
 	if v != nil {
 		_c.SetReason(*v)
+	}
+	return _c
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (_c *ProxyUserWithdrawalCreate) SetProcessedAt(v time.Time) *ProxyUserWithdrawalCreate {
+	_c.mutation.SetProcessedAt(v)
+	return _c
+}
+
+// SetNillableProcessedAt sets the "processed_at" field if the given value is not nil.
+func (_c *ProxyUserWithdrawalCreate) SetNillableProcessedAt(v *time.Time) *ProxyUserWithdrawalCreate {
+	if v != nil {
+		_c.SetProcessedAt(*v)
 	}
 	return _c
 }
@@ -171,6 +199,11 @@ func (_c *ProxyUserWithdrawalCreate) check() error {
 	if _, ok := _c.mutation.Amount(); !ok {
 		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "ProxyUserWithdrawal.amount"`)}
 	}
+	if v, ok := _c.mutation.Method(); ok {
+		if err := proxyuserwithdrawal.MethodValidator(v); err != nil {
+			return &ValidationError{Name: "method", err: fmt.Errorf(`ent: validator failed for field "ProxyUserWithdrawal.method": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "ProxyUserWithdrawal.status"`)}
 	}
@@ -229,6 +262,10 @@ func (_c *ProxyUserWithdrawalCreate) createSpec() (*ProxyUserWithdrawal, *sqlgra
 		_spec.SetField(proxyuserwithdrawal.FieldAmount, field.TypeInt64, value)
 		_node.Amount = value
 	}
+	if value, ok := _c.mutation.Method(); ok {
+		_spec.SetField(proxyuserwithdrawal.FieldMethod, field.TypeString, value)
+		_node.Method = &value
+	}
 	if value, ok := _c.mutation.Content(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldContent, field.TypeString, value)
 		_node.Content = &value
@@ -240,6 +277,10 @@ func (_c *ProxyUserWithdrawalCreate) createSpec() (*ProxyUserWithdrawal, *sqlgra
 	if value, ok := _c.mutation.Reason(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldReason, field.TypeString, value)
 		_node.Reason = &value
+	}
+	if value, ok := _c.mutation.ProcessedAt(); ok {
+		_spec.SetField(proxyuserwithdrawal.FieldProcessedAt, field.TypeTime, value)
+		_node.ProcessedAt = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(proxyuserwithdrawal.FieldCreatedAt, field.TypeTime, value)

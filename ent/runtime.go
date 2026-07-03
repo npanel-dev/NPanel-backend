@@ -452,15 +452,15 @@ func init() {
 	// proxynode.DefaultIsHidden holds the default value on creation for the is_hidden field.
 	proxynode.DefaultIsHidden = proxynodeDescIsHidden.Default.(bool)
 	// proxynodeDescSort is the schema descriptor for sort field.
-	proxynodeDescSort := proxynodeFields[10].Descriptor()
+	proxynodeDescSort := proxynodeFields[11].Descriptor()
 	// proxynode.DefaultSort holds the default value on creation for the sort field.
 	proxynode.DefaultSort = proxynodeDescSort.Default.(int32)
 	// proxynodeDescCreatedAt is the schema descriptor for created_at field.
-	proxynodeDescCreatedAt := proxynodeFields[12].Descriptor()
+	proxynodeDescCreatedAt := proxynodeFields[13].Descriptor()
 	// proxynode.DefaultCreatedAt holds the default value on creation for the created_at field.
 	proxynode.DefaultCreatedAt = proxynodeDescCreatedAt.Default.(func() time.Time)
 	// proxynodeDescUpdatedAt is the schema descriptor for updated_at field.
-	proxynodeDescUpdatedAt := proxynodeFields[13].Descriptor()
+	proxynodeDescUpdatedAt := proxynodeFields[14].Descriptor()
 	// proxynode.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	proxynode.DefaultUpdatedAt = proxynodeDescUpdatedAt.Default.(func() time.Time)
 	// proxynode.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -2079,72 +2079,78 @@ func init() {
 	proxyuserDescSalt := proxyuserFields[3].Descriptor()
 	// proxyuser.SaltValidator is a validator for the "salt" field. It is called by the builders before save.
 	proxyuser.SaltValidator = proxyuserDescSalt.Validators[0].(func(string) error)
+	// proxyuserDescSourcePanel is the schema descriptor for source_panel field.
+	proxyuserDescSourcePanel := proxyuserFields[4].Descriptor()
+	// proxyuser.DefaultSourcePanel holds the default value on creation for the source_panel field.
+	proxyuser.DefaultSourcePanel = proxyuserDescSourcePanel.Default.(string)
+	// proxyuser.SourcePanelValidator is a validator for the "source_panel" field. It is called by the builders before save.
+	proxyuser.SourcePanelValidator = proxyuserDescSourcePanel.Validators[0].(func(string) error)
 	// proxyuserDescBalance is the schema descriptor for balance field.
-	proxyuserDescBalance := proxyuserFields[5].Descriptor()
+	proxyuserDescBalance := proxyuserFields[6].Descriptor()
 	// proxyuser.DefaultBalance holds the default value on creation for the balance field.
 	proxyuser.DefaultBalance = proxyuserDescBalance.Default.(int64)
 	// proxyuserDescReferCode is the schema descriptor for refer_code field.
-	proxyuserDescReferCode := proxyuserFields[7].Descriptor()
+	proxyuserDescReferCode := proxyuserFields[8].Descriptor()
 	// proxyuser.ReferCodeValidator is a validator for the "refer_code" field. It is called by the builders before save.
 	proxyuser.ReferCodeValidator = proxyuserDescReferCode.Validators[0].(func(string) error)
 	// proxyuserDescCommission is the schema descriptor for commission field.
-	proxyuserDescCommission := proxyuserFields[9].Descriptor()
+	proxyuserDescCommission := proxyuserFields[10].Descriptor()
 	// proxyuser.DefaultCommission holds the default value on creation for the commission field.
 	proxyuser.DefaultCommission = proxyuserDescCommission.Default.(int64)
 	// proxyuserDescReferralPercentage is the schema descriptor for referral_percentage field.
-	proxyuserDescReferralPercentage := proxyuserFields[10].Descriptor()
+	proxyuserDescReferralPercentage := proxyuserFields[11].Descriptor()
 	// proxyuser.DefaultReferralPercentage holds the default value on creation for the referral_percentage field.
 	proxyuser.DefaultReferralPercentage = proxyuserDescReferralPercentage.Default.(int8)
 	// proxyuserDescOnlyFirstPurchase is the schema descriptor for only_first_purchase field.
-	proxyuserDescOnlyFirstPurchase := proxyuserFields[11].Descriptor()
+	proxyuserDescOnlyFirstPurchase := proxyuserFields[12].Descriptor()
 	// proxyuser.DefaultOnlyFirstPurchase holds the default value on creation for the only_first_purchase field.
 	proxyuser.DefaultOnlyFirstPurchase = proxyuserDescOnlyFirstPurchase.Default.(bool)
 	// proxyuserDescGiftAmount is the schema descriptor for gift_amount field.
-	proxyuserDescGiftAmount := proxyuserFields[12].Descriptor()
+	proxyuserDescGiftAmount := proxyuserFields[13].Descriptor()
 	// proxyuser.DefaultGiftAmount holds the default value on creation for the gift_amount field.
 	proxyuser.DefaultGiftAmount = proxyuserDescGiftAmount.Default.(int64)
 	// proxyuserDescEnable is the schema descriptor for enable field.
-	proxyuserDescEnable := proxyuserFields[13].Descriptor()
+	proxyuserDescEnable := proxyuserFields[14].Descriptor()
 	// proxyuser.DefaultEnable holds the default value on creation for the enable field.
 	proxyuser.DefaultEnable = proxyuserDescEnable.Default.(bool)
 	// proxyuserDescIsAdmin is the schema descriptor for is_admin field.
-	proxyuserDescIsAdmin := proxyuserFields[14].Descriptor()
+	proxyuserDescIsAdmin := proxyuserFields[15].Descriptor()
 	// proxyuser.DefaultIsAdmin holds the default value on creation for the is_admin field.
 	proxyuser.DefaultIsAdmin = proxyuserDescIsAdmin.Default.(bool)
 	// proxyuserDescValidEmail is the schema descriptor for valid_email field.
-	proxyuserDescValidEmail := proxyuserFields[15].Descriptor()
+	proxyuserDescValidEmail := proxyuserFields[16].Descriptor()
 	// proxyuser.DefaultValidEmail holds the default value on creation for the valid_email field.
 	proxyuser.DefaultValidEmail = proxyuserDescValidEmail.Default.(bool)
 	// proxyuserDescEnableEmailNotify is the schema descriptor for enable_email_notify field.
-	proxyuserDescEnableEmailNotify := proxyuserFields[16].Descriptor()
+	proxyuserDescEnableEmailNotify := proxyuserFields[17].Descriptor()
 	// proxyuser.DefaultEnableEmailNotify holds the default value on creation for the enable_email_notify field.
 	proxyuser.DefaultEnableEmailNotify = proxyuserDescEnableEmailNotify.Default.(bool)
 	// proxyuserDescEnableTelegramNotify is the schema descriptor for enable_telegram_notify field.
-	proxyuserDescEnableTelegramNotify := proxyuserFields[17].Descriptor()
+	proxyuserDescEnableTelegramNotify := proxyuserFields[18].Descriptor()
 	// proxyuser.DefaultEnableTelegramNotify holds the default value on creation for the enable_telegram_notify field.
 	proxyuser.DefaultEnableTelegramNotify = proxyuserDescEnableTelegramNotify.Default.(bool)
 	// proxyuserDescEnableBalanceNotify is the schema descriptor for enable_balance_notify field.
-	proxyuserDescEnableBalanceNotify := proxyuserFields[18].Descriptor()
+	proxyuserDescEnableBalanceNotify := proxyuserFields[19].Descriptor()
 	// proxyuser.DefaultEnableBalanceNotify holds the default value on creation for the enable_balance_notify field.
 	proxyuser.DefaultEnableBalanceNotify = proxyuserDescEnableBalanceNotify.Default.(bool)
 	// proxyuserDescEnableLoginNotify is the schema descriptor for enable_login_notify field.
-	proxyuserDescEnableLoginNotify := proxyuserFields[19].Descriptor()
+	proxyuserDescEnableLoginNotify := proxyuserFields[20].Descriptor()
 	// proxyuser.DefaultEnableLoginNotify holds the default value on creation for the enable_login_notify field.
 	proxyuser.DefaultEnableLoginNotify = proxyuserDescEnableLoginNotify.Default.(bool)
 	// proxyuserDescEnableSubscribeNotify is the schema descriptor for enable_subscribe_notify field.
-	proxyuserDescEnableSubscribeNotify := proxyuserFields[20].Descriptor()
+	proxyuserDescEnableSubscribeNotify := proxyuserFields[21].Descriptor()
 	// proxyuser.DefaultEnableSubscribeNotify holds the default value on creation for the enable_subscribe_notify field.
 	proxyuser.DefaultEnableSubscribeNotify = proxyuserDescEnableSubscribeNotify.Default.(bool)
 	// proxyuserDescEnableTradeNotify is the schema descriptor for enable_trade_notify field.
-	proxyuserDescEnableTradeNotify := proxyuserFields[21].Descriptor()
+	proxyuserDescEnableTradeNotify := proxyuserFields[22].Descriptor()
 	// proxyuser.DefaultEnableTradeNotify holds the default value on creation for the enable_trade_notify field.
 	proxyuser.DefaultEnableTradeNotify = proxyuserDescEnableTradeNotify.Default.(bool)
 	// proxyuserDescCreatedAt is the schema descriptor for created_at field.
-	proxyuserDescCreatedAt := proxyuserFields[23].Descriptor()
+	proxyuserDescCreatedAt := proxyuserFields[24].Descriptor()
 	// proxyuser.DefaultCreatedAt holds the default value on creation for the created_at field.
 	proxyuser.DefaultCreatedAt = proxyuserDescCreatedAt.Default.(func() time.Time)
 	// proxyuserDescUpdatedAt is the schema descriptor for updated_at field.
-	proxyuserDescUpdatedAt := proxyuserFields[24].Descriptor()
+	proxyuserDescUpdatedAt := proxyuserFields[25].Descriptor()
 	// proxyuser.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	proxyuser.DefaultUpdatedAt = proxyuserDescUpdatedAt.Default.(func() time.Time)
 	// proxyuser.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -2341,20 +2347,24 @@ func init() {
 	proxyusersubscribe.IDValidator = proxyusersubscribeDescID.Validators[0].(func(int64) error)
 	proxyuserwithdrawalFields := schema.ProxyUserWithdrawal{}.Fields()
 	_ = proxyuserwithdrawalFields
+	// proxyuserwithdrawalDescMethod is the schema descriptor for method field.
+	proxyuserwithdrawalDescMethod := proxyuserwithdrawalFields[3].Descriptor()
+	// proxyuserwithdrawal.MethodValidator is a validator for the "method" field. It is called by the builders before save.
+	proxyuserwithdrawal.MethodValidator = proxyuserwithdrawalDescMethod.Validators[0].(func(string) error)
 	// proxyuserwithdrawalDescStatus is the schema descriptor for status field.
-	proxyuserwithdrawalDescStatus := proxyuserwithdrawalFields[4].Descriptor()
+	proxyuserwithdrawalDescStatus := proxyuserwithdrawalFields[5].Descriptor()
 	// proxyuserwithdrawal.DefaultStatus holds the default value on creation for the status field.
 	proxyuserwithdrawal.DefaultStatus = proxyuserwithdrawalDescStatus.Default.(int8)
 	// proxyuserwithdrawalDescReason is the schema descriptor for reason field.
-	proxyuserwithdrawalDescReason := proxyuserwithdrawalFields[5].Descriptor()
+	proxyuserwithdrawalDescReason := proxyuserwithdrawalFields[6].Descriptor()
 	// proxyuserwithdrawal.ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
 	proxyuserwithdrawal.ReasonValidator = proxyuserwithdrawalDescReason.Validators[0].(func(string) error)
 	// proxyuserwithdrawalDescCreatedAt is the schema descriptor for created_at field.
-	proxyuserwithdrawalDescCreatedAt := proxyuserwithdrawalFields[6].Descriptor()
+	proxyuserwithdrawalDescCreatedAt := proxyuserwithdrawalFields[8].Descriptor()
 	// proxyuserwithdrawal.DefaultCreatedAt holds the default value on creation for the created_at field.
 	proxyuserwithdrawal.DefaultCreatedAt = proxyuserwithdrawalDescCreatedAt.Default.(func() time.Time)
 	// proxyuserwithdrawalDescUpdatedAt is the schema descriptor for updated_at field.
-	proxyuserwithdrawalDescUpdatedAt := proxyuserwithdrawalFields[7].Descriptor()
+	proxyuserwithdrawalDescUpdatedAt := proxyuserwithdrawalFields[9].Descriptor()
 	// proxyuserwithdrawal.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	proxyuserwithdrawal.DefaultUpdatedAt = proxyuserwithdrawalDescUpdatedAt.Default.(func() time.Time)
 	// proxyuserwithdrawal.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

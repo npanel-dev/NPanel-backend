@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	pb "github.com/npanel-dev/NPanel-backend/api/admin/system/v1"
 	systembiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/system"
 	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type SystemService struct {
@@ -97,9 +97,11 @@ func (s *SystemService) GetInviteConfig(ctx context.Context, req *pb.GetInviteCo
 		Code:    responsecode.AdminGetInviteConfigSuccess,
 		Message: responsecode.CodeMessages[responsecode.AdminGetInviteConfigSuccess],
 		Data: &pb.InviteConfig{
-			ForcedInvite:       config.ForcedInvite,
-			ReferralPercentage: int64(config.ReferralPercentage),
-			OnlyFirstPurchase:  config.OnlyFirstPurchase,
+			ForcedInvite:        config.ForcedInvite,
+			ReferralPercentage:  int64(config.ReferralPercentage),
+			OnlyFirstPurchase:   config.OnlyFirstPurchase,
+			WithdrawalMinAmount: config.WithdrawalMinAmount,
+			WithdrawalMethods:   config.WithdrawalMethods,
 		},
 	}, nil
 }
@@ -108,9 +110,11 @@ func (s *SystemService) GetInviteConfig(ctx context.Context, req *pb.GetInviteCo
 func (s *SystemService) UpdateInviteConfig(ctx context.Context, req *pb.UpdateInviteConfigRequest) (*pb.UpdateInviteConfigReply, error) {
 
 	config := &systembiz.InviteConfig{
-		ForcedInvite:       req.ForcedInvite,
-		ReferralPercentage: int(req.ReferralPercentage),
-		OnlyFirstPurchase:  req.OnlyFirstPurchase,
+		ForcedInvite:        req.ForcedInvite,
+		ReferralPercentage:  int(req.ReferralPercentage),
+		OnlyFirstPurchase:   req.OnlyFirstPurchase,
+		WithdrawalMinAmount: req.WithdrawalMinAmount,
+		WithdrawalMethods:   req.WithdrawalMethods,
 	}
 
 	if err := s.uc.UpdateInviteConfig(ctx, config); err != nil {
@@ -402,6 +406,51 @@ func (s *SystemService) UpdateSiteConfig(ctx context.Context, req *pb.UpdateSite
 		Code:    responsecode.AdminUpdateSiteConfigSuccess,
 		Message: responsecode.CodeMessages[responsecode.AdminUpdateSiteConfigSuccess],
 		Data:    &pb.UpdateSiteConfigData{Success: true},
+	}, nil
+}
+
+// GetTawkConfig 获取Tawk客服配置
+func (s *SystemService) GetTawkConfig(ctx context.Context, req *pb.GetTawkConfigRequest) (*pb.GetTawkConfigReply, error) {
+	config, err := s.uc.GetTawkConfig(ctx)
+	if err != nil {
+		s.log.Errorf("Failed to get tawk config: %v", err)
+		return nil, err
+	}
+
+	return &pb.GetTawkConfigReply{
+		Code:    responsecode.AdminGetSiteConfigSuccess,
+		Message: responsecode.CodeMessages[responsecode.AdminGetSiteConfigSuccess],
+		Data: &pb.AdminTawkConfig{
+			Enabled:      config.Enabled,
+			PropertyId:   config.PropertyID,
+			WidgetId:     config.WidgetID,
+			IdentifyUser: config.IdentifyUser,
+			SecureMode:   config.SecureMode,
+			SecretKey:    config.SecretKey,
+		},
+	}, nil
+}
+
+// UpdateTawkConfig 更新Tawk客服配置
+func (s *SystemService) UpdateTawkConfig(ctx context.Context, req *pb.UpdateTawkConfigRequest) (*pb.UpdateTawkConfigReply, error) {
+	config := &systembiz.TawkConfig{
+		Enabled:      req.Enabled,
+		PropertyID:   req.PropertyId,
+		WidgetID:     req.WidgetId,
+		IdentifyUser: req.IdentifyUser,
+		SecureMode:   req.SecureMode,
+		SecretKey:    req.SecretKey,
+	}
+
+	if err := s.uc.UpdateTawkConfig(ctx, config); err != nil {
+		s.log.Errorf("Failed to update tawk config: %v", err)
+		return nil, err
+	}
+
+	return &pb.UpdateTawkConfigReply{
+		Code:    responsecode.AdminUpdateSiteConfigSuccess,
+		Message: responsecode.CodeMessages[responsecode.AdminUpdateSiteConfigSuccess],
+		Data:    &pb.UpdateTawkConfigData{Success: true},
 	}, nil
 }
 

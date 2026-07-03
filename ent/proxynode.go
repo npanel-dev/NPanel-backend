@@ -37,6 +37,8 @@ type ProxyNode struct {
 	NodeType string `json:"node_type,omitempty"`
 	// 是否隐藏
 	IsHidden bool `json:"is_hidden,omitempty"`
+	// 入口节点绑定的落地节点ID
+	TargetNodeID *int64 `json:"target_node_id,omitempty"`
 	// 排序
 	Sort int32 `json:"sort,omitempty"`
 	// 节点组ID列表
@@ -57,7 +59,7 @@ func (*ProxyNode) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case proxynode.FieldEnabled, proxynode.FieldIsHidden:
 			values[i] = new(sql.NullBool)
-		case proxynode.FieldID, proxynode.FieldPort, proxynode.FieldServerID, proxynode.FieldSort:
+		case proxynode.FieldID, proxynode.FieldPort, proxynode.FieldServerID, proxynode.FieldTargetNodeID, proxynode.FieldSort:
 			values[i] = new(sql.NullInt64)
 		case proxynode.FieldName, proxynode.FieldTags, proxynode.FieldAddress, proxynode.FieldProtocol, proxynode.FieldNodeType:
 			values[i] = new(sql.NullString)
@@ -137,6 +139,13 @@ func (_m *ProxyNode) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_hidden", values[i])
 			} else if value.Valid {
 				_m.IsHidden = value.Bool
+			}
+		case proxynode.FieldTargetNodeID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field target_node_id", values[i])
+			} else if value.Valid {
+				_m.TargetNodeID = new(int64)
+				*_m.TargetNodeID = value.Int64
 			}
 		case proxynode.FieldSort:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -226,6 +235,11 @@ func (_m *ProxyNode) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_hidden=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsHidden))
+	builder.WriteString(", ")
+	if v := _m.TargetNodeID; v != nil {
+		builder.WriteString("target_node_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("sort=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sort))

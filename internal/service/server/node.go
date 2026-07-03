@@ -398,6 +398,7 @@ func (s *ServerService) QueryServerProtocolConfig(ctx context.Context, req *v1.Q
 			MundoFakeMessage:                       protocol.MundoFakeMessage,
 			MundoAcceptProxyProtocol:               protocol.MundoAcceptProxyProtocol,
 			MundoUseTlsCertificate:                 protocol.MundoUseTLSCertificate,
+			ProxyProtocol:                          protocol.ProxyProtocol,
 			Cipher:                                 protocol.Cipher,
 			ServerKey:                              protocol.ServerKey,
 			Flow:                                   protocol.Flow,

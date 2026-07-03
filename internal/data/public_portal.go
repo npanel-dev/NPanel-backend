@@ -163,6 +163,10 @@ func (r *publicPortalRepo) GetSubscribeList(ctx context.Context, language string
 			Name:              sub.Name,
 			Language:          sub.Language,
 			Description:       sub.Description,
+			ShortDescription:  sub.ShortDescription,
+			Features:          sub.Features,
+			DetailFormat:      sub.DetailFormat,
+			DetailContent:     sub.DetailContent,
 			UnitPrice:         sub.UnitPrice,
 			UnitTime:          sub.UnitTime,
 			Discount:          discounts,
@@ -338,17 +342,23 @@ func (r *publicPortalRepo) portalSubscribePriceOptions(ctx context.Context, subs
 }
 
 func (r *publicPortalRepo) getSellablePortalPriceOption(ctx context.Context, subscribeID, optionID int64) (*ent.ProxySubscribePriceOption, error) {
-	if optionID <= 0 {
-		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
-	}
-	option, err := r.data.db.ProxySubscribePriceOption.Query().
+	query := r.data.db.ProxySubscribePriceOption.Query().
 		Where(
-			proxysubscribepriceoption.IDEQ(optionID),
 			proxysubscribepriceoption.SubscribeIDEQ(subscribeID),
 			proxysubscribepriceoption.OptionTypeEQ("duration"),
+			proxysubscribepriceoption.ShowEQ(true),
 			proxysubscribepriceoption.SellEQ(true),
-		).
-		Only(ctx)
+		)
+	if optionID > 0 {
+		query = query.Where(proxysubscribepriceoption.IDEQ(optionID))
+	} else {
+		query = query.Order(
+			ent.Desc(proxysubscribepriceoption.FieldIsDefault),
+			ent.Desc(proxysubscribepriceoption.FieldSort),
+			ent.Asc(proxysubscribepriceoption.FieldID),
+		)
+	}
+	option, err := query.First(ctx)
 	if err != nil {
 		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
 	}
@@ -993,6 +1003,10 @@ func (r *publicPortalRepo) CheckOrderStatus(ctx context.Context, orderNo, authTy
 			Name:              subscribeEntity.Name,
 			Language:          subscribeEntity.Language,
 			Description:       subscribeEntity.Description,
+			ShortDescription:  subscribeEntity.ShortDescription,
+			Features:          subscribeEntity.Features,
+			DetailFormat:      subscribeEntity.DetailFormat,
+			DetailContent:     subscribeEntity.DetailContent,
 			UnitPrice:         subscribeEntity.UnitPrice,
 			UnitTime:          subscribeEntity.UnitTime,
 			Discount:          discounts,

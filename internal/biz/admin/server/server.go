@@ -61,6 +61,7 @@ type Node struct {
 	Enabled      *bool
 	NodeType     string
 	IsHidden     *bool
+	TargetNodeID *int64
 	Sort         uint32
 	NodeGroupID  int64
 	NodeGroupIDs []int64
@@ -112,6 +113,8 @@ type NodeRepo interface {
 	ResetNodeSort(ctx context.Context, sortItems []*SortItem) error
 	ClearNodeCache(ctx context.Context, serverIDs []int) error
 	GetServerProtocols(ctx context.Context, id int) ([]*server.Protocol, error)
+	GetNodeByID(ctx context.Context, id int64) (*Node, error)
+	CountFrontNodesByTarget(ctx context.Context, targetNodeID int64) (int, error)
 }
 
 type MigrationRepo interface {
@@ -192,6 +195,28 @@ func normalizeMundoProtocol(protocol *server.Protocol) {
 	}
 }
 
+func normalizeRealityProtocol(protocol *server.Protocol) error {
+	if protocol == nil || !((protocol.Type == "vless" || protocol.Type == "mx") && protocol.Security == "reality") {
+		return nil
+	}
+	public, private, err := tool.Curve25519Genkey(false, strings.TrimSpace(protocol.RealityPrivateKey))
+	if err != nil {
+		return err
+	}
+	protocol.RealityPublicKey = public
+	protocol.RealityPrivateKey = private
+	if strings.TrimSpace(protocol.RealityShortId) == "" {
+		protocol.RealityShortId = tool.GenerateShortID(private)
+	}
+	if strings.TrimSpace(protocol.RealityServerAddr) == "" {
+		protocol.RealityServerAddr = strings.TrimSpace(protocol.SNI)
+	}
+	if protocol.RealityServerPort == 0 {
+		protocol.RealityServerPort = 443
+	}
+	return nil
+}
+
 func isMundoNetwork(transport string) bool {
 	switch strings.ToLower(strings.TrimSpace(transport)) {
 	case "mundordp", "mundosql":
@@ -227,23 +252,9 @@ func (uc *ServerUsecase) CreateServer(ctx context.Context, name, country, city, 
 		processedProtocols[i] = copied
 	}
 	for _, protocol := range processedProtocols {
-		if (protocol.Type == "vless" || protocol.Type == "mx") && protocol.Security == "reality" {
-			if protocol.RealityPublicKey == "" {
-				public, private, err := tool.Curve25519Genkey(false, "")
-				if err != nil {
-					uc.log.Errorf("Failed to generate Curve25519 key: %v", err)
-					return nil, err
-				}
-				protocol.RealityPublicKey = public
-				protocol.RealityPrivateKey = private
-				protocol.RealityShortId = tool.GenerateShortID(private)
-			}
-			if protocol.RealityServerAddr == "" {
-				protocol.RealityServerAddr = protocol.SNI
-			}
-			if protocol.RealityServerPort == 0 {
-				protocol.RealityServerPort = 443
-			}
+		if err := normalizeRealityProtocol(protocol); err != nil {
+			uc.log.Errorf("Failed to normalize Reality key: %v", err)
+			return nil, err
 		}
 		if protocol.Type == "shadowsocks" && strings.Contains(protocol.Cipher, "2022") {
 			length := 32
@@ -283,23 +294,9 @@ func (uc *ServerUsecase) UpdateServer(ctx context.Context, id int, name, country
 		processedProtocols[i] = copied
 	}
 	for _, protocol := range processedProtocols {
-		if (protocol.Type == "vless" || protocol.Type == "mx") && protocol.Security == "reality" {
-			if protocol.RealityPublicKey == "" {
-				public, private, err := tool.Curve25519Genkey(false, "")
-				if err != nil {
-					uc.log.Errorf("Failed to generate Curve25519 key: %v", err)
-					return nil, err
-				}
-				protocol.RealityPublicKey = public
-				protocol.RealityPrivateKey = private
-				protocol.RealityShortId = tool.GenerateShortID(private)
-			}
-			if protocol.RealityServerAddr == "" {
-				protocol.RealityServerAddr = protocol.SNI
-			}
-			if protocol.RealityServerPort == 0 {
-				protocol.RealityServerPort = 443
-			}
+		if err := normalizeRealityProtocol(protocol); err != nil {
+			uc.log.Errorf("Failed to normalize Reality key: %v", err)
+			return nil, err
 		}
 		if protocol.Type == "shadowsocks" && strings.Contains(protocol.Cipher, "2022") {
 			length := 32

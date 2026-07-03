@@ -29,6 +29,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/ticket"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/tool"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/user"
+	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/withdrawal"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/auth"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/auth/oauth"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/common"
@@ -42,7 +43,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/internal/biz/public/subscription"
 	ticket3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/ticket"
 	user3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/user"
-	"github.com/npanel-dev/NPanel-backend/internal/biz/public/withdrawal"
+	withdrawal3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/withdrawal"
 	server4 "github.com/npanel-dev/NPanel-backend/internal/biz/server"
 	"github.com/npanel-dev/NPanel-backend/internal/conf"
 	"github.com/npanel-dev/NPanel-backend/internal/data"
@@ -67,6 +68,7 @@ import (
 	ticket2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/ticket"
 	tool2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/tool"
 	user2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/user"
+	withdrawal2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/withdrawal"
 	auth2 "github.com/npanel-dev/NPanel-backend/internal/service/auth"
 	oauth2 "github.com/npanel-dev/NPanel-backend/internal/service/auth/oauth"
 	common2 "github.com/npanel-dev/NPanel-backend/internal/service/common"
@@ -157,6 +159,9 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	redemptionService := redemption2.NewRedemptionService(redemptionUseCase)
 	toolUseCase := tool.NewToolUseCase(logger, systemUsecase)
 	toolService := tool2.NewToolService(toolUseCase)
+	withdrawalRepo := data.NewAdminWithdrawalRepo(dataData, logger)
+	withdrawalUsecase := withdrawal.NewWithdrawalUsecase(withdrawalRepo, logger)
+	withdrawalService := withdrawal2.NewWithdrawalService(withdrawalUsecase)
 	groupRepo := data.NewAdminGroupRepo(dataData, logger)
 	groupUseCase := group.NewGroupUseCase(groupRepo, logger)
 	groupService := group2.NewGroupService(groupUseCase)
@@ -193,10 +198,10 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	ticketTicketService := ticket4.NewTicketService(ticketTicketUseCase, logger)
 	userUserRepo := data.NewPublicUserRepo(dataData, logger)
 	userUseCase := user3.NewUserUseCase(userUserRepo)
-	withdrawalRepo := data.NewWithdrawalRepo(dataData, logger)
-	withdrawalUsecase := withdrawal.NewWithdrawalUsecase(withdrawalRepo, logger)
-	userUserService := user4.NewUserService(userUseCase, withdrawalUsecase)
-	grpcServer := server.NewGRPCServer(confServer, serviceContext, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, portalService, ticketTicketService, userUserService)
+	withdrawalWithdrawalRepo := data.NewWithdrawalRepo(dataData, logger)
+	withdrawalWithdrawalUsecase := withdrawal3.NewWithdrawalUsecase(withdrawalWithdrawalRepo, logger)
+	userUserService := user4.NewUserService(userUseCase, withdrawalWithdrawalUsecase)
+	grpcServer := server.NewGRPCServer(confServer, serviceContext, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, withdrawalService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, portalService, ticketTicketService, userUserService)
 	authCompat := data.NewAuthCompat(dataData, confApplication, logger)
 	announcementAnnouncementRepo := data.NewPublicAnnouncementRepo(dataData, logger)
 	announcementUseCase := announcement3.NewAnnouncementUseCase(announcementAnnouncementRepo)
@@ -219,7 +224,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	serverNodeRepo := data.NewServerNodeRepo(dataData, logger)
 	serverNodeUsecase := server4.NewServerNodeUsecase(serverNodeRepo, logger)
 	serverServerService := server5.NewServerService(serverNodeUsecase, logger)
-	httpServer := server.NewHTTPServer(confServer, confApplication, serviceContext, authCompat, dataData, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, announcementAnnouncementService, documentDocumentService, paymentPaymentService, portalService, redemptionRedemptionService, subscribeSubscribeService, publicSubscriptionService, ticketTicketService, userUserService, serverServerService, logger)
+	httpServer := server.NewHTTPServer(confServer, confApplication, serviceContext, authCompat, dataData, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, withdrawalService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, announcementAnnouncementService, documentDocumentService, paymentPaymentService, portalService, redemptionRedemptionService, subscribeSubscribeService, publicSubscriptionService, ticketTicketService, userUserService, serverServerService, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

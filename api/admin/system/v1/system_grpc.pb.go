@@ -31,6 +31,8 @@ const (
 	SystemService_GetRegisterConfig_FullMethodName         = "/api.admin.system.v1.SystemService/GetRegisterConfig"
 	SystemService_UpdateRegisterConfig_FullMethodName      = "/api.admin.system.v1.SystemService/UpdateRegisterConfig"
 	SystemService_GetSiteConfig_FullMethodName             = "/api.admin.system.v1.SystemService/GetSiteConfig"
+	SystemService_GetTawkConfig_FullMethodName             = "/api.admin.system.v1.SystemService/GetTawkConfig"
+	SystemService_UpdateTawkConfig_FullMethodName          = "/api.admin.system.v1.SystemService/UpdateTawkConfig"
 	SystemService_UpdateSiteConfig_FullMethodName          = "/api.admin.system.v1.SystemService/UpdateSiteConfig"
 	SystemService_GetSubscribeConfig_FullMethodName        = "/api.admin.system.v1.SystemService/GetSubscribeConfig"
 	SystemService_UpdateSubscribeConfig_FullMethodName     = "/api.admin.system.v1.SystemService/UpdateSubscribeConfig"
@@ -74,6 +76,10 @@ type SystemServiceClient interface {
 	UpdateRegisterConfig(ctx context.Context, in *UpdateRegisterConfigRequest, opts ...grpc.CallOption) (*UpdateRegisterConfigReply, error)
 	// GetSiteConfig 获取站点配置
 	GetSiteConfig(ctx context.Context, in *GetSiteConfigRequest, opts ...grpc.CallOption) (*GetSiteConfigReply, error)
+	// GetTawkConfig 获取Tawk客服配置
+	GetTawkConfig(ctx context.Context, in *GetTawkConfigRequest, opts ...grpc.CallOption) (*GetTawkConfigReply, error)
+	// UpdateTawkConfig 更新Tawk客服配置
+	UpdateTawkConfig(ctx context.Context, in *UpdateTawkConfigRequest, opts ...grpc.CallOption) (*UpdateTawkConfigReply, error)
 	// UpdateSiteConfig 更新站点配置
 	UpdateSiteConfig(ctx context.Context, in *UpdateSiteConfigRequest, opts ...grpc.CallOption) (*UpdateSiteConfigReply, error)
 	// GetSubscribeConfig 获取订阅配置
@@ -224,6 +230,26 @@ func (c *systemServiceClient) GetSiteConfig(ctx context.Context, in *GetSiteConf
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSiteConfigReply)
 	err := c.cc.Invoke(ctx, SystemService_GetSiteConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *systemServiceClient) GetTawkConfig(ctx context.Context, in *GetTawkConfigRequest, opts ...grpc.CallOption) (*GetTawkConfigReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTawkConfigReply)
+	err := c.cc.Invoke(ctx, SystemService_GetTawkConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *systemServiceClient) UpdateTawkConfig(ctx context.Context, in *UpdateTawkConfigRequest, opts ...grpc.CallOption) (*UpdateTawkConfigReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateTawkConfigReply)
+	err := c.cc.Invoke(ctx, SystemService_UpdateTawkConfig_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -388,6 +414,10 @@ type SystemServiceServer interface {
 	UpdateRegisterConfig(context.Context, *UpdateRegisterConfigRequest) (*UpdateRegisterConfigReply, error)
 	// GetSiteConfig 获取站点配置
 	GetSiteConfig(context.Context, *GetSiteConfigRequest) (*GetSiteConfigReply, error)
+	// GetTawkConfig 获取Tawk客服配置
+	GetTawkConfig(context.Context, *GetTawkConfigRequest) (*GetTawkConfigReply, error)
+	// UpdateTawkConfig 更新Tawk客服配置
+	UpdateTawkConfig(context.Context, *UpdateTawkConfigRequest) (*UpdateTawkConfigReply, error)
 	// UpdateSiteConfig 更新站点配置
 	UpdateSiteConfig(context.Context, *UpdateSiteConfigRequest) (*UpdateSiteConfigReply, error)
 	// GetSubscribeConfig 获取订阅配置
@@ -459,6 +489,12 @@ func (UnimplementedSystemServiceServer) UpdateRegisterConfig(context.Context, *U
 }
 func (UnimplementedSystemServiceServer) GetSiteConfig(context.Context, *GetSiteConfigRequest) (*GetSiteConfigReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSiteConfig not implemented")
+}
+func (UnimplementedSystemServiceServer) GetTawkConfig(context.Context, *GetTawkConfigRequest) (*GetTawkConfigReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTawkConfig not implemented")
+}
+func (UnimplementedSystemServiceServer) UpdateTawkConfig(context.Context, *UpdateTawkConfigRequest) (*UpdateTawkConfigReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTawkConfig not implemented")
 }
 func (UnimplementedSystemServiceServer) UpdateSiteConfig(context.Context, *UpdateSiteConfigRequest) (*UpdateSiteConfigReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSiteConfig not implemented")
@@ -732,6 +768,42 @@ func _SystemService_GetSiteConfig_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SystemServiceServer).GetSiteConfig(ctx, req.(*GetSiteConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SystemService_GetTawkConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTawkConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SystemServiceServer).GetTawkConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SystemService_GetTawkConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SystemServiceServer).GetTawkConfig(ctx, req.(*GetTawkConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SystemService_UpdateTawkConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTawkConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SystemServiceServer).UpdateTawkConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SystemService_UpdateTawkConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SystemServiceServer).UpdateTawkConfig(ctx, req.(*UpdateTawkConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1024,6 +1096,14 @@ var SystemService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSiteConfig",
 			Handler:    _SystemService_GetSiteConfig_Handler,
+		},
+		{
+			MethodName: "GetTawkConfig",
+			Handler:    _SystemService_GetTawkConfig_Handler,
+		},
+		{
+			MethodName: "UpdateTawkConfig",
+			Handler:    _SystemService_UpdateTawkConfig_Handler,
 		},
 		{
 			MethodName: "UpdateSiteConfig",

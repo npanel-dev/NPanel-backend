@@ -19,6 +19,12 @@ type legacySQLMigration struct {
 	path    string
 }
 
+type legacyRequiredSchemaPatch struct {
+	table  string
+	column string
+	ddl    string
+}
+
 var legacySQLMigrations = []legacySQLMigration{
 	{version: 2, path: "legacy_sql/00002_init_basic_data.up.sql"},
 	{version: 2101, path: "legacy_sql/02101_subscribe_application.up.sql"},
@@ -48,6 +54,73 @@ var legacySQLMigrations = []legacySQLMigration{
 	{version: 2148, path: "legacy_sql/02148_subscribe_description_content.up.sql"},
 	{version: 2149, path: "legacy_sql/02149_subscribe_price_option_code_type.up.sql"},
 	{version: 2150, path: "legacy_sql/02150_subscribe_price_option_version.up.sql"},
+	{version: 2151, path: "legacy_sql/02151_archive_duplicate_duration_price_options.up.sql"},
+	{version: 2152, path: "legacy_sql/02152_unwrap_subscribe_description_json.up.sql"},
+	{version: 2153, path: "legacy_sql/02153_cleanup_inactive_unreferenced_price_options.up.sql"},
+	{version: 2154, path: "legacy_sql/02154_node_target_node_id.up.sql"},
+}
+
+var legacyCompatibilityMigrationVersions = map[int64]struct{}{
+	2141: {},
+	2142: {},
+	2143: {},
+	2144: {},
+	2145: {},
+	2146: {},
+	2147: {},
+	2148: {},
+	2149: {},
+	2150: {},
+	2151: {},
+	2152: {},
+}
+
+var legacyRequiredSchemaPatches = []legacyRequiredSchemaPatch{
+	{
+		table:  "servers",
+		column: "last_reported_at",
+		ddl:    "ALTER TABLE `servers` ADD COLUMN `last_reported_at` datetime(3) DEFAULT NULL COMMENT 'Last Reported Time'",
+	},
+	{
+		table:  "servers",
+		column: "longitude",
+		ddl:    "ALTER TABLE `servers` ADD COLUMN `longitude` VARCHAR(255) DEFAULT '' COMMENT 'longitude'",
+	},
+	{
+		table:  "servers",
+		column: "latitude",
+		ddl:    "ALTER TABLE `servers` ADD COLUMN `latitude` VARCHAR(255) DEFAULT '' COMMENT 'latitude'",
+	},
+	{
+		table:  "servers",
+		column: "longitude_center",
+		ddl:    "ALTER TABLE `servers` ADD COLUMN `longitude_center` VARCHAR(255) DEFAULT '' COMMENT 'longitude center'",
+	},
+	{
+		table:  "servers",
+		column: "latitude_center",
+		ddl:    "ALTER TABLE `servers` ADD COLUMN `latitude_center` VARCHAR(255) DEFAULT '' COMMENT 'latitude center'",
+	},
+	{
+		table:  "nodes",
+		column: "node_group_ids",
+		ddl:    "ALTER TABLE `nodes` ADD COLUMN `node_group_ids` JSON COMMENT 'Node Group IDs (JSON array, multiple groups)'",
+	},
+	{
+		table:  "nodes",
+		column: "node_type",
+		ddl:    "ALTER TABLE `nodes` ADD COLUMN `node_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'landing' COMMENT 'Node type: front, landing' AFTER `enabled`",
+	},
+	{
+		table:  "nodes",
+		column: "is_hidden",
+		ddl:    "ALTER TABLE `nodes` ADD COLUMN `is_hidden` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Hidden - users cannot see hidden nodes' AFTER `node_type`",
+	},
+	{
+		table:  "nodes",
+		column: "target_node_id",
+		ddl:    "ALTER TABLE `nodes` ADD COLUMN `target_node_id` bigint NULL COMMENT '入口节点绑定的落地节点ID' AFTER `is_hidden`",
+	},
 }
 
 func (m *Migrator) initLegacyDefaultData(ctx context.Context) error {
@@ -73,6 +146,10 @@ func (m *Migrator) initLegacyDefaultData(ctx context.Context) error {
 		if err := m.executeLegacySQLMigration(ctx, db, migration); err != nil {
 			return err
 		}
+	}
+
+	if err := m.applyLegacyRequiredSchemaPatches(ctx, db); err != nil {
+		return err
 	}
 
 	return nil
@@ -143,8 +220,12 @@ func (m *Migrator) EnsureLegacyCompatibilitySchema(ctx context.Context) error {
 	}
 	defer db.Close()
 
+	if err := m.applyLegacyRequiredSchemaPatches(ctx, db); err != nil {
+		return err
+	}
+
 	for _, migration := range legacySQLMigrations {
-		if migration.version != 2141 && migration.version != 2142 && migration.version != 2143 && migration.version != 2144 && migration.version != 2145 && migration.version != 2146 && migration.version != 2147 && migration.version != 2148 && migration.version != 2149 && migration.version != 2150 {
+		if _, ok := legacyCompatibilityMigrationVersions[migration.version]; !ok {
 			continue
 		}
 		if err := m.executeLegacySQLMigrationWithVersion(ctx, db, migration, false); err != nil {
@@ -153,6 +234,84 @@ func (m *Migrator) EnsureLegacyCompatibilitySchema(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (m *Migrator) applyLegacyRequiredSchemaPatches(ctx context.Context, db *sql.DB) error {
+	for _, patch := range legacyRequiredSchemaPatches {
+		tableExists, err := legacyTableExists(ctx, db, patch.table)
+		if err != nil {
+			return err
+		}
+		if !tableExists {
+			m.logger.Warnf("skip legacy required schema patch; table does not exist: table=%s column=%s", patch.table, patch.column)
+			continue
+		}
+
+		columnExists, err := legacyColumnExists(ctx, db, patch.table, patch.column)
+		if err != nil {
+			return err
+		}
+		if columnExists {
+			continue
+		}
+
+		if _, err := db.ExecContext(ctx, patch.ddl); err != nil {
+			return fmt.Errorf("apply legacy required schema patch %s.%s failed: %w", patch.table, patch.column, err)
+		}
+		m.logger.Infof("legacy required schema patch applied: table=%s column=%s", patch.table, patch.column)
+	}
+
+	if err := m.normalizeLegacyNodeType(ctx, db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Migrator) normalizeLegacyNodeType(ctx context.Context, db *sql.DB) error {
+	tableExists, err := legacyTableExists(ctx, db, "nodes")
+	if err != nil {
+		return err
+	}
+	if !tableExists {
+		return nil
+	}
+	columnExists, err := legacyColumnExists(ctx, db, "nodes", "node_type")
+	if err != nil {
+		return err
+	}
+	if !columnExists {
+		return nil
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE `nodes` SET `node_type` = 'landing' WHERE `node_type` = ''"); err != nil {
+		return fmt.Errorf("normalize legacy nodes.node_type failed: %w", err)
+	}
+	return nil
+}
+
+func legacyTableExists(ctx context.Context, db *sql.DB, tableName string) (bool, error) {
+	var count int
+	if err := db.QueryRowContext(
+		ctx,
+		"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
+		tableName,
+	).Scan(&count); err != nil {
+		return false, fmt.Errorf("query legacy table %s existence failed: %w", tableName, err)
+	}
+	return count > 0, nil
+}
+
+func legacyColumnExists(ctx context.Context, db *sql.DB, tableName, columnName string) (bool, error) {
+	var count int
+	if err := db.QueryRowContext(
+		ctx,
+		"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+		tableName,
+		columnName,
+	).Scan(&count); err != nil {
+		return false, fmt.Errorf("query legacy column %s.%s existence failed: %w", tableName, columnName, err)
+	}
+	return count > 0, nil
 }
 
 func getLegacyMigrationVersion(ctx context.Context, db *sql.DB) (int64, error) {
@@ -268,10 +427,12 @@ func shouldIgnoreLegacySQLError(path, stmt string, err error) bool {
 			path == "legacy_sql/02135_add_node_group_type.up.sql" ||
 			path == "legacy_sql/02136_add_node_type_is_hidden.up.sql" ||
 			path == "legacy_sql/02137_payment_sort.up.sql" ||
-			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql"
+			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql" ||
+			path == "legacy_sql/02154_node_target_node_id.up.sql"
 	case 1061:
 		return path == "legacy_sql/02133_add_expired_node_group.up.sql" ||
-			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql"
+			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql" ||
+			path == "legacy_sql/02154_node_target_node_id.up.sql"
 	case 1091:
 		return path == "legacy_sql/02137_payment_sort.up.sql"
 	}
@@ -281,7 +442,8 @@ func shouldIgnoreLegacySQLError(path, stmt string, err error) bool {
 		return strings.HasPrefix(path, "legacy_sql/02133_") ||
 			path == "legacy_sql/02135_add_node_group_type.up.sql" ||
 			path == "legacy_sql/02136_add_node_type_is_hidden.up.sql" ||
-			path == "legacy_sql/02137_payment_sort.up.sql"
+			path == "legacy_sql/02137_payment_sort.up.sql" ||
+			path == "legacy_sql/02154_node_target_node_id.up.sql"
 	}
 
 	return false

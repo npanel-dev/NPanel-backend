@@ -241,6 +241,8 @@ func (m *Protocol) validate(all bool) error {
 
 	// no validation rules for SimnetClientMaxUdpSessions
 
+	// no validation rules for ProxyProtocol
+
 	// no validation rules for OmniflowCarrier
 
 	// no validation rules for OmniflowPath
@@ -1134,6 +1136,10 @@ func (m *Node) validate(all bool) error {
 
 	if m.IsHidden != nil {
 		// no validation rules for IsHidden
+	}
+
+	if m.TargetNodeId != nil {
+		// no validation rules for TargetNodeId
 	}
 
 	if len(errors) > 0 {
@@ -3174,6 +3180,10 @@ func (m *CreateNodeRequest) validate(all bool) error {
 		// no validation rules for IsHidden
 	}
 
+	if m.TargetNodeId != nil {
+		// no validation rules for TargetNodeId
+	}
+
 	if len(errors) > 0 {
 		return CreateNodeRequestMultiError(errors)
 	}
@@ -3558,6 +3568,10 @@ func (m *UpdateNodeRequest) validate(all bool) error {
 
 	if m.IsHidden != nil {
 		// no validation rules for IsHidden
+	}
+
+	if m.TargetNodeId != nil {
+		// no validation rules for TargetNodeId
 	}
 
 	if len(errors) > 0 {

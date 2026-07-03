@@ -78,6 +78,20 @@ func (_u *ProxyUserUpdate) ClearSalt() *ProxyUserUpdate {
 	return _u
 }
 
+// SetSourcePanel sets the "source_panel" field.
+func (_u *ProxyUserUpdate) SetSourcePanel(v string) *ProxyUserUpdate {
+	_u.mutation.SetSourcePanel(v)
+	return _u
+}
+
+// SetNillableSourcePanel sets the "source_panel" field if the given value is not nil.
+func (_u *ProxyUserUpdate) SetNillableSourcePanel(v *string) *ProxyUserUpdate {
+	if v != nil {
+		_u.SetSourcePanel(*v)
+	}
+	return _u
+}
+
 // SetAvatar sets the "avatar" field.
 func (_u *ProxyUserUpdate) SetAvatar(v string) *ProxyUserUpdate {
 	_u.mutation.SetAvatar(v)
@@ -617,6 +631,11 @@ func (_u *ProxyUserUpdate) check() error {
 			return &ValidationError{Name: "salt", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.salt": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SourcePanel(); ok {
+		if err := proxyuser.SourcePanelValidator(v); err != nil {
+			return &ValidationError{Name: "source_panel", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.source_panel": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ReferCode(); ok {
 		if err := proxyuser.ReferCodeValidator(v); err != nil {
 			return &ValidationError{Name: "refer_code", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.refer_code": %w`, err)}
@@ -648,6 +667,9 @@ func (_u *ProxyUserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SaltCleared() {
 		_spec.ClearField(proxyuser.FieldSalt, field.TypeString)
+	}
+	if value, ok := _u.mutation.SourcePanel(); ok {
+		_spec.SetField(proxyuser.FieldSourcePanel, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Avatar(); ok {
 		_spec.SetField(proxyuser.FieldAvatar, field.TypeString, value)
@@ -921,6 +943,20 @@ func (_u *ProxyUserUpdateOne) SetNillableSalt(v *string) *ProxyUserUpdateOne {
 // ClearSalt clears the value of the "salt" field.
 func (_u *ProxyUserUpdateOne) ClearSalt() *ProxyUserUpdateOne {
 	_u.mutation.ClearSalt()
+	return _u
+}
+
+// SetSourcePanel sets the "source_panel" field.
+func (_u *ProxyUserUpdateOne) SetSourcePanel(v string) *ProxyUserUpdateOne {
+	_u.mutation.SetSourcePanel(v)
+	return _u
+}
+
+// SetNillableSourcePanel sets the "source_panel" field if the given value is not nil.
+func (_u *ProxyUserUpdateOne) SetNillableSourcePanel(v *string) *ProxyUserUpdateOne {
+	if v != nil {
+		_u.SetSourcePanel(*v)
+	}
 	return _u
 }
 
@@ -1476,6 +1512,11 @@ func (_u *ProxyUserUpdateOne) check() error {
 			return &ValidationError{Name: "salt", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.salt": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SourcePanel(); ok {
+		if err := proxyuser.SourcePanelValidator(v); err != nil {
+			return &ValidationError{Name: "source_panel", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.source_panel": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ReferCode(); ok {
 		if err := proxyuser.ReferCodeValidator(v); err != nil {
 			return &ValidationError{Name: "refer_code", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.refer_code": %w`, err)}
@@ -1524,6 +1565,9 @@ func (_u *ProxyUserUpdateOne) sqlSave(ctx context.Context) (_node *ProxyUser, er
 	}
 	if _u.mutation.SaltCleared() {
 		_spec.ClearField(proxyuser.FieldSalt, field.TypeString)
+	}
+	if value, ok := _u.mutation.SourcePanel(); ok {
+		_spec.SetField(proxyuser.FieldSourcePanel, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Avatar(); ok {
 		_spec.SetField(proxyuser.FieldAvatar, field.TypeString, value)

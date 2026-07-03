@@ -56,6 +56,20 @@ func (_c *ProxyUserCreate) SetNillableSalt(v *string) *ProxyUserCreate {
 	return _c
 }
 
+// SetSourcePanel sets the "source_panel" field.
+func (_c *ProxyUserCreate) SetSourcePanel(v string) *ProxyUserCreate {
+	_c.mutation.SetSourcePanel(v)
+	return _c
+}
+
+// SetNillableSourcePanel sets the "source_panel" field if the given value is not nil.
+func (_c *ProxyUserCreate) SetNillableSourcePanel(v *string) *ProxyUserCreate {
+	if v != nil {
+		_c.SetSourcePanel(*v)
+	}
+	return _c
+}
+
 // SetAvatar sets the "avatar" field.
 func (_c *ProxyUserCreate) SetAvatar(v string) *ProxyUserCreate {
 	_c.mutation.SetAvatar(v)
@@ -453,6 +467,10 @@ func (_c *ProxyUserCreate) defaults() {
 		v := proxyuser.DefaultAlgo
 		_c.mutation.SetAlgo(v)
 	}
+	if _, ok := _c.mutation.SourcePanel(); !ok {
+		v := proxyuser.DefaultSourcePanel
+		_c.mutation.SetSourcePanel(v)
+	}
 	if _, ok := _c.mutation.Balance(); !ok {
 		v := proxyuser.DefaultBalance
 		_c.mutation.SetBalance(v)
@@ -540,6 +558,14 @@ func (_c *ProxyUserCreate) check() error {
 	if v, ok := _c.mutation.Salt(); ok {
 		if err := proxyuser.SaltValidator(v); err != nil {
 			return &ValidationError{Name: "salt", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.salt": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SourcePanel(); !ok {
+		return &ValidationError{Name: "source_panel", err: errors.New(`ent: missing required field "ProxyUser.source_panel"`)}
+	}
+	if v, ok := _c.mutation.SourcePanel(); ok {
+		if err := proxyuser.SourcePanelValidator(v); err != nil {
+			return &ValidationError{Name: "source_panel", err: fmt.Errorf(`ent: validator failed for field "ProxyUser.source_panel": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ReferCode(); ok {
@@ -634,6 +660,10 @@ func (_c *ProxyUserCreate) createSpec() (*ProxyUser, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Salt(); ok {
 		_spec.SetField(proxyuser.FieldSalt, field.TypeString, value)
 		_node.Salt = &value
+	}
+	if value, ok := _c.mutation.SourcePanel(); ok {
+		_spec.SetField(proxyuser.FieldSourcePanel, field.TypeString, value)
+		_node.SourcePanel = value
 	}
 	if value, ok := _c.mutation.Avatar(); ok {
 		_spec.SetField(proxyuser.FieldAvatar, field.TypeString, value)

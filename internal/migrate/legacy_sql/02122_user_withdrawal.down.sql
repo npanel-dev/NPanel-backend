@@ -1,5 +1,5 @@
-DROP TABLE IF EXISTS `withdrawals`;
+DROP TABLE IF EXISTS `user_withdrawal`;
 
 DELETE FROM `system`
 WHERE `category` = 'invite'
-  AND `key` = 'WithdrawalMethod';
+  AND `key` IN ('WithdrawalMethod', 'WithdrawalMethods', 'WithdrawalMinAmount');

@@ -227,6 +227,8 @@ message InviteConfig {
   bool forced_invite = 1;
   int64 referral_percentage = 2;
   bool only_first_purchase = 3;
+  int64 withdrawal_min_amount = 4;
+  string withdrawal_methods = 5;
 }
 
 // Currency configuration
@@ -245,6 +247,15 @@ message SubscribeConfig {
   string user_agent_list = 6;
 }
 
+// Public tawk customer service configuration
+message PublicTawkConfig {
+  bool enabled = 1;
+  string property_id = 2;
+  string widget_id = 3;
+  bool identify_user = 4;
+  bool secure_mode = 5;
+}
+
 // Public verify code configuration
 message PublicVerifyCodeConfig {
   int64 verify_code_interval = 1;
@@ -261,6 +272,7 @@ message GetGlobalConfigReply {
   PublicVerifyCodeConfig verify_code = 7;
   repeated string oauth_methods = 8;
   bool web_ad = 9;
+  PublicTawkConfig tawk = 10;
 }
 
 // GetStat Request (empty)

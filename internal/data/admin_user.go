@@ -544,6 +544,8 @@ func (r *adminUserRepo) UpdateUserBasicInfo(ctx context.Context, req *v1.UpdateU
 		}
 		encodedPwd := tool.EncodePassWord(req.Password)
 		builder.SetPassword(encodedPwd)
+		builder.SetAlgo("default")
+		builder.ClearSalt()
 	}
 
 	// Telegram field is int64 in proto

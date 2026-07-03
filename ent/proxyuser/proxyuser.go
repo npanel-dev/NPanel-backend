@@ -20,6 +20,8 @@ const (
 	FieldAlgo = "algo"
 	// FieldSalt holds the string denoting the salt field in the database.
 	FieldSalt = "salt"
+	// FieldSourcePanel holds the string denoting the source_panel field in the database.
+	FieldSourcePanel = "source_panel"
 	// FieldAvatar holds the string denoting the avatar field in the database.
 	FieldAvatar = "avatar"
 	// FieldBalance holds the string denoting the balance field in the database.
@@ -94,6 +96,7 @@ var Columns = []string{
 	FieldPassword,
 	FieldAlgo,
 	FieldSalt,
+	FieldSourcePanel,
 	FieldAvatar,
 	FieldBalance,
 	FieldTelegram,
@@ -138,6 +141,10 @@ var (
 	AlgoValidator func(string) error
 	// SaltValidator is a validator for the "salt" field. It is called by the builders before save.
 	SaltValidator func(string) error
+	// DefaultSourcePanel holds the default value on creation for the "source_panel" field.
+	DefaultSourcePanel string
+	// SourcePanelValidator is a validator for the "source_panel" field. It is called by the builders before save.
+	SourcePanelValidator func(string) error
 	// DefaultBalance holds the default value on creation for the "balance" field.
 	DefaultBalance int64
 	// ReferCodeValidator is a validator for the "refer_code" field. It is called by the builders before save.
@@ -199,6 +206,11 @@ func ByAlgo(opts ...sql.OrderTermOption) OrderOption {
 // BySalt orders the results by the salt field.
 func BySalt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSalt, opts...).ToFunc()
+}
+
+// BySourcePanel orders the results by the source_panel field.
+func BySourcePanel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourcePanel, opts...).ToFunc()
 }
 
 // ByAvatar orders the results by the avatar field.

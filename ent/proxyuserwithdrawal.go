@@ -23,12 +23,16 @@ type ProxyUserWithdrawal struct {
 	UserID int64 `json:"user_id,omitempty"`
 	// 提现金额
 	Amount int64 `json:"amount,omitempty"`
+	// 提现方式
+	Method *string `json:"method,omitempty"`
 	// 提现内容
 	Content *string `json:"content,omitempty"`
 	// 提现状态
 	Status int8 `json:"status,omitempty"`
 	// 拒绝原因
 	Reason *string `json:"reason,omitempty"`
+	// 处理时间
+	ProcessedAt *time.Time `json:"processed_at,omitempty"`
 	// 创建时间
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// 更新时间
@@ -66,9 +70,9 @@ func (*ProxyUserWithdrawal) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case proxyuserwithdrawal.FieldID, proxyuserwithdrawal.FieldUserID, proxyuserwithdrawal.FieldAmount, proxyuserwithdrawal.FieldStatus:
 			values[i] = new(sql.NullInt64)
-		case proxyuserwithdrawal.FieldContent, proxyuserwithdrawal.FieldReason:
+		case proxyuserwithdrawal.FieldMethod, proxyuserwithdrawal.FieldContent, proxyuserwithdrawal.FieldReason:
 			values[i] = new(sql.NullString)
-		case proxyuserwithdrawal.FieldCreatedAt, proxyuserwithdrawal.FieldUpdatedAt:
+		case proxyuserwithdrawal.FieldProcessedAt, proxyuserwithdrawal.FieldCreatedAt, proxyuserwithdrawal.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -103,6 +107,13 @@ func (_m *ProxyUserWithdrawal) assignValues(columns []string, values []any) erro
 			} else if value.Valid {
 				_m.Amount = value.Int64
 			}
+		case proxyuserwithdrawal.FieldMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field method", values[i])
+			} else if value.Valid {
+				_m.Method = new(string)
+				*_m.Method = value.String
+			}
 		case proxyuserwithdrawal.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
@@ -122,6 +133,13 @@ func (_m *ProxyUserWithdrawal) assignValues(columns []string, values []any) erro
 			} else if value.Valid {
 				_m.Reason = new(string)
 				*_m.Reason = value.String
+			}
+		case proxyuserwithdrawal.FieldProcessedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field processed_at", values[i])
+			} else if value.Valid {
+				_m.ProcessedAt = new(time.Time)
+				*_m.ProcessedAt = value.Time
 			}
 		case proxyuserwithdrawal.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -182,6 +200,11 @@ func (_m *ProxyUserWithdrawal) String() string {
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Amount))
 	builder.WriteString(", ")
+	if v := _m.Method; v != nil {
+		builder.WriteString("method=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
 	if v := _m.Content; v != nil {
 		builder.WriteString("content=")
 		builder.WriteString(*v)
@@ -193,6 +216,11 @@ func (_m *ProxyUserWithdrawal) String() string {
 	if v := _m.Reason; v != nil {
 		builder.WriteString("reason=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ProcessedAt; v != nil {
+		builder.WriteString("processed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")

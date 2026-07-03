@@ -163,6 +163,7 @@ var (
 		{Name: "enabled", Type: field.TypeBool, Comment: "启用", Default: true},
 		{Name: "node_type", Type: field.TypeString, Size: 20, Comment: "节点类型", Default: "landing"},
 		{Name: "is_hidden", Type: field.TypeBool, Comment: "是否隐藏", Default: false},
+		{Name: "target_node_id", Type: field.TypeInt64, Nullable: true, Comment: "入口节点绑定的落地节点ID"},
 		{Name: "sort", Type: field.TypeInt32, Comment: "排序", Default: 0},
 		{Name: "node_group_ids", Type: field.TypeJSON, Nullable: true, Comment: "节点组ID列表"},
 		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
@@ -780,6 +781,7 @@ var (
 		{Name: "password", Type: field.TypeString, Size: 100, Comment: "用户密码"},
 		{Name: "algo", Type: field.TypeString, Size: 20, Comment: "加密算法", Default: "default"},
 		{Name: "salt", Type: field.TypeString, Nullable: true, Size: 20, Comment: "密码盐值"},
+		{Name: "source_panel", Type: field.TypeString, Size: 64, Comment: "账号来源面板", Default: "npanel"},
 		{Name: "avatar", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "用户头像"},
 		{Name: "balance", Type: field.TypeInt64, Nullable: true, Comment: "用户余额", Default: 0},
 		{Name: "telegram", Type: field.TypeInt64, Nullable: true, Comment: "Telegram 账号"},
@@ -896,9 +898,11 @@ var (
 	UserWithdrawalColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "提现ID"},
 		{Name: "amount", Type: field.TypeInt64, Comment: "提现金额"},
+		{Name: "method", Type: field.TypeString, Nullable: true, Size: 32, Comment: "提现方式"},
 		{Name: "content", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "提现内容"},
 		{Name: "status", Type: field.TypeInt8, Comment: "提现状态", Default: 0},
 		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 500, Comment: "拒绝原因"},
+		{Name: "processed_at", Type: field.TypeTime, Nullable: true, Comment: "处理时间"},
 		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
 		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
 		{Name: "user_id", Type: field.TypeInt64, Comment: "用户ID"},
@@ -911,7 +915,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "user_withdrawal_user_withdrawals",
-				Columns:    []*schema.Column{UserWithdrawalColumns[7]},
+				Columns:    []*schema.Column{UserWithdrawalColumns[9]},
 				RefColumns: []*schema.Column{UserColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

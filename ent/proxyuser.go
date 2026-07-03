@@ -24,6 +24,8 @@ type ProxyUser struct {
 	Algo string `json:"algo,omitempty"`
 	// 密码盐值
 	Salt *string `json:"salt,omitempty"`
+	// 账号来源面板
+	SourcePanel string `json:"source_panel,omitempty"`
 	// 用户头像
 	Avatar *string `json:"avatar,omitempty"`
 	// 用户余额
@@ -114,7 +116,7 @@ func (*ProxyUser) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case proxyuser.FieldID, proxyuser.FieldBalance, proxyuser.FieldTelegram, proxyuser.FieldRefererID, proxyuser.FieldCommission, proxyuser.FieldReferralPercentage, proxyuser.FieldGiftAmount, proxyuser.FieldIsDel:
 			values[i] = new(sql.NullInt64)
-		case proxyuser.FieldPassword, proxyuser.FieldAlgo, proxyuser.FieldSalt, proxyuser.FieldAvatar, proxyuser.FieldReferCode, proxyuser.FieldRules:
+		case proxyuser.FieldPassword, proxyuser.FieldAlgo, proxyuser.FieldSalt, proxyuser.FieldSourcePanel, proxyuser.FieldAvatar, proxyuser.FieldReferCode, proxyuser.FieldRules:
 			values[i] = new(sql.NullString)
 		case proxyuser.FieldCreatedAt, proxyuser.FieldUpdatedAt, proxyuser.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -157,6 +159,12 @@ func (_m *ProxyUser) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Salt = new(string)
 				*_m.Salt = value.String
+			}
+		case proxyuser.FieldSourcePanel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source_panel", values[i])
+			} else if value.Valid {
+				_m.SourcePanel = value.String
 			}
 		case proxyuser.FieldAvatar:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -362,6 +370,9 @@ func (_m *ProxyUser) String() string {
 		builder.WriteString("salt=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("source_panel=")
+	builder.WriteString(_m.SourcePanel)
 	builder.WriteString(", ")
 	if v := _m.Avatar; v != nil {
 		builder.WriteString("avatar=")

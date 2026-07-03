@@ -511,6 +511,10 @@ func (m *InviteConfig) validate(all bool) error {
 
 	// no validation rules for OnlyFirstPurchase
 
+	// no validation rules for WithdrawalMinAmount
+
+	// no validation rules for WithdrawalMethods
+
 	if len(errors) > 0 {
 		return InviteConfigMultiError(errors)
 	}
@@ -1437,6 +1441,10 @@ func (m *UpdateInviteConfigRequest) validate(all bool) error {
 	// no validation rules for ReferralPercentage
 
 	// no validation rules for OnlyFirstPurchase
+
+	// no validation rules for WithdrawalMinAmount
+
+	// no validation rules for WithdrawalMethods
 
 	if len(errors) > 0 {
 		return UpdateInviteConfigRequestMultiError(errors)
@@ -3731,6 +3739,118 @@ var _ interface {
 	ErrorName() string
 } = SiteConfigValidationError{}
 
+// Validate checks the field values on AdminTawkConfig with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *AdminTawkConfig) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AdminTawkConfig with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AdminTawkConfigMultiError, or nil if none found.
+func (m *AdminTawkConfig) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AdminTawkConfig) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Enabled
+
+	// no validation rules for PropertyId
+
+	// no validation rules for WidgetId
+
+	// no validation rules for IdentifyUser
+
+	// no validation rules for SecureMode
+
+	// no validation rules for SecretKey
+
+	if len(errors) > 0 {
+		return AdminTawkConfigMultiError(errors)
+	}
+
+	return nil
+}
+
+// AdminTawkConfigMultiError is an error wrapping multiple validation errors
+// returned by AdminTawkConfig.ValidateAll() if the designated constraints
+// aren't met.
+type AdminTawkConfigMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AdminTawkConfigMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AdminTawkConfigMultiError) AllErrors() []error { return m }
+
+// AdminTawkConfigValidationError is the validation error returned by
+// AdminTawkConfig.Validate if the designated constraints aren't met.
+type AdminTawkConfigValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AdminTawkConfigValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AdminTawkConfigValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AdminTawkConfigValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AdminTawkConfigValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AdminTawkConfigValidationError) ErrorName() string { return "AdminTawkConfigValidationError" }
+
+// Error satisfies the builtin error interface
+func (e AdminTawkConfigValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAdminTawkConfig.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AdminTawkConfigValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AdminTawkConfigValidationError{}
+
 // Validate checks the field values on GetRegisterConfigRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -4919,6 +5039,596 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateSiteConfigReplyValidationError{}
+
+// Validate checks the field values on GetTawkConfigRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetTawkConfigRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetTawkConfigRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetTawkConfigRequestMultiError, or nil if none found.
+func (m *GetTawkConfigRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetTawkConfigRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetTawkConfigRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetTawkConfigRequestMultiError is an error wrapping multiple validation
+// errors returned by GetTawkConfigRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetTawkConfigRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetTawkConfigRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetTawkConfigRequestMultiError) AllErrors() []error { return m }
+
+// GetTawkConfigRequestValidationError is the validation error returned by
+// GetTawkConfigRequest.Validate if the designated constraints aren't met.
+type GetTawkConfigRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetTawkConfigRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetTawkConfigRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetTawkConfigRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetTawkConfigRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetTawkConfigRequestValidationError) ErrorName() string {
+	return "GetTawkConfigRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetTawkConfigRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetTawkConfigRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetTawkConfigRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetTawkConfigRequestValidationError{}
+
+// Validate checks the field values on GetTawkConfigReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetTawkConfigReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetTawkConfigReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetTawkConfigReplyMultiError, or nil if none found.
+func (m *GetTawkConfigReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetTawkConfigReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GetTawkConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GetTawkConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GetTawkConfigReplyValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return GetTawkConfigReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetTawkConfigReplyMultiError is an error wrapping multiple validation errors
+// returned by GetTawkConfigReply.ValidateAll() if the designated constraints
+// aren't met.
+type GetTawkConfigReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetTawkConfigReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetTawkConfigReplyMultiError) AllErrors() []error { return m }
+
+// GetTawkConfigReplyValidationError is the validation error returned by
+// GetTawkConfigReply.Validate if the designated constraints aren't met.
+type GetTawkConfigReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetTawkConfigReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetTawkConfigReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetTawkConfigReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetTawkConfigReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetTawkConfigReplyValidationError) ErrorName() string {
+	return "GetTawkConfigReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetTawkConfigReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetTawkConfigReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetTawkConfigReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetTawkConfigReplyValidationError{}
+
+// Validate checks the field values on UpdateTawkConfigRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateTawkConfigRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateTawkConfigRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateTawkConfigRequestMultiError, or nil if none found.
+func (m *UpdateTawkConfigRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateTawkConfigRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Enabled
+
+	// no validation rules for PropertyId
+
+	// no validation rules for WidgetId
+
+	// no validation rules for IdentifyUser
+
+	// no validation rules for SecureMode
+
+	// no validation rules for SecretKey
+
+	if len(errors) > 0 {
+		return UpdateTawkConfigRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateTawkConfigRequestMultiError is an error wrapping multiple validation
+// errors returned by UpdateTawkConfigRequest.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateTawkConfigRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateTawkConfigRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateTawkConfigRequestMultiError) AllErrors() []error { return m }
+
+// UpdateTawkConfigRequestValidationError is the validation error returned by
+// UpdateTawkConfigRequest.Validate if the designated constraints aren't met.
+type UpdateTawkConfigRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateTawkConfigRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateTawkConfigRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateTawkConfigRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateTawkConfigRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateTawkConfigRequestValidationError) ErrorName() string {
+	return "UpdateTawkConfigRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateTawkConfigRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateTawkConfigRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateTawkConfigRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateTawkConfigRequestValidationError{}
+
+// Validate checks the field values on UpdateTawkConfigData with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateTawkConfigData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateTawkConfigData with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateTawkConfigDataMultiError, or nil if none found.
+func (m *UpdateTawkConfigData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateTawkConfigData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return UpdateTawkConfigDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateTawkConfigDataMultiError is an error wrapping multiple validation
+// errors returned by UpdateTawkConfigData.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateTawkConfigDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateTawkConfigDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateTawkConfigDataMultiError) AllErrors() []error { return m }
+
+// UpdateTawkConfigDataValidationError is the validation error returned by
+// UpdateTawkConfigData.Validate if the designated constraints aren't met.
+type UpdateTawkConfigDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateTawkConfigDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateTawkConfigDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateTawkConfigDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateTawkConfigDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateTawkConfigDataValidationError) ErrorName() string {
+	return "UpdateTawkConfigDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateTawkConfigDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateTawkConfigData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateTawkConfigDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateTawkConfigDataValidationError{}
+
+// Validate checks the field values on UpdateTawkConfigReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateTawkConfigReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateTawkConfigReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateTawkConfigReplyMultiError, or nil if none found.
+func (m *UpdateTawkConfigReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateTawkConfigReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateTawkConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateTawkConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateTawkConfigReplyValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateTawkConfigReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateTawkConfigReplyMultiError is an error wrapping multiple validation
+// errors returned by UpdateTawkConfigReply.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateTawkConfigReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateTawkConfigReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateTawkConfigReplyMultiError) AllErrors() []error { return m }
+
+// UpdateTawkConfigReplyValidationError is the validation error returned by
+// UpdateTawkConfigReply.Validate if the designated constraints aren't met.
+type UpdateTawkConfigReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateTawkConfigReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateTawkConfigReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateTawkConfigReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateTawkConfigReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateTawkConfigReplyValidationError) ErrorName() string {
+	return "UpdateTawkConfigReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateTawkConfigReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateTawkConfigReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateTawkConfigReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateTawkConfigReplyValidationError{}
 
 // Validate checks the field values on SubscribeConfig with the rules defined
 // in the proto definition for this message. If any rules are violated, the

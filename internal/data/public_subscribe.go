@@ -2,14 +2,15 @@ package data
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
-	"github.com/npanel-dev/NPanel-backend/ent/proxyserver"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyservergroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
@@ -665,37 +666,27 @@ func buildLegacyNodeInfos(ctx context.Context, d *Data, userSub *ent.ProxyUserSu
 	if len(nodes) == 0 {
 		return []*subscribeBiz.UserSubscribeNodeInfo{}, nil
 	}
-	serverIDs := make([]int64, 0, len(nodes))
-	serverSeen := make(map[int64]struct{}, len(nodes))
-	for _, node := range nodes {
-		if _, ok := serverSeen[node.ServerID]; ok {
-			continue
-		}
-		serverSeen[node.ServerID] = struct{}{}
-		serverIDs = append(serverIDs, node.ServerID)
-	}
-	servers, err := d.db.ProxyServer.Query().
-		Where(proxyserver.IDIn(serverIDs...)).
-		All(ctx)
+	deliveryNodes, err := resolveDeliveryNodes(ctx, d.db, nodes)
 	if err != nil {
 		return nil, responsecode.NewKratosError(responsecode.ErrDatabaseQuery)
 	}
-	serverMap := make(map[int64]*ent.ProxyServer, len(servers))
-	for _, server := range servers {
-		serverMap[server.ID] = server
-	}
 	result := make([]*subscribeBiz.UserSubscribeNodeInfo, 0, len(nodes))
-	for _, node := range nodes {
-		server := serverMap[node.ServerID]
-		if server == nil {
+	for _, item := range deliveryNodes {
+		if item == nil || item.display == nil || item.landing == nil || item.server == nil {
 			continue
 		}
-		protocols := cleanLegacyNodeProtocolInstance(server.Protocol, node.Protocol, node.Port)
+		node := item.display
+		landing := item.landing
+		server := item.server
+		protocols := injectLegacySimnetUserCredentialsForClient(
+			cleanLegacyNodeProtocolInstance(server.Protocol, landing.Protocol, landing.Port),
+			userSub,
+		)
 		nodeInfo := &subscribeBiz.UserSubscribeNodeInfo{
 			ID:              node.ID,
 			Name:            node.Name,
 			Uuid:            stringValue(userSub.UUID),
-			Protocol:        node.Protocol,
+			Protocol:        item.protocol.Type,
 			Protocols:       protocols,
 			Port:            uint32(node.Port),
 			Address:         node.Address,
@@ -708,9 +699,7 @@ func buildLegacyNodeInfos(ctx context.Context, d *Data, userSub *ent.ProxyUserSu
 			LongitudeCenter: server.LongitudeCenter,
 			CreatedAt:       node.CreatedAt.Unix(),
 		}
-		if matched := legacyMatchedServerProtocol(server.Protocol, node.Protocol, node.Port); matched != nil {
-			applyLegacyOmniflowProtocol(nodeInfo, matched)
-		}
+		applyLegacyOmniflowProtocol(nodeInfo, item.protocol)
 		result = append(result, nodeInfo)
 	}
 	return result, nil
@@ -789,6 +778,164 @@ func cleanLegacyNodeProtocolInstance(raw string, nodeProtocol string, nodePort u
 		return raw
 	}
 	return string(cleaned)
+}
+
+func injectLegacySimnetUserCredentialsForClient(raw string, userSub *ent.ProxyUserSubscribe) string {
+	if strings.TrimSpace(raw) == "" || userSub == nil {
+		return raw
+	}
+	userPSK := deriveLegacySimnetUserPSK(stringValue(userSub.UUID))
+	if userPSK == "" {
+		return raw
+	}
+	userKeyID := legacySimnetUserKeyID(userSub.ID)
+	var protocols []map[string]any
+	if err := json.Unmarshal([]byte(raw), &protocols); err != nil {
+		return raw
+	}
+	changed := false
+	for _, protocol := range protocols {
+		if !isLegacySimnetProtocolMap(protocol) {
+			continue
+		}
+		if serverPSK := firstStringFromMap(protocol, "simnet_server_psk", "simnetServerPsk", "simnet_psk", "simnetPsk"); serverPSK != "" {
+			protocol["simnet_server_psk"] = serverPSK
+		}
+		protocol["simnet_server_key_id"] = firstIntFromMap(protocol, 0, "simnet_server_key_id", "simnetServerKeyId", "simnet_key_id", "simnetKeyId")
+		protocol["simnet_user_psk"] = userPSK
+		protocol["simnet_user_key_id"] = userKeyID
+		changed = true
+	}
+	if !changed {
+		return raw
+	}
+	encoded, err := json.Marshal(protocols)
+	if err != nil {
+		return raw
+	}
+	return string(encoded)
+}
+
+func isLegacySimnetProtocolMap(protocol map[string]any) bool {
+	return strings.EqualFold(firstStringFromMap(protocol, "type", "protocol"), "simnet")
+}
+
+func legacySimnetUserKeyID(id int64) int64 {
+	keyID := id % (1<<31 - 1)
+	if keyID == 0 {
+		return 1
+	}
+	return keyID
+}
+
+func deriveLegacySimnetUserPSK(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if isCanonicalLegacyUUID(trimmed) {
+		return strings.ToLower(strings.ReplaceAll(trimmed, "-", ""))
+	}
+	if len(trimmed) == 32 && isLegacyASCIIHex(trimmed) {
+		return strings.ToLower(trimmed)
+	}
+	return hex.EncodeToString([]byte(trimmed))
+}
+
+func isCanonicalLegacyUUID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+	for idx, ch := range value {
+		switch idx {
+		case 8, 13, 18, 23:
+			if ch != '-' {
+				return false
+			}
+		default:
+			if !isLegacyASCIIHexRune(ch) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func isLegacyASCIIHex(value string) bool {
+	for _, ch := range value {
+		if !isLegacyASCIIHexRune(ch) {
+			return false
+		}
+	}
+	return true
+}
+
+func isLegacyASCIIHexRune(ch rune) bool {
+	return (ch >= '0' && ch <= '9') ||
+		(ch >= 'a' && ch <= 'f') ||
+		(ch >= 'A' && ch <= 'F')
+}
+
+func firstStringFromMap(values map[string]any, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := values[key]; ok {
+			if trimmed := strings.TrimSpace(stringFromAny(value)); trimmed != "" {
+				return trimmed
+			}
+		}
+	}
+	return ""
+}
+
+func stringFromAny(value any) string {
+	switch v := value.(type) {
+	case string:
+		return v
+	case nil:
+		return ""
+	default:
+		return strings.TrimSpace(fmt.Sprint(v))
+	}
+}
+
+func firstIntFromMap(values map[string]any, fallback int64, keys ...string) int64 {
+	for _, key := range keys {
+		value, ok := values[key]
+		if !ok {
+			continue
+		}
+		switch v := value.(type) {
+		case int:
+			return int64(v)
+		case int64:
+			return v
+		case int32:
+			return int64(v)
+		case float64:
+			return int64(v)
+		case json.Number:
+			if parsed, err := v.Int64(); err == nil {
+				return parsed
+			}
+		case string:
+			if parsed, ok := parseLegacyIntString(v); ok {
+				return parsed
+			}
+		}
+	}
+	return fallback
+}
+
+func parseLegacyIntString(value string) (int64, bool) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return 0, false
+	}
+	var result int64
+	for _, ch := range trimmed {
+		if ch < '0' || ch > '9' {
+			return 0, false
+		}
+		result = result*10 + int64(ch-'0')
+	}
+	return result, true
 }
 
 func cleanSimnetProtocolForClient(protocol *servermodel.Protocol) {

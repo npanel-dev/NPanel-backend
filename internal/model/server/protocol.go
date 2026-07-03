@@ -32,6 +32,7 @@ type Protocol struct {
 	MundoFakeMessage                       string   `json:"mundo_fake_message,omitempty"`
 	MundoAcceptProxyProtocol               bool     `json:"mundo_accept_proxy_protocol,omitempty"`
 	MundoUseTLSCertificate                 bool     `json:"mundo_use_tls_certificate,omitempty"`
+	ProxyProtocol                          bool     `json:"proxy_protocol,omitempty"`
 	Cipher                                 string   `json:"cipher,omitempty"`
 	ServerKey                              string   `json:"server_key,omitempty"`
 	Flow                                   string   `json:"flow,omitempty"`
@@ -222,6 +223,7 @@ func (p *Protocol) UnmarshalJSON(data []byte) error {
 		MundoFakeMsgCamel    string         `json:"mundoFakeMessage,omitempty"`
 		AcceptProxyProtocol  bool           `json:"acceptProxyProtocol,omitempty"`
 		MundoAcceptPPCamel   bool           `json:"mundoAcceptProxyProtocol,omitempty"`
+		ProxyProtocolCamel   bool           `json:"proxyProtocol,omitempty"`
 		UseTLSCertificate    bool           `json:"useTLSCertificate,omitempty"`
 		MundoUseTLSCertCamel bool           `json:"mundoUseTLSCertificate,omitempty"`
 	}{
@@ -274,6 +276,9 @@ func (p *Protocol) UnmarshalJSON(data []byte) error {
 	}
 	if !p.MundoAcceptProxyProtocol {
 		p.MundoAcceptProxyProtocol = aux.MundoAcceptPPCamel || aux.AcceptProxyProtocol
+	}
+	if !p.ProxyProtocol {
+		p.ProxyProtocol = aux.ProxyProtocolCamel
 	}
 	if !p.MundoUseTLSCertificate {
 		p.MundoUseTLSCertificate = aux.MundoUseTLSCertCamel || aux.UseTLSCertificate

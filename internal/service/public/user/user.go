@@ -108,6 +108,23 @@ func (s *UserService) QueryUserInfo(ctx context.Context, req *emptypb.Empty) (*v
 	}, nil
 }
 
+// GetTawkIdentity 获取Tawk访客身份签名
+func (s *UserService) GetTawkIdentity(ctx context.Context, req *emptypb.Empty) (*v1.TawkIdentityReply, error) {
+	userID := middleware.GetUserID(ctx)
+
+	identity, err := s.uc.GetTawkIdentity(ctx, int(userID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.TawkIdentityReply{
+		Name:   identity.Name,
+		Email:  identity.Email,
+		UserId: identity.UserID,
+		Hash:   identity.Hash,
+	}, nil
+}
+
 // GetLoginLog 获取登录日志
 func (s *UserService) GetLoginLog(ctx context.Context, req *v1.GetLoginLogRequest) (*v1.GetLoginLogReply, error) {
 	userID := middleware.GetUserID(ctx)
@@ -606,21 +623,21 @@ func (s *UserService) CommissionWithdraw(ctx context.Context, req *v1.Commission
 	withdrawal, err := s.withdrawalUc.CommissionWithdraw(ctx, int64(userID), &withdrawalBiz.CommissionWithdrawRequest{
 		Amount:  req.Amount,
 		Content: req.Content,
+		Method:  req.Method,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &v1.WithdrawalLog{
-		Id:        withdrawal.ID,
-		UserId:    withdrawal.UserID,
-		Amount:    withdrawal.Amount,
-		Content:   withdrawal.Content,
-		Status:    int32(withdrawal.Status),
-		Reason:    withdrawal.Reason,
-		CreatedAt: withdrawal.CreatedAt.UnixMilli(),
-		UpdatedAt: withdrawal.UpdatedAt.UnixMilli(),
-	}, nil
+	return convertWithdrawalLog(withdrawal), nil
+}
+
+func (s *UserService) TransferCommissionToBalance(ctx context.Context, req *v1.TransferCommissionToBalanceRequest) (*emptypb.Empty, error) {
+	userID := middleware.GetUserID(ctx)
+	if err := s.withdrawalUc.TransferCommissionToBalance(ctx, int64(userID), req.Amount); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
 
 // QueryWithdrawalLog 查询提现日志
@@ -634,18 +651,27 @@ func (s *UserService) QueryWithdrawalLog(ctx context.Context, req *v1.QueryWithd
 
 	list := make([]*v1.WithdrawalLog, 0, len(withdrawals))
 	for _, w := range withdrawals {
-		list = append(list, &v1.WithdrawalLog{
-			Id:        w.ID,
-			UserId:    w.UserID,
-			Amount:    w.Amount,
-			Content:   w.Content,
-			Status:    int32(w.Status),
-			Reason:    w.Reason,
-			CreatedAt: w.CreatedAt.UnixMilli(),
-			UpdatedAt: w.UpdatedAt.UnixMilli(),
-		})
+		list = append(list, convertWithdrawalLog(w))
 	}
 	return &v1.QueryWithdrawalLogReply{List: list, Total: total}, nil
+}
+
+func convertWithdrawalLog(w *withdrawalBiz.Withdrawal) *v1.WithdrawalLog {
+	item := &v1.WithdrawalLog{
+		Id:        w.ID,
+		UserId:    w.UserID,
+		Amount:    w.Amount,
+		Content:   w.Content,
+		Status:    int32(w.Status),
+		Reason:    w.Reason,
+		CreatedAt: w.CreatedAt.UnixMilli(),
+		UpdatedAt: w.UpdatedAt.UnixMilli(),
+		Method:    w.Method,
+	}
+	if w.ProcessedAt != nil {
+		item.ProcessedAt = w.ProcessedAt.UnixMilli()
+	}
+	return item
 }
 
 // UpdateUserSubscribeNote 更新用户订阅备注

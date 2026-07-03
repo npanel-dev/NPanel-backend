@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	entsqlschema "entgo.io/ent/dialect/sql/schema"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyauthmethod"
 	"github.com/npanel-dev/NPanel-backend/internal/conf"
@@ -46,6 +47,25 @@ func (m *Migrator) AutoMigrate(ctx context.Context) error {
 	}
 
 	m.logger.Info("Auto migration completed successfully")
+	return nil
+}
+
+// AutoMigrateLegacySchema brings imported legacy databases up to the current
+// Ent schema without deleting legacy-only columns or indexes.
+func (m *Migrator) AutoMigrateLegacySchema(ctx context.Context) error {
+	m.logger.Info("Starting legacy schema compatibility migration...")
+
+	if err := m.client.Schema.Create(
+		ctx,
+		entsqlschema.WithDropColumn(false),
+		entsqlschema.WithDropIndex(false),
+		entsqlschema.WithForeignKeys(false),
+	); err != nil {
+		m.logger.Errorf("Failed to create legacy compatible schema: %v", err)
+		return fmt.Errorf("failed to create legacy compatible schema: %w", err)
+	}
+
+	m.logger.Info("Legacy schema compatibility migration completed successfully")
 	return nil
 }
 
