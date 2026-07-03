@@ -65,8 +65,73 @@ func TestAdminCreateServerAllowsMxMc1RdpAndSql(t *testing.T) {
 	}
 }
 
+func TestAdminCreateServerNormalizesRealityKeyPairFromPrivate(t *testing.T) {
+	repo := &adminServerRepoStub{}
+	uc := NewServerUsecase(repo, &adminNodeRepoStub{}, log.DefaultLogger)
+
+	private := "IMGZGlt-9z_W-Lg42MNGngb5DIIkiu_1M8Yu3oLboXI"
+	_, err := uc.CreateServer(context.Background(), "Reality", "US", "LA", "node.example.com", 1, []*servermodel.Protocol{
+		{
+			Type:              "vless",
+			Port:              49533,
+			Enable:            true,
+			Security:          "reality",
+			SNI:               "www.python.org",
+			RealityPrivateKey: private,
+			RealityPublicKey:  "x38_lDn7ZXzfheGbLsFweavt0x4HmrzJ6UX1Mf7HJgs",
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateServer returned error: %v", err)
+	}
+
+	protocol := repo.created.Protocols[0]
+	if protocol.RealityPrivateKey != private {
+		t.Fatalf("private key = %q, want input private", protocol.RealityPrivateKey)
+	}
+	if protocol.RealityPublicKey != "Ondiyf3k-4Q_N2zkuodXjBgUcBCV0SKSGR9YaCww_Hw" {
+		t.Fatalf("public key = %q, want derived key", protocol.RealityPublicKey)
+	}
+	if protocol.RealityShortId == "" {
+		t.Fatal("short id should be generated")
+	}
+	if protocol.RealityServerAddr != "www.python.org" || protocol.RealityServerPort != 443 {
+		t.Fatalf("reality server defaults = %s:%d, want www.python.org:443", protocol.RealityServerAddr, protocol.RealityServerPort)
+	}
+}
+
+func TestAdminUpdateServerNormalizesRealityKeyPairFromPrivate(t *testing.T) {
+	repo := &adminServerRepoStub{}
+	uc := NewServerUsecase(repo, &adminNodeRepoStub{}, log.DefaultLogger)
+
+	private := "gLHRlZrb8Car1bl1OWXongDlmRf49CevfU8PeESwYG8"
+	_, err := uc.UpdateServer(context.Background(), 1, "Reality", "US", "LA", "node.example.com", 1, []*servermodel.Protocol{
+		{
+			Type:              "vless",
+			Port:              49533,
+			Enable:            true,
+			Security:          "reality",
+			SNI:               "www.python.org",
+			RealityPrivateKey: private,
+			RealityPublicKey:  "Ogl56Lr_DJQoRMnxVvdg2dGJtHdy-GZoJCcfDgL1wF0",
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateServer returned error: %v", err)
+	}
+
+	protocol := repo.updated.Protocols[0]
+	if protocol.RealityPrivateKey != private {
+		t.Fatalf("private key = %q, want input private", protocol.RealityPrivateKey)
+	}
+	if protocol.RealityPublicKey != "x38_lDn7ZXzfheGbLsFweavt0x4HmrzJ6UX1Mf7HJgs" {
+		t.Fatalf("public key = %q, want derived key", protocol.RealityPublicKey)
+	}
+}
+
 type adminServerRepoStub struct {
 	created *Server
+	updated *Server
 }
 
 func (r *adminServerRepoStub) CreateServer(ctx context.Context, server *Server) (*Server, error) {
@@ -76,6 +141,7 @@ func (r *adminServerRepoStub) CreateServer(ctx context.Context, server *Server) 
 }
 
 func (r *adminServerRepoStub) UpdateServer(ctx context.Context, server *Server) (*Server, error) {
+	r.updated = server
 	return server, nil
 }
 
