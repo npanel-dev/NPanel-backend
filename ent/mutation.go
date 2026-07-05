@@ -22,6 +22,8 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotion"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotiontier"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptioncode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptionrecord"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyroutingdnsresolver"
@@ -74,6 +76,8 @@ const (
 	TypeProxyNode                   = "ProxyNode"
 	TypeProxyOrder                  = "ProxyOrder"
 	TypeProxyPayment                = "ProxyPayment"
+	TypeProxyRechargePromotion      = "ProxyRechargePromotion"
+	TypeProxyRechargePromotionTier  = "ProxyRechargePromotionTier"
 	TypeProxyRedemptionCode         = "ProxyRedemptionCode"
 	TypeProxyRedemptionRecord       = "ProxyRedemptionRecord"
 	TypeProxyRoutingDNSResolver     = "ProxyRoutingDNSResolver"
@@ -10608,6 +10612,2092 @@ func (m *ProxyPaymentMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ProxyPaymentMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ProxyPayment edge %s", name)
+}
+
+// ProxyRechargePromotionMutation represents an operation that mutates the ProxyRechargePromotion nodes in the graph.
+type ProxyRechargePromotionMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	name                    *string
+	description             *string
+	start_time              *int64
+	addstart_time           *int64
+	end_time                *int64
+	addend_time             *int64
+	status                  *bool
+	priority                *int32
+	addpriority             *int32
+	stack_mode              *int8
+	addstack_mode           *int8
+	custom_bonus_enabled    *bool
+	custom_bonus_percent    *int32
+	addcustom_bonus_percent *int32
+	sort                    *int32
+	addsort                 *int32
+	created_at              *time.Time
+	updated_at              *time.Time
+	clearedFields           map[string]struct{}
+	tiers                   map[int64]struct{}
+	removedtiers            map[int64]struct{}
+	clearedtiers            bool
+	done                    bool
+	oldValue                func(context.Context) (*ProxyRechargePromotion, error)
+	predicates              []predicate.ProxyRechargePromotion
+}
+
+var _ ent.Mutation = (*ProxyRechargePromotionMutation)(nil)
+
+// proxyrechargepromotionOption allows management of the mutation configuration using functional options.
+type proxyrechargepromotionOption func(*ProxyRechargePromotionMutation)
+
+// newProxyRechargePromotionMutation creates new mutation for the ProxyRechargePromotion entity.
+func newProxyRechargePromotionMutation(c config, op Op, opts ...proxyrechargepromotionOption) *ProxyRechargePromotionMutation {
+	m := &ProxyRechargePromotionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProxyRechargePromotion,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProxyRechargePromotionID sets the ID field of the mutation.
+func withProxyRechargePromotionID(id int64) proxyrechargepromotionOption {
+	return func(m *ProxyRechargePromotionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProxyRechargePromotion
+		)
+		m.oldValue = func(ctx context.Context) (*ProxyRechargePromotion, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProxyRechargePromotion.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProxyRechargePromotion sets the old ProxyRechargePromotion of the mutation.
+func withProxyRechargePromotion(node *ProxyRechargePromotion) proxyrechargepromotionOption {
+	return func(m *ProxyRechargePromotionMutation) {
+		m.oldValue = func(context.Context) (*ProxyRechargePromotion, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProxyRechargePromotionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProxyRechargePromotionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ProxyRechargePromotion entities.
+func (m *ProxyRechargePromotionMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProxyRechargePromotionMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProxyRechargePromotionMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProxyRechargePromotion.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *ProxyRechargePromotionMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ProxyRechargePromotionMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ProxyRechargePromotionMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *ProxyRechargePromotionMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *ProxyRechargePromotionMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *ProxyRechargePromotionMutation) ResetDescription() {
+	m.description = nil
+}
+
+// SetStartTime sets the "start_time" field.
+func (m *ProxyRechargePromotionMutation) SetStartTime(i int64) {
+	m.start_time = &i
+	m.addstart_time = nil
+}
+
+// StartTime returns the value of the "start_time" field in the mutation.
+func (m *ProxyRechargePromotionMutation) StartTime() (r int64, exists bool) {
+	v := m.start_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartTime returns the old "start_time" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldStartTime(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartTime: %w", err)
+	}
+	return oldValue.StartTime, nil
+}
+
+// AddStartTime adds i to the "start_time" field.
+func (m *ProxyRechargePromotionMutation) AddStartTime(i int64) {
+	if m.addstart_time != nil {
+		*m.addstart_time += i
+	} else {
+		m.addstart_time = &i
+	}
+}
+
+// AddedStartTime returns the value that was added to the "start_time" field in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedStartTime() (r int64, exists bool) {
+	v := m.addstart_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStartTime resets all changes to the "start_time" field.
+func (m *ProxyRechargePromotionMutation) ResetStartTime() {
+	m.start_time = nil
+	m.addstart_time = nil
+}
+
+// SetEndTime sets the "end_time" field.
+func (m *ProxyRechargePromotionMutation) SetEndTime(i int64) {
+	m.end_time = &i
+	m.addend_time = nil
+}
+
+// EndTime returns the value of the "end_time" field in the mutation.
+func (m *ProxyRechargePromotionMutation) EndTime() (r int64, exists bool) {
+	v := m.end_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndTime returns the old "end_time" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldEndTime(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndTime: %w", err)
+	}
+	return oldValue.EndTime, nil
+}
+
+// AddEndTime adds i to the "end_time" field.
+func (m *ProxyRechargePromotionMutation) AddEndTime(i int64) {
+	if m.addend_time != nil {
+		*m.addend_time += i
+	} else {
+		m.addend_time = &i
+	}
+}
+
+// AddedEndTime returns the value that was added to the "end_time" field in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedEndTime() (r int64, exists bool) {
+	v := m.addend_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetEndTime resets all changes to the "end_time" field.
+func (m *ProxyRechargePromotionMutation) ResetEndTime() {
+	m.end_time = nil
+	m.addend_time = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *ProxyRechargePromotionMutation) SetStatus(b bool) {
+	m.status = &b
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *ProxyRechargePromotionMutation) Status() (r bool, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldStatus(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *ProxyRechargePromotionMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetPriority sets the "priority" field.
+func (m *ProxyRechargePromotionMutation) SetPriority(i int32) {
+	m.priority = &i
+	m.addpriority = nil
+}
+
+// Priority returns the value of the "priority" field in the mutation.
+func (m *ProxyRechargePromotionMutation) Priority() (r int32, exists bool) {
+	v := m.priority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriority returns the old "priority" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldPriority(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriority is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriority requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriority: %w", err)
+	}
+	return oldValue.Priority, nil
+}
+
+// AddPriority adds i to the "priority" field.
+func (m *ProxyRechargePromotionMutation) AddPriority(i int32) {
+	if m.addpriority != nil {
+		*m.addpriority += i
+	} else {
+		m.addpriority = &i
+	}
+}
+
+// AddedPriority returns the value that was added to the "priority" field in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedPriority() (r int32, exists bool) {
+	v := m.addpriority
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriority resets all changes to the "priority" field.
+func (m *ProxyRechargePromotionMutation) ResetPriority() {
+	m.priority = nil
+	m.addpriority = nil
+}
+
+// SetStackMode sets the "stack_mode" field.
+func (m *ProxyRechargePromotionMutation) SetStackMode(i int8) {
+	m.stack_mode = &i
+	m.addstack_mode = nil
+}
+
+// StackMode returns the value of the "stack_mode" field in the mutation.
+func (m *ProxyRechargePromotionMutation) StackMode() (r int8, exists bool) {
+	v := m.stack_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStackMode returns the old "stack_mode" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldStackMode(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStackMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStackMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStackMode: %w", err)
+	}
+	return oldValue.StackMode, nil
+}
+
+// AddStackMode adds i to the "stack_mode" field.
+func (m *ProxyRechargePromotionMutation) AddStackMode(i int8) {
+	if m.addstack_mode != nil {
+		*m.addstack_mode += i
+	} else {
+		m.addstack_mode = &i
+	}
+}
+
+// AddedStackMode returns the value that was added to the "stack_mode" field in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedStackMode() (r int8, exists bool) {
+	v := m.addstack_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStackMode resets all changes to the "stack_mode" field.
+func (m *ProxyRechargePromotionMutation) ResetStackMode() {
+	m.stack_mode = nil
+	m.addstack_mode = nil
+}
+
+// SetCustomBonusEnabled sets the "custom_bonus_enabled" field.
+func (m *ProxyRechargePromotionMutation) SetCustomBonusEnabled(b bool) {
+	m.custom_bonus_enabled = &b
+}
+
+// CustomBonusEnabled returns the value of the "custom_bonus_enabled" field in the mutation.
+func (m *ProxyRechargePromotionMutation) CustomBonusEnabled() (r bool, exists bool) {
+	v := m.custom_bonus_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomBonusEnabled returns the old "custom_bonus_enabled" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldCustomBonusEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomBonusEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomBonusEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomBonusEnabled: %w", err)
+	}
+	return oldValue.CustomBonusEnabled, nil
+}
+
+// ResetCustomBonusEnabled resets all changes to the "custom_bonus_enabled" field.
+func (m *ProxyRechargePromotionMutation) ResetCustomBonusEnabled() {
+	m.custom_bonus_enabled = nil
+}
+
+// SetCustomBonusPercent sets the "custom_bonus_percent" field.
+func (m *ProxyRechargePromotionMutation) SetCustomBonusPercent(i int32) {
+	m.custom_bonus_percent = &i
+	m.addcustom_bonus_percent = nil
+}
+
+// CustomBonusPercent returns the value of the "custom_bonus_percent" field in the mutation.
+func (m *ProxyRechargePromotionMutation) CustomBonusPercent() (r int32, exists bool) {
+	v := m.custom_bonus_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCustomBonusPercent returns the old "custom_bonus_percent" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldCustomBonusPercent(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCustomBonusPercent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCustomBonusPercent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCustomBonusPercent: %w", err)
+	}
+	return oldValue.CustomBonusPercent, nil
+}
+
+// AddCustomBonusPercent adds i to the "custom_bonus_percent" field.
+func (m *ProxyRechargePromotionMutation) AddCustomBonusPercent(i int32) {
+	if m.addcustom_bonus_percent != nil {
+		*m.addcustom_bonus_percent += i
+	} else {
+		m.addcustom_bonus_percent = &i
+	}
+}
+
+// AddedCustomBonusPercent returns the value that was added to the "custom_bonus_percent" field in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedCustomBonusPercent() (r int32, exists bool) {
+	v := m.addcustom_bonus_percent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCustomBonusPercent resets all changes to the "custom_bonus_percent" field.
+func (m *ProxyRechargePromotionMutation) ResetCustomBonusPercent() {
+	m.custom_bonus_percent = nil
+	m.addcustom_bonus_percent = nil
+}
+
+// SetSort sets the "sort" field.
+func (m *ProxyRechargePromotionMutation) SetSort(i int32) {
+	m.sort = &i
+	m.addsort = nil
+}
+
+// Sort returns the value of the "sort" field in the mutation.
+func (m *ProxyRechargePromotionMutation) Sort() (r int32, exists bool) {
+	v := m.sort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSort returns the old "sort" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldSort(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSort is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSort requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSort: %w", err)
+	}
+	return oldValue.Sort, nil
+}
+
+// AddSort adds i to the "sort" field.
+func (m *ProxyRechargePromotionMutation) AddSort(i int32) {
+	if m.addsort != nil {
+		*m.addsort += i
+	} else {
+		m.addsort = &i
+	}
+}
+
+// AddedSort returns the value that was added to the "sort" field in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedSort() (r int32, exists bool) {
+	v := m.addsort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSort resets all changes to the "sort" field.
+func (m *ProxyRechargePromotionMutation) ResetSort() {
+	m.sort = nil
+	m.addsort = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProxyRechargePromotionMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProxyRechargePromotionMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProxyRechargePromotionMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProxyRechargePromotionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProxyRechargePromotionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProxyRechargePromotion entity.
+// If the ProxyRechargePromotion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProxyRechargePromotionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// AddTierIDs adds the "tiers" edge to the ProxyRechargePromotionTier entity by ids.
+func (m *ProxyRechargePromotionMutation) AddTierIDs(ids ...int64) {
+	if m.tiers == nil {
+		m.tiers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.tiers[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTiers clears the "tiers" edge to the ProxyRechargePromotionTier entity.
+func (m *ProxyRechargePromotionMutation) ClearTiers() {
+	m.clearedtiers = true
+}
+
+// TiersCleared reports if the "tiers" edge to the ProxyRechargePromotionTier entity was cleared.
+func (m *ProxyRechargePromotionMutation) TiersCleared() bool {
+	return m.clearedtiers
+}
+
+// RemoveTierIDs removes the "tiers" edge to the ProxyRechargePromotionTier entity by IDs.
+func (m *ProxyRechargePromotionMutation) RemoveTierIDs(ids ...int64) {
+	if m.removedtiers == nil {
+		m.removedtiers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.tiers, ids[i])
+		m.removedtiers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTiers returns the removed IDs of the "tiers" edge to the ProxyRechargePromotionTier entity.
+func (m *ProxyRechargePromotionMutation) RemovedTiersIDs() (ids []int64) {
+	for id := range m.removedtiers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TiersIDs returns the "tiers" edge IDs in the mutation.
+func (m *ProxyRechargePromotionMutation) TiersIDs() (ids []int64) {
+	for id := range m.tiers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTiers resets all changes to the "tiers" edge.
+func (m *ProxyRechargePromotionMutation) ResetTiers() {
+	m.tiers = nil
+	m.clearedtiers = false
+	m.removedtiers = nil
+}
+
+// Where appends a list predicates to the ProxyRechargePromotionMutation builder.
+func (m *ProxyRechargePromotionMutation) Where(ps ...predicate.ProxyRechargePromotion) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ProxyRechargePromotionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ProxyRechargePromotionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ProxyRechargePromotion, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ProxyRechargePromotionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ProxyRechargePromotionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ProxyRechargePromotion).
+func (m *ProxyRechargePromotionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProxyRechargePromotionMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.name != nil {
+		fields = append(fields, proxyrechargepromotion.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, proxyrechargepromotion.FieldDescription)
+	}
+	if m.start_time != nil {
+		fields = append(fields, proxyrechargepromotion.FieldStartTime)
+	}
+	if m.end_time != nil {
+		fields = append(fields, proxyrechargepromotion.FieldEndTime)
+	}
+	if m.status != nil {
+		fields = append(fields, proxyrechargepromotion.FieldStatus)
+	}
+	if m.priority != nil {
+		fields = append(fields, proxyrechargepromotion.FieldPriority)
+	}
+	if m.stack_mode != nil {
+		fields = append(fields, proxyrechargepromotion.FieldStackMode)
+	}
+	if m.custom_bonus_enabled != nil {
+		fields = append(fields, proxyrechargepromotion.FieldCustomBonusEnabled)
+	}
+	if m.custom_bonus_percent != nil {
+		fields = append(fields, proxyrechargepromotion.FieldCustomBonusPercent)
+	}
+	if m.sort != nil {
+		fields = append(fields, proxyrechargepromotion.FieldSort)
+	}
+	if m.created_at != nil {
+		fields = append(fields, proxyrechargepromotion.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, proxyrechargepromotion.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProxyRechargePromotionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case proxyrechargepromotion.FieldName:
+		return m.Name()
+	case proxyrechargepromotion.FieldDescription:
+		return m.Description()
+	case proxyrechargepromotion.FieldStartTime:
+		return m.StartTime()
+	case proxyrechargepromotion.FieldEndTime:
+		return m.EndTime()
+	case proxyrechargepromotion.FieldStatus:
+		return m.Status()
+	case proxyrechargepromotion.FieldPriority:
+		return m.Priority()
+	case proxyrechargepromotion.FieldStackMode:
+		return m.StackMode()
+	case proxyrechargepromotion.FieldCustomBonusEnabled:
+		return m.CustomBonusEnabled()
+	case proxyrechargepromotion.FieldCustomBonusPercent:
+		return m.CustomBonusPercent()
+	case proxyrechargepromotion.FieldSort:
+		return m.Sort()
+	case proxyrechargepromotion.FieldCreatedAt:
+		return m.CreatedAt()
+	case proxyrechargepromotion.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProxyRechargePromotionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case proxyrechargepromotion.FieldName:
+		return m.OldName(ctx)
+	case proxyrechargepromotion.FieldDescription:
+		return m.OldDescription(ctx)
+	case proxyrechargepromotion.FieldStartTime:
+		return m.OldStartTime(ctx)
+	case proxyrechargepromotion.FieldEndTime:
+		return m.OldEndTime(ctx)
+	case proxyrechargepromotion.FieldStatus:
+		return m.OldStatus(ctx)
+	case proxyrechargepromotion.FieldPriority:
+		return m.OldPriority(ctx)
+	case proxyrechargepromotion.FieldStackMode:
+		return m.OldStackMode(ctx)
+	case proxyrechargepromotion.FieldCustomBonusEnabled:
+		return m.OldCustomBonusEnabled(ctx)
+	case proxyrechargepromotion.FieldCustomBonusPercent:
+		return m.OldCustomBonusPercent(ctx)
+	case proxyrechargepromotion.FieldSort:
+		return m.OldSort(ctx)
+	case proxyrechargepromotion.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case proxyrechargepromotion.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProxyRechargePromotion field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProxyRechargePromotionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case proxyrechargepromotion.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case proxyrechargepromotion.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case proxyrechargepromotion.FieldStartTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartTime(v)
+		return nil
+	case proxyrechargepromotion.FieldEndTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndTime(v)
+		return nil
+	case proxyrechargepromotion.FieldStatus:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case proxyrechargepromotion.FieldPriority:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriority(v)
+		return nil
+	case proxyrechargepromotion.FieldStackMode:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStackMode(v)
+		return nil
+	case proxyrechargepromotion.FieldCustomBonusEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomBonusEnabled(v)
+		return nil
+	case proxyrechargepromotion.FieldCustomBonusPercent:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCustomBonusPercent(v)
+		return nil
+	case proxyrechargepromotion.FieldSort:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSort(v)
+		return nil
+	case proxyrechargepromotion.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case proxyrechargepromotion.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotion field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProxyRechargePromotionMutation) AddedFields() []string {
+	var fields []string
+	if m.addstart_time != nil {
+		fields = append(fields, proxyrechargepromotion.FieldStartTime)
+	}
+	if m.addend_time != nil {
+		fields = append(fields, proxyrechargepromotion.FieldEndTime)
+	}
+	if m.addpriority != nil {
+		fields = append(fields, proxyrechargepromotion.FieldPriority)
+	}
+	if m.addstack_mode != nil {
+		fields = append(fields, proxyrechargepromotion.FieldStackMode)
+	}
+	if m.addcustom_bonus_percent != nil {
+		fields = append(fields, proxyrechargepromotion.FieldCustomBonusPercent)
+	}
+	if m.addsort != nil {
+		fields = append(fields, proxyrechargepromotion.FieldSort)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProxyRechargePromotionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case proxyrechargepromotion.FieldStartTime:
+		return m.AddedStartTime()
+	case proxyrechargepromotion.FieldEndTime:
+		return m.AddedEndTime()
+	case proxyrechargepromotion.FieldPriority:
+		return m.AddedPriority()
+	case proxyrechargepromotion.FieldStackMode:
+		return m.AddedStackMode()
+	case proxyrechargepromotion.FieldCustomBonusPercent:
+		return m.AddedCustomBonusPercent()
+	case proxyrechargepromotion.FieldSort:
+		return m.AddedSort()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProxyRechargePromotionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case proxyrechargepromotion.FieldStartTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStartTime(v)
+		return nil
+	case proxyrechargepromotion.FieldEndTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddEndTime(v)
+		return nil
+	case proxyrechargepromotion.FieldPriority:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriority(v)
+		return nil
+	case proxyrechargepromotion.FieldStackMode:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStackMode(v)
+		return nil
+	case proxyrechargepromotion.FieldCustomBonusPercent:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCustomBonusPercent(v)
+		return nil
+	case proxyrechargepromotion.FieldSort:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSort(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotion numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProxyRechargePromotionMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProxyRechargePromotionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProxyRechargePromotionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProxyRechargePromotion nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProxyRechargePromotionMutation) ResetField(name string) error {
+	switch name {
+	case proxyrechargepromotion.FieldName:
+		m.ResetName()
+		return nil
+	case proxyrechargepromotion.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case proxyrechargepromotion.FieldStartTime:
+		m.ResetStartTime()
+		return nil
+	case proxyrechargepromotion.FieldEndTime:
+		m.ResetEndTime()
+		return nil
+	case proxyrechargepromotion.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case proxyrechargepromotion.FieldPriority:
+		m.ResetPriority()
+		return nil
+	case proxyrechargepromotion.FieldStackMode:
+		m.ResetStackMode()
+		return nil
+	case proxyrechargepromotion.FieldCustomBonusEnabled:
+		m.ResetCustomBonusEnabled()
+		return nil
+	case proxyrechargepromotion.FieldCustomBonusPercent:
+		m.ResetCustomBonusPercent()
+		return nil
+	case proxyrechargepromotion.FieldSort:
+		m.ResetSort()
+		return nil
+	case proxyrechargepromotion.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case proxyrechargepromotion.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotion field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.tiers != nil {
+		edges = append(edges, proxyrechargepromotion.EdgeTiers)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProxyRechargePromotionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case proxyrechargepromotion.EdgeTiers:
+		ids := make([]ent.Value, 0, len(m.tiers))
+		for id := range m.tiers {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProxyRechargePromotionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedtiers != nil {
+		edges = append(edges, proxyrechargepromotion.EdgeTiers)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProxyRechargePromotionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case proxyrechargepromotion.EdgeTiers:
+		ids := make([]ent.Value, 0, len(m.removedtiers))
+		for id := range m.removedtiers {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProxyRechargePromotionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedtiers {
+		edges = append(edges, proxyrechargepromotion.EdgeTiers)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProxyRechargePromotionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case proxyrechargepromotion.EdgeTiers:
+		return m.clearedtiers
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProxyRechargePromotionMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotion unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProxyRechargePromotionMutation) ResetEdge(name string) error {
+	switch name {
+	case proxyrechargepromotion.EdgeTiers:
+		m.ResetTiers()
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotion edge %s", name)
+}
+
+// ProxyRechargePromotionTierMutation represents an operation that mutates the ProxyRechargePromotionTier nodes in the graph.
+type ProxyRechargePromotionTierMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	amount           *int64
+	addamount        *int64
+	bonus            *int64
+	addbonus         *int64
+	label            *string
+	sort             *int32
+	addsort          *int32
+	enable           *bool
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	promotion        *int64
+	clearedpromotion bool
+	done             bool
+	oldValue         func(context.Context) (*ProxyRechargePromotionTier, error)
+	predicates       []predicate.ProxyRechargePromotionTier
+}
+
+var _ ent.Mutation = (*ProxyRechargePromotionTierMutation)(nil)
+
+// proxyrechargepromotiontierOption allows management of the mutation configuration using functional options.
+type proxyrechargepromotiontierOption func(*ProxyRechargePromotionTierMutation)
+
+// newProxyRechargePromotionTierMutation creates new mutation for the ProxyRechargePromotionTier entity.
+func newProxyRechargePromotionTierMutation(c config, op Op, opts ...proxyrechargepromotiontierOption) *ProxyRechargePromotionTierMutation {
+	m := &ProxyRechargePromotionTierMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProxyRechargePromotionTier,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProxyRechargePromotionTierID sets the ID field of the mutation.
+func withProxyRechargePromotionTierID(id int64) proxyrechargepromotiontierOption {
+	return func(m *ProxyRechargePromotionTierMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProxyRechargePromotionTier
+		)
+		m.oldValue = func(ctx context.Context) (*ProxyRechargePromotionTier, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProxyRechargePromotionTier.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProxyRechargePromotionTier sets the old ProxyRechargePromotionTier of the mutation.
+func withProxyRechargePromotionTier(node *ProxyRechargePromotionTier) proxyrechargepromotiontierOption {
+	return func(m *ProxyRechargePromotionTierMutation) {
+		m.oldValue = func(context.Context) (*ProxyRechargePromotionTier, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProxyRechargePromotionTierMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProxyRechargePromotionTierMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ProxyRechargePromotionTier entities.
+func (m *ProxyRechargePromotionTierMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProxyRechargePromotionTierMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProxyRechargePromotionTierMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProxyRechargePromotionTier.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPromotionID sets the "promotion_id" field.
+func (m *ProxyRechargePromotionTierMutation) SetPromotionID(i int64) {
+	m.promotion = &i
+}
+
+// PromotionID returns the value of the "promotion_id" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) PromotionID() (r int64, exists bool) {
+	v := m.promotion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPromotionID returns the old "promotion_id" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldPromotionID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPromotionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPromotionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPromotionID: %w", err)
+	}
+	return oldValue.PromotionID, nil
+}
+
+// ResetPromotionID resets all changes to the "promotion_id" field.
+func (m *ProxyRechargePromotionTierMutation) ResetPromotionID() {
+	m.promotion = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *ProxyRechargePromotionTierMutation) SetAmount(i int64) {
+	m.amount = &i
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) Amount() (r int64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldAmount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds i to the "amount" field.
+func (m *ProxyRechargePromotionTierMutation) AddAmount(i int64) {
+	if m.addamount != nil {
+		*m.addamount += i
+	} else {
+		m.addamount = &i
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *ProxyRechargePromotionTierMutation) AddedAmount() (r int64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *ProxyRechargePromotionTierMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetBonus sets the "bonus" field.
+func (m *ProxyRechargePromotionTierMutation) SetBonus(i int64) {
+	m.bonus = &i
+	m.addbonus = nil
+}
+
+// Bonus returns the value of the "bonus" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) Bonus() (r int64, exists bool) {
+	v := m.bonus
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBonus returns the old "bonus" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldBonus(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBonus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBonus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBonus: %w", err)
+	}
+	return oldValue.Bonus, nil
+}
+
+// AddBonus adds i to the "bonus" field.
+func (m *ProxyRechargePromotionTierMutation) AddBonus(i int64) {
+	if m.addbonus != nil {
+		*m.addbonus += i
+	} else {
+		m.addbonus = &i
+	}
+}
+
+// AddedBonus returns the value that was added to the "bonus" field in this mutation.
+func (m *ProxyRechargePromotionTierMutation) AddedBonus() (r int64, exists bool) {
+	v := m.addbonus
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBonus resets all changes to the "bonus" field.
+func (m *ProxyRechargePromotionTierMutation) ResetBonus() {
+	m.bonus = nil
+	m.addbonus = nil
+}
+
+// SetLabel sets the "label" field.
+func (m *ProxyRechargePromotionTierMutation) SetLabel(s string) {
+	m.label = &s
+}
+
+// Label returns the value of the "label" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) Label() (r string, exists bool) {
+	v := m.label
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLabel returns the old "label" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldLabel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLabel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLabel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLabel: %w", err)
+	}
+	return oldValue.Label, nil
+}
+
+// ResetLabel resets all changes to the "label" field.
+func (m *ProxyRechargePromotionTierMutation) ResetLabel() {
+	m.label = nil
+}
+
+// SetSort sets the "sort" field.
+func (m *ProxyRechargePromotionTierMutation) SetSort(i int32) {
+	m.sort = &i
+	m.addsort = nil
+}
+
+// Sort returns the value of the "sort" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) Sort() (r int32, exists bool) {
+	v := m.sort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSort returns the old "sort" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldSort(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSort is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSort requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSort: %w", err)
+	}
+	return oldValue.Sort, nil
+}
+
+// AddSort adds i to the "sort" field.
+func (m *ProxyRechargePromotionTierMutation) AddSort(i int32) {
+	if m.addsort != nil {
+		*m.addsort += i
+	} else {
+		m.addsort = &i
+	}
+}
+
+// AddedSort returns the value that was added to the "sort" field in this mutation.
+func (m *ProxyRechargePromotionTierMutation) AddedSort() (r int32, exists bool) {
+	v := m.addsort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSort resets all changes to the "sort" field.
+func (m *ProxyRechargePromotionTierMutation) ResetSort() {
+	m.sort = nil
+	m.addsort = nil
+}
+
+// SetEnable sets the "enable" field.
+func (m *ProxyRechargePromotionTierMutation) SetEnable(b bool) {
+	m.enable = &b
+}
+
+// Enable returns the value of the "enable" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) Enable() (r bool, exists bool) {
+	v := m.enable
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnable returns the old "enable" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldEnable(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnable is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnable requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnable: %w", err)
+	}
+	return oldValue.Enable, nil
+}
+
+// ResetEnable resets all changes to the "enable" field.
+func (m *ProxyRechargePromotionTierMutation) ResetEnable() {
+	m.enable = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProxyRechargePromotionTierMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProxyRechargePromotionTierMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProxyRechargePromotionTierMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProxyRechargePromotionTierMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProxyRechargePromotionTier entity.
+// If the ProxyRechargePromotionTier object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxyRechargePromotionTierMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProxyRechargePromotionTierMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// ClearPromotion clears the "promotion" edge to the ProxyRechargePromotion entity.
+func (m *ProxyRechargePromotionTierMutation) ClearPromotion() {
+	m.clearedpromotion = true
+	m.clearedFields[proxyrechargepromotiontier.FieldPromotionID] = struct{}{}
+}
+
+// PromotionCleared reports if the "promotion" edge to the ProxyRechargePromotion entity was cleared.
+func (m *ProxyRechargePromotionTierMutation) PromotionCleared() bool {
+	return m.clearedpromotion
+}
+
+// PromotionIDs returns the "promotion" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PromotionID instead. It exists only for internal usage by the builders.
+func (m *ProxyRechargePromotionTierMutation) PromotionIDs() (ids []int64) {
+	if id := m.promotion; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPromotion resets all changes to the "promotion" edge.
+func (m *ProxyRechargePromotionTierMutation) ResetPromotion() {
+	m.promotion = nil
+	m.clearedpromotion = false
+}
+
+// Where appends a list predicates to the ProxyRechargePromotionTierMutation builder.
+func (m *ProxyRechargePromotionTierMutation) Where(ps ...predicate.ProxyRechargePromotionTier) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ProxyRechargePromotionTierMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ProxyRechargePromotionTierMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ProxyRechargePromotionTier, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ProxyRechargePromotionTierMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ProxyRechargePromotionTierMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ProxyRechargePromotionTier).
+func (m *ProxyRechargePromotionTierMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProxyRechargePromotionTierMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.promotion != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldPromotionID)
+	}
+	if m.amount != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldAmount)
+	}
+	if m.bonus != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldBonus)
+	}
+	if m.label != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldLabel)
+	}
+	if m.sort != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldSort)
+	}
+	if m.enable != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldEnable)
+	}
+	if m.created_at != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProxyRechargePromotionTierMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case proxyrechargepromotiontier.FieldPromotionID:
+		return m.PromotionID()
+	case proxyrechargepromotiontier.FieldAmount:
+		return m.Amount()
+	case proxyrechargepromotiontier.FieldBonus:
+		return m.Bonus()
+	case proxyrechargepromotiontier.FieldLabel:
+		return m.Label()
+	case proxyrechargepromotiontier.FieldSort:
+		return m.Sort()
+	case proxyrechargepromotiontier.FieldEnable:
+		return m.Enable()
+	case proxyrechargepromotiontier.FieldCreatedAt:
+		return m.CreatedAt()
+	case proxyrechargepromotiontier.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProxyRechargePromotionTierMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case proxyrechargepromotiontier.FieldPromotionID:
+		return m.OldPromotionID(ctx)
+	case proxyrechargepromotiontier.FieldAmount:
+		return m.OldAmount(ctx)
+	case proxyrechargepromotiontier.FieldBonus:
+		return m.OldBonus(ctx)
+	case proxyrechargepromotiontier.FieldLabel:
+		return m.OldLabel(ctx)
+	case proxyrechargepromotiontier.FieldSort:
+		return m.OldSort(ctx)
+	case proxyrechargepromotiontier.FieldEnable:
+		return m.OldEnable(ctx)
+	case proxyrechargepromotiontier.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case proxyrechargepromotiontier.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProxyRechargePromotionTier field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProxyRechargePromotionTierMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case proxyrechargepromotiontier.FieldPromotionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPromotionID(v)
+		return nil
+	case proxyrechargepromotiontier.FieldAmount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case proxyrechargepromotiontier.FieldBonus:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBonus(v)
+		return nil
+	case proxyrechargepromotiontier.FieldLabel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLabel(v)
+		return nil
+	case proxyrechargepromotiontier.FieldSort:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSort(v)
+		return nil
+	case proxyrechargepromotiontier.FieldEnable:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnable(v)
+		return nil
+	case proxyrechargepromotiontier.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case proxyrechargepromotiontier.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotionTier field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProxyRechargePromotionTierMutation) AddedFields() []string {
+	var fields []string
+	if m.addamount != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldAmount)
+	}
+	if m.addbonus != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldBonus)
+	}
+	if m.addsort != nil {
+		fields = append(fields, proxyrechargepromotiontier.FieldSort)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProxyRechargePromotionTierMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case proxyrechargepromotiontier.FieldAmount:
+		return m.AddedAmount()
+	case proxyrechargepromotiontier.FieldBonus:
+		return m.AddedBonus()
+	case proxyrechargepromotiontier.FieldSort:
+		return m.AddedSort()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProxyRechargePromotionTierMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case proxyrechargepromotiontier.FieldAmount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	case proxyrechargepromotiontier.FieldBonus:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBonus(v)
+		return nil
+	case proxyrechargepromotiontier.FieldSort:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSort(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotionTier numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProxyRechargePromotionTierMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProxyRechargePromotionTierMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProxyRechargePromotionTierMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProxyRechargePromotionTier nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProxyRechargePromotionTierMutation) ResetField(name string) error {
+	switch name {
+	case proxyrechargepromotiontier.FieldPromotionID:
+		m.ResetPromotionID()
+		return nil
+	case proxyrechargepromotiontier.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case proxyrechargepromotiontier.FieldBonus:
+		m.ResetBonus()
+		return nil
+	case proxyrechargepromotiontier.FieldLabel:
+		m.ResetLabel()
+		return nil
+	case proxyrechargepromotiontier.FieldSort:
+		m.ResetSort()
+		return nil
+	case proxyrechargepromotiontier.FieldEnable:
+		m.ResetEnable()
+		return nil
+	case proxyrechargepromotiontier.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case proxyrechargepromotiontier.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotionTier field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProxyRechargePromotionTierMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.promotion != nil {
+		edges = append(edges, proxyrechargepromotiontier.EdgePromotion)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProxyRechargePromotionTierMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case proxyrechargepromotiontier.EdgePromotion:
+		if id := m.promotion; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProxyRechargePromotionTierMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProxyRechargePromotionTierMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProxyRechargePromotionTierMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedpromotion {
+		edges = append(edges, proxyrechargepromotiontier.EdgePromotion)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProxyRechargePromotionTierMutation) EdgeCleared(name string) bool {
+	switch name {
+	case proxyrechargepromotiontier.EdgePromotion:
+		return m.clearedpromotion
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProxyRechargePromotionTierMutation) ClearEdge(name string) error {
+	switch name {
+	case proxyrechargepromotiontier.EdgePromotion:
+		m.ClearPromotion()
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotionTier unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProxyRechargePromotionTierMutation) ResetEdge(name string) error {
+	switch name {
+	case proxyrechargepromotiontier.EdgePromotion:
+		m.ResetPromotion()
+		return nil
+	}
+	return fmt.Errorf("unknown ProxyRechargePromotionTier edge %s", name)
 }
 
 // ProxyRedemptionCodeMutation represents an operation that mutates the ProxyRedemptionCode nodes in the graph.

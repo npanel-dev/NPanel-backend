@@ -129,6 +129,30 @@ func (f ProxyPaymentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProxyPaymentMutation", m)
 }
 
+// The ProxyRechargePromotionFunc type is an adapter to allow the use of ordinary
+// function as ProxyRechargePromotion mutator.
+type ProxyRechargePromotionFunc func(context.Context, *ent.ProxyRechargePromotionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProxyRechargePromotionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProxyRechargePromotionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProxyRechargePromotionMutation", m)
+}
+
+// The ProxyRechargePromotionTierFunc type is an adapter to allow the use of ordinary
+// function as ProxyRechargePromotionTier mutator.
+type ProxyRechargePromotionTierFunc func(context.Context, *ent.ProxyRechargePromotionTierMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProxyRechargePromotionTierFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProxyRechargePromotionTierMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProxyRechargePromotionTierMutation", m)
+}
+
 // The ProxyRedemptionCodeFunc type is an adapter to allow the use of ordinary
 // function as ProxyRedemptionCode mutator.
 type ProxyRedemptionCodeFunc func(context.Context, *ent.ProxyRedemptionCodeMutation) (ent.Value, error)

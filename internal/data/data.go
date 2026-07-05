@@ -43,6 +43,7 @@ var ProviderSet = wire.NewSet(
 	NewAdminMarketingRepo,
 	NewOrderRepo,
 	NewAdminPaymentRepo,
+	NewAdminRechargePromotionRepo,
 	NewAdminRoutingRepo,
 	NewAdminServerRepo,
 	NewAdminNodeRepo,
@@ -72,6 +73,8 @@ var ProviderSet = wire.NewSet(
 	NewPublicDocumentRepo,
 	// Public Portal模块仓储
 	NewPublicPortalRepo,
+	// Public RechargePromotion模块仓储（充值促销）
+	NewPublicRechargePromotionRepo,
 	// Public Redemption模块仓储
 	NewPublicRedemptionRepo,
 	// Public Ticket模块仓储

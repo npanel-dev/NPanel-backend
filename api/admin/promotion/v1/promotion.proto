@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package api.admin.promotion.v1;
+
+option go_package = "github.com/npanel-dev/NPanel-backend/api/admin/promotion/v1;v1";
+
+import "google/api/annotations.proto";
+
+// RechargePromotionAdminService 充值促销管理服务（管理端）
+service RechargePromotionAdminService {
+  // CreateRechargePromotion 创建充值促销活动（含档位一次性提交）
+  rpc CreateRechargePromotion (CreateRechargePromotionRequest) returns (CreateRechargePromotionReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/promotion/recharge"
+      body: "*"
+    };
+  }
+
+  // UpdateRechargePromotion 更新充值促销活动（tiers 全量替换）
+  rpc UpdateRechargePromotion (UpdateRechargePromotionRequest) returns (UpdateRechargePromotionReply) {
+    option (google.api.http) = {
+      put: "/v1/admin/promotion/recharge"
+      body: "*"
+    };
+  }
+
+  // DeleteRechargePromotion 删除充值促销活动（同时删除其档位）
+  rpc DeleteRechargePromotion (DeleteRechargePromotionRequest) returns (DeleteRechargePromotionReply) {
+    option (google.api.http) = {
+      delete: "/v1/admin/promotion/recharge"
+      body: "*"
+    };
+  }
+
+  // GetRechargePromotionList 获取充值促销活动列表
+  rpc GetRechargePromotionList (GetRechargePromotionListRequest) returns (GetRechargePromotionListReply) {
+    option (google.api.http) = {
+      get: "/v1/admin/promotion/recharge/list"
+    };
+  }
+
+  // UpdateRechargePromotionStatus 快速启停活动
+  rpc UpdateRechargePromotionStatus (UpdateRechargePromotionStatusRequest) returns (UpdateRechargePromotionStatusReply) {
+    option (google.api.http) = {
+      put: "/v1/admin/promotion/recharge/status"
+      body: "*"
+    };
+  }
+}
+
+// RechargePromotionTier 充值促销档位
+message RechargePromotionTier {
+  int64 amount = 1;   // 充值档位金额 分
+  int64 bonus = 2;    // 赠送金额 分
+  string label = 3;   // 档位标签
+  int32 sort = 4;     // 档位排序 ASC
+  bool enable = 5;    // 单档启停
+}
+
+// RechargePromotion 充值促销活动
+message RechargePromotion {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  int64 start_time = 4;     // Unix 毫秒，0=不限
+  int64 end_time = 5;       // Unix 毫秒，0=长期
+  bool status = 6;          // 启用状态
+  int32 priority = 7;       // 优先级 DESC
+  int32 stack_mode = 8;     // 叠加策略 0=互斥 1=叠加
+  bool custom_bonus_enabled = 9;
+  int32 custom_bonus_percent = 10;  // 万分比 0-10000
+  int32 sort = 11;
+  repeated RechargePromotionTier tiers = 12;
+  int64 created_at = 13;    // Unix 毫秒
+  int64 updated_at = 14;    // Unix 毫秒
+}
+
+// ===== Create =====
+message CreateRechargePromotionRequest {
+  string name = 1;
+  string description = 2;
+  int64 start_time = 3;
+  int64 end_time = 4;
+  int32 priority = 5;
+  int32 stack_mode = 6;
+  bool custom_bonus_enabled = 7;
+  int32 custom_bonus_percent = 8;
+  int32 sort = 9;
+  repeated RechargePromotionTier tiers = 10;
+}
+
+message CreateRechargePromotionData {
+  RechargePromotion promotion = 1;
+}
+
+message CreateRechargePromotionReply {
+  int32 code = 1;
+  string message = 2;
+  CreateRechargePromotionData data = 3;
+}
+
+// ===== Update =====
+message UpdateRechargePromotionRequest {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  int64 start_time = 4;
+  int64 end_time = 5;
+  int32 priority = 6;
+  int32 stack_mode = 7;
+  bool custom_bonus_enabled = 8;
+  int32 custom_bonus_percent = 9;
+  int32 sort = 10;
+  repeated RechargePromotionTier tiers = 11;
+}
+
+message UpdateRechargePromotionData {
+  RechargePromotion promotion = 1;
+}
+
+message UpdateRechargePromotionReply {
+  int32 code = 1;
+  string message = 2;
+  UpdateRechargePromotionData data = 3;
+}
+
+// ===== Delete =====
+message DeleteRechargePromotionRequest {
+  int64 id = 1;
+}
+
+message DeleteRechargePromotionReply {
+  int32 code = 1;
+  string message = 2;
+}
+
+// ===== List =====
+message GetRechargePromotionListRequest {
+  int32 page = 1;
+  int32 size = 2;
+  optional bool status = 3;     // 按启用状态过滤
+  optional string search = 4;   // 按名称模糊搜索
+}
+
+message GetRechargePromotionListData {
+  int32 total = 1;
+  repeated RechargePromotion list = 2;
+}
+
+message GetRechargePromotionListReply {
+  int32 code = 1;
+  string message = 2;
+  GetRechargePromotionListData data = 3;
+}
+
+// ===== UpdateStatus =====
+message UpdateRechargePromotionStatusRequest {
+  int64 id = 1;
+  bool status = 2;
+}
+
+message UpdateRechargePromotionStatusReply {
+  int32 code = 1;
+  string message = 2;
+}

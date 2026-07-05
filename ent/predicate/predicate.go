@@ -36,6 +36,12 @@ type ProxyOrder func(*sql.Selector)
 // ProxyPayment is the predicate function for proxypayment builders.
 type ProxyPayment func(*sql.Selector)
 
+// ProxyRechargePromotion is the predicate function for proxyrechargepromotion builders.
+type ProxyRechargePromotion func(*sql.Selector)
+
+// ProxyRechargePromotionTier is the predicate function for proxyrechargepromotiontier builders.
+type ProxyRechargePromotionTier func(*sql.Selector)
+
 // ProxyRedemptionCode is the predicate function for proxyredemptioncode builders.
 type ProxyRedemptionCode func(*sql.Selector)
 

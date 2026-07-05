@@ -1827,6 +1827,112 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.payment.v1.GetPaymentPlatformReply'
+    /v1/admin/promotion/recharge:
+        put:
+            tags:
+                - RechargePromotionAdminService
+            description: UpdateRechargePromotion 更新充值促销活动（tiers 全量替换）
+            operationId: RechargePromotionAdminService_UpdateRechargePromotion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.promotion.v1.UpdateRechargePromotionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.promotion.v1.UpdateRechargePromotionReply'
+        post:
+            tags:
+                - RechargePromotionAdminService
+            description: CreateRechargePromotion 创建充值促销活动（含档位一次性提交）
+            operationId: RechargePromotionAdminService_CreateRechargePromotion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.promotion.v1.CreateRechargePromotionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.promotion.v1.CreateRechargePromotionReply'
+        delete:
+            tags:
+                - RechargePromotionAdminService
+            description: DeleteRechargePromotion 删除充值促销活动（同时删除其档位）
+            operationId: RechargePromotionAdminService_DeleteRechargePromotion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.promotion.v1.DeleteRechargePromotionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.promotion.v1.DeleteRechargePromotionReply'
+    /v1/admin/promotion/recharge/list:
+        get:
+            tags:
+                - RechargePromotionAdminService
+            description: GetRechargePromotionList 获取充值促销活动列表
+            operationId: RechargePromotionAdminService_GetRechargePromotionList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: status
+                  in: query
+                  schema:
+                    type: boolean
+                - name: search
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.promotion.v1.GetRechargePromotionListReply'
+    /v1/admin/promotion/recharge/status:
+        put:
+            tags:
+                - RechargePromotionAdminService
+            description: UpdateRechargePromotionStatus 快速启停活动
+            operationId: RechargePromotionAdminService_UpdateRechargePromotionStatus
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.promotion.v1.UpdateRechargePromotionStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.promotion.v1.UpdateRechargePromotionStatusReply'
     /v1/admin/redemption/code:
         put:
             tags:
@@ -3524,6 +3630,42 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.subscribe.v1.GetSubscribeListReply'
+    /v1/admin/subscribe/rebate_config:
+        get:
+            tags:
+                - Subscribe
+            description: GetSubscribeRebateConfig 获取订阅套餐返佣配置
+            operationId: Subscribe_GetSubscribeRebateConfig
+            parameters:
+                - name: subscribeId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.subscribe.v1.GetSubscribeRebateConfigReply'
+        put:
+            tags:
+                - Subscribe
+            description: UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+            operationId: Subscribe_UpdateSubscribeRebateConfig
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.subscribe.v1.UpdateSubscribeRebateConfigRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.subscribe.v1.UpdateSubscribeRebateConfigReply'
     /v1/admin/subscribe/reset_all_token:
         post:
             tags:
@@ -5874,6 +6016,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.public.portal.v1.GetSubscriptionCatalogReply'
+    /v1/public/promotion/recharge/active:
+        get:
+            tags:
+                - RechargePromotionPublicService
+            description: ListActiveRechargePromotion 列出当前生效的充值促销活动（含档位）
+            operationId: RechargePromotionPublicService_ListActiveRechargePromotion
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.public.promotion.v1.ListActiveRechargePromotionReply'
     /v1/public/redemption:
         post:
             tags:
@@ -9400,6 +9555,201 @@ components:
                     format: int32
                 enable:
                     type: boolean
+        api.admin.promotion.v1.CreateRechargePromotionData:
+            type: object
+            properties:
+                promotion:
+                    $ref: '#/components/schemas/api.admin.promotion.v1.RechargePromotion'
+        api.admin.promotion.v1.CreateRechargePromotionReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.promotion.v1.CreateRechargePromotionData'
+        api.admin.promotion.v1.CreateRechargePromotionRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                startTime:
+                    type: string
+                endTime:
+                    type: string
+                priority:
+                    type: integer
+                    format: int32
+                stackMode:
+                    type: integer
+                    format: int32
+                customBonusEnabled:
+                    type: boolean
+                customBonusPercent:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                tiers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.promotion.v1.RechargePromotionTier'
+            description: ===== Create =====
+        api.admin.promotion.v1.DeleteRechargePromotionReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+        api.admin.promotion.v1.DeleteRechargePromotionRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+            description: ===== Delete =====
+        api.admin.promotion.v1.GetRechargePromotionListData:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.promotion.v1.RechargePromotion'
+        api.admin.promotion.v1.GetRechargePromotionListReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.promotion.v1.GetRechargePromotionListData'
+        api.admin.promotion.v1.RechargePromotion:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                startTime:
+                    type: string
+                endTime:
+                    type: string
+                status:
+                    type: boolean
+                priority:
+                    type: integer
+                    format: int32
+                stackMode:
+                    type: integer
+                    format: int32
+                customBonusEnabled:
+                    type: boolean
+                customBonusPercent:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                tiers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.promotion.v1.RechargePromotionTier'
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+            description: RechargePromotion 充值促销活动
+        api.admin.promotion.v1.RechargePromotionTier:
+            type: object
+            properties:
+                amount:
+                    type: string
+                bonus:
+                    type: string
+                label:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+                enable:
+                    type: boolean
+            description: RechargePromotionTier 充值促销档位
+        api.admin.promotion.v1.UpdateRechargePromotionData:
+            type: object
+            properties:
+                promotion:
+                    $ref: '#/components/schemas/api.admin.promotion.v1.RechargePromotion'
+        api.admin.promotion.v1.UpdateRechargePromotionReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.promotion.v1.UpdateRechargePromotionData'
+        api.admin.promotion.v1.UpdateRechargePromotionRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                startTime:
+                    type: string
+                endTime:
+                    type: string
+                priority:
+                    type: integer
+                    format: int32
+                stackMode:
+                    type: integer
+                    format: int32
+                customBonusEnabled:
+                    type: boolean
+                customBonusPercent:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                tiers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.promotion.v1.RechargePromotionTier'
+            description: ===== Update =====
+        api.admin.promotion.v1.UpdateRechargePromotionStatusReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+        api.admin.promotion.v1.UpdateRechargePromotionStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: boolean
+            description: ===== UpdateStatus =====
         api.admin.redemption.v1.BatchDeleteRedemptionCodeData:
             type: object
             properties:
@@ -12162,6 +12512,25 @@ components:
                 data:
                     $ref: '#/components/schemas/api.admin.subscribe.v1.GetSubscribeListData'
             description: GetSubscribeListReply 获取订阅套餐列表响应
+        api.admin.subscribe.v1.GetSubscribeRebateConfigData:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.subscribe.v1.SubscribeRebateConfigItem'
+            description: GetSubscribeRebateConfigData 获取订阅套餐返佣配置数据
+        api.admin.subscribe.v1.GetSubscribeRebateConfigReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.subscribe.v1.GetSubscribeRebateConfigData'
+            description: GetSubscribeRebateConfigReply 获取订阅套餐返佣配置响应
         api.admin.subscribe.v1.ResetAllSubscribeTokenData:
             type: object
             properties:
@@ -12477,6 +12846,17 @@ components:
                     type: integer
                     format: int32
             description: SubscribePriceOption 商品价格档位
+        api.admin.subscribe.v1.SubscribeRebateConfigItem:
+            type: object
+            properties:
+                priceOptionId:
+                    type: string
+                referralPercentage:
+                    type: integer
+                    format: int32
+                enabled:
+                    type: boolean
+            description: SubscribeRebateConfigItem 返佣配置项
         api.admin.subscribe.v1.SubscribeSortData:
             type: object
             properties:
@@ -12591,6 +12971,33 @@ components:
                     type: integer
                     format: int32
             description: UpdateSubscribeGroupRequest 更新订阅组请求
+        api.admin.subscribe.v1.UpdateSubscribeRebateConfigData:
+            type: object
+            properties:
+                success:
+                    type: boolean
+            description: UpdateSubscribeRebateConfigData 更新订阅套餐返佣配置数据
+        api.admin.subscribe.v1.UpdateSubscribeRebateConfigReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.subscribe.v1.UpdateSubscribeRebateConfigData'
+            description: UpdateSubscribeRebateConfigReply 更新订阅套餐返佣配置响应
+        api.admin.subscribe.v1.UpdateSubscribeRebateConfigRequest:
+            type: object
+            properties:
+                subscribeId:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.admin.subscribe.v1.SubscribeRebateConfigItem'
+            description: UpdateSubscribeRebateConfigRequest 更新订阅套餐返佣配置请求
         api.admin.subscribe.v1.UpdateSubscribeReply:
             type: object
             properties:
@@ -16289,6 +16696,53 @@ components:
                 speedLimit:
                     type: integer
                     format: int32
+        api.public.promotion.v1.ActiveRechargePromotion:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                endTime:
+                    type: string
+                stackMode:
+                    type: integer
+                    format: int32
+                customBonusEnabled:
+                    type: boolean
+                customBonusPercent:
+                    type: integer
+                    format: int32
+                tiers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.public.promotion.v1.ActiveRechargePromotionTier'
+            description: ActiveRechargePromotion 用户端活动（脱敏，仅展示字段）
+        api.public.promotion.v1.ActiveRechargePromotionTier:
+            type: object
+            properties:
+                amount:
+                    type: string
+                bonus:
+                    type: string
+                label:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+            description: ActiveRechargePromotionTier 用户端档位（脱敏，仅展示字段）
+        api.public.promotion.v1.ListActiveRechargePromotionReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.public.promotion.v1.ActiveRechargePromotion'
         api.public.redemption.v1.RedeemCodeReply:
             type: object
             properties:
@@ -17997,6 +18451,10 @@ tags:
       description: |-
         Public User service
          公共用户服务（需要认证）
+    - name: RechargePromotionAdminService
+      description: RechargePromotionAdminService 充值促销管理服务（管理端）
+    - name: RechargePromotionPublicService
+      description: RechargePromotionPublicService 充值促销用户端服务（查询当前有效活动）
     - name: Redemption
     - name: RedemptionService
       description: RedemptionService 兑换码服务
@@ -18015,8 +18473,8 @@ tags:
          订阅配置服务 - 生成客户端配置
     - name: SystemService
     - name: Ticket
-      description: Ticket service for users
     - name: Ticket
+      description: Ticket service for users
     - name: Tool
     - name: UserAuthMethodService
       description: UserAuthMethodService 用户认证方法管理服务

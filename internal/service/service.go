@@ -15,6 +15,7 @@ import (
 	adminmarketing "github.com/npanel-dev/NPanel-backend/internal/service/admin/marketing"
 	adminorder "github.com/npanel-dev/NPanel-backend/internal/service/admin/order"
 	adminpayment "github.com/npanel-dev/NPanel-backend/internal/service/admin/payment"
+	adminrechargepromotion "github.com/npanel-dev/NPanel-backend/internal/service/admin/recharge_promotion"
 	adminredemption "github.com/npanel-dev/NPanel-backend/internal/service/admin/redemption"
 	adminrouting "github.com/npanel-dev/NPanel-backend/internal/service/admin/routing"
 	adminserver "github.com/npanel-dev/NPanel-backend/internal/service/admin/server"
@@ -32,6 +33,7 @@ import (
 	publicdocument "github.com/npanel-dev/NPanel-backend/internal/service/public/document"
 	publicpayment "github.com/npanel-dev/NPanel-backend/internal/service/public/payment"
 	publicportal "github.com/npanel-dev/NPanel-backend/internal/service/public/portal"
+	publicrechargepromotion "github.com/npanel-dev/NPanel-backend/internal/service/public/recharge_promotion"
 	publicredemption "github.com/npanel-dev/NPanel-backend/internal/service/public/redemption"
 	publicsubscribe "github.com/npanel-dev/NPanel-backend/internal/service/public/subscribe"
 	publicsubscription "github.com/npanel-dev/NPanel-backend/internal/service/public/subscription"
@@ -54,6 +56,7 @@ var ProviderSet = wire.NewSet(
 	adminmarketing.NewMarketingService,
 	adminorder.NewOrderService,
 	adminpayment.NewPaymentService,
+	adminrechargepromotion.NewRechargePromotionService,
 	adminrouting.NewRoutingService,
 	adminserver.NewServerService,
 	adminsubscribe.NewSubscribeService,
@@ -84,6 +87,8 @@ var ProviderSet = wire.NewSet(
 	publicpayment.NewPaymentService,
 	// Public Portal模块服务
 	publicportal.NewPortalService,
+	// Public RechargePromotion模块服务（充值促销）
+	publicrechargepromotion.NewRechargePromotionPublicService,
 	// Public Subscribe模块服务
 	publicsubscribe.NewSubscribeService,
 	// Public Subscription模块服务（订阅配置生成）

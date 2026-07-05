@@ -21,6 +21,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/marketing"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/order"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/payment"
+	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/recharge_promotion"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/redemption"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/routing"
 	server2 "github.com/npanel-dev/NPanel-backend/internal/biz/admin/server"
@@ -38,6 +39,7 @@ import (
 	document3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/document"
 	payment3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/payment"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/public/portal"
+	recharge_promotion3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/recharge_promotion"
 	redemption3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/redemption"
 	subscribe3 "github.com/npanel-dev/NPanel-backend/internal/biz/public/subscribe"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/public/subscription"
@@ -60,6 +62,7 @@ import (
 	marketing2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/marketing"
 	order2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/order"
 	payment2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/payment"
+	recharge_promotion2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/recharge_promotion"
 	redemption2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/redemption"
 	routing2 "github.com/npanel-dev/NPanel-backend/internal/service/admin/routing"
 	server3 "github.com/npanel-dev/NPanel-backend/internal/service/admin/server"
@@ -77,6 +80,7 @@ import (
 	document4 "github.com/npanel-dev/NPanel-backend/internal/service/public/document"
 	payment4 "github.com/npanel-dev/NPanel-backend/internal/service/public/payment"
 	portal2 "github.com/npanel-dev/NPanel-backend/internal/service/public/portal"
+	recharge_promotion4 "github.com/npanel-dev/NPanel-backend/internal/service/public/recharge_promotion"
 	redemption4 "github.com/npanel-dev/NPanel-backend/internal/service/public/redemption"
 	subscribe4 "github.com/npanel-dev/NPanel-backend/internal/service/public/subscribe"
 	subscription2 "github.com/npanel-dev/NPanel-backend/internal/service/public/subscription"
@@ -129,6 +133,9 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	marketingRepo := data.NewAdminMarketingRepo(dataData, logger)
 	marketingUsecase := marketing.NewMarketingUsecase(marketingRepo, logger)
 	marketingService := marketing2.NewMarketingService(marketingUsecase, logger)
+	rechargePromotionRepo := data.NewAdminRechargePromotionRepo(dataData, logger)
+	rechargePromotionUsecase := recharge_promotion.NewRechargePromotionUsecase(rechargePromotionRepo, logger)
+	rechargePromotionService := recharge_promotion2.NewRechargePromotionService(rechargePromotionUsecase, logger)
 	orderRepo := data.NewOrderRepo(dataData, logger)
 	orderUseCase := order.NewOrderUseCase(orderRepo, logger)
 	orderService := order2.NewOrderService(orderUseCase, logger)
@@ -193,6 +200,9 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	portalRepo := data.NewPublicPortalRepo(dataData, logger)
 	portalUseCase := portal.NewPortalUseCase(portalRepo)
 	portalService := portal2.NewPortalService(portalUseCase)
+	rechargePromotionPublicRepo := data.NewPublicRechargePromotionRepo(dataData, logger)
+	rechargePromotionPublicUsecase := recharge_promotion3.NewRechargePromotionPublicUsecase(rechargePromotionPublicRepo, logger)
+	rechargePromotionPublicService := recharge_promotion4.NewRechargePromotionPublicService(rechargePromotionPublicUsecase, logger)
 	ticketTicketRepo := data.NewPublicTicketRepo(dataData, logger)
 	ticketTicketUseCase := ticket3.NewTicketUseCase(ticketTicketRepo, logger)
 	ticketTicketService := ticket4.NewTicketService(ticketTicketUseCase, logger)
@@ -201,7 +211,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	withdrawalWithdrawalRepo := data.NewWithdrawalRepo(dataData, logger)
 	withdrawalWithdrawalUsecase := withdrawal3.NewWithdrawalUsecase(withdrawalWithdrawalRepo, logger)
 	userUserService := user4.NewUserService(userUseCase, withdrawalWithdrawalUsecase)
-	grpcServer := server.NewGRPCServer(confServer, serviceContext, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, withdrawalService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, portalService, ticketTicketService, userUserService)
+	grpcServer := server.NewGRPCServer(confServer, serviceContext, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, rechargePromotionService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, withdrawalService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, portalService, rechargePromotionPublicService, ticketTicketService, userUserService)
 	authCompat := data.NewAuthCompat(dataData, confApplication, logger)
 	announcementAnnouncementRepo := data.NewPublicAnnouncementRepo(dataData, logger)
 	announcementUseCase := announcement3.NewAnnouncementUseCase(announcementAnnouncementRepo)
@@ -224,7 +234,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, confApplication *conf
 	serverNodeRepo := data.NewServerNodeRepo(dataData, logger)
 	serverNodeUsecase := server4.NewServerNodeUsecase(serverNodeRepo, logger)
 	serverServerService := server5.NewServerService(serverNodeUsecase, logger)
-	httpServer := server.NewHTTPServer(confServer, confApplication, serviceContext, authCompat, dataData, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, withdrawalService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, announcementAnnouncementService, documentDocumentService, paymentPaymentService, portalService, redemptionRedemptionService, subscribeSubscribeService, publicSubscriptionService, ticketTicketService, userUserService, serverServerService, logger)
+	httpServer := server.NewHTTPServer(confServer, confApplication, serviceContext, authCompat, dataData, adsService, announcementService, subscribeApplicationService, authMethodService, consoleService, couponService, documentService, logService, marketingService, rechargePromotionService, orderService, paymentService, routingService, serverService, subscribeService, systemService, ticketService, redemptionService, toolService, withdrawalService, groupService, userService, userAuthMethodService, userDeviceService, userSubscribeService, authService, oAuthService, commonService, publicOrderService, announcementAnnouncementService, documentDocumentService, paymentPaymentService, portalService, rechargePromotionPublicService, redemptionRedemptionService, subscribeSubscribeService, publicSubscriptionService, ticketTicketService, userUserService, serverServerService, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

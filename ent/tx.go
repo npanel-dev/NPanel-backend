@@ -32,6 +32,10 @@ type Tx struct {
 	ProxyOrder *ProxyOrderClient
 	// ProxyPayment is the client for interacting with the ProxyPayment builders.
 	ProxyPayment *ProxyPaymentClient
+	// ProxyRechargePromotion is the client for interacting with the ProxyRechargePromotion builders.
+	ProxyRechargePromotion *ProxyRechargePromotionClient
+	// ProxyRechargePromotionTier is the client for interacting with the ProxyRechargePromotionTier builders.
+	ProxyRechargePromotionTier *ProxyRechargePromotionTierClient
 	// ProxyRedemptionCode is the client for interacting with the ProxyRedemptionCode builders.
 	ProxyRedemptionCode *ProxyRedemptionCodeClient
 	// ProxyRedemptionRecord is the client for interacting with the ProxyRedemptionRecord builders.
@@ -235,6 +239,8 @@ func (tx *Tx) init() {
 	tx.ProxyNode = NewProxyNodeClient(tx.config)
 	tx.ProxyOrder = NewProxyOrderClient(tx.config)
 	tx.ProxyPayment = NewProxyPaymentClient(tx.config)
+	tx.ProxyRechargePromotion = NewProxyRechargePromotionClient(tx.config)
+	tx.ProxyRechargePromotionTier = NewProxyRechargePromotionTierClient(tx.config)
 	tx.ProxyRedemptionCode = NewProxyRedemptionCodeClient(tx.config)
 	tx.ProxyRedemptionRecord = NewProxyRedemptionRecordClient(tx.config)
 	tx.ProxyRoutingDNSResolver = NewProxyRoutingDNSResolverClient(tx.config)
