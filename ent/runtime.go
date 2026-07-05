@@ -32,6 +32,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -1907,6 +1908,34 @@ func init() {
 	proxysubscribepriceoptionDescID := proxysubscribepriceoptionFields[0].Descriptor()
 	// proxysubscribepriceoption.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	proxysubscribepriceoption.IDValidator = proxysubscribepriceoptionDescID.Validators[0].(func(int64) error)
+	proxysubscriberebateconfigFields := schema.ProxySubscribeRebateConfig{}.Fields()
+	_ = proxysubscriberebateconfigFields
+	// proxysubscriberebateconfigDescPriceOptionID is the schema descriptor for price_option_id field.
+	proxysubscriberebateconfigDescPriceOptionID := proxysubscriberebateconfigFields[2].Descriptor()
+	// proxysubscriberebateconfig.DefaultPriceOptionID holds the default value on creation for the price_option_id field.
+	proxysubscriberebateconfig.DefaultPriceOptionID = proxysubscriberebateconfigDescPriceOptionID.Default.(int64)
+	// proxysubscriberebateconfigDescReferralPercentage is the schema descriptor for referral_percentage field.
+	proxysubscriberebateconfigDescReferralPercentage := proxysubscriberebateconfigFields[3].Descriptor()
+	// proxysubscriberebateconfig.DefaultReferralPercentage holds the default value on creation for the referral_percentage field.
+	proxysubscriberebateconfig.DefaultReferralPercentage = proxysubscriberebateconfigDescReferralPercentage.Default.(int8)
+	// proxysubscriberebateconfigDescEnabled is the schema descriptor for enabled field.
+	proxysubscriberebateconfigDescEnabled := proxysubscriberebateconfigFields[4].Descriptor()
+	// proxysubscriberebateconfig.DefaultEnabled holds the default value on creation for the enabled field.
+	proxysubscriberebateconfig.DefaultEnabled = proxysubscriberebateconfigDescEnabled.Default.(bool)
+	// proxysubscriberebateconfigDescCreatedAt is the schema descriptor for created_at field.
+	proxysubscriberebateconfigDescCreatedAt := proxysubscriberebateconfigFields[5].Descriptor()
+	// proxysubscriberebateconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	proxysubscriberebateconfig.DefaultCreatedAt = proxysubscriberebateconfigDescCreatedAt.Default.(func() time.Time)
+	// proxysubscriberebateconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	proxysubscriberebateconfigDescUpdatedAt := proxysubscriberebateconfigFields[6].Descriptor()
+	// proxysubscriberebateconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	proxysubscriberebateconfig.DefaultUpdatedAt = proxysubscriberebateconfigDescUpdatedAt.Default.(func() time.Time)
+	// proxysubscriberebateconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	proxysubscriberebateconfig.UpdateDefaultUpdatedAt = proxysubscriberebateconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// proxysubscriberebateconfigDescID is the schema descriptor for id field.
+	proxysubscriberebateconfigDescID := proxysubscriberebateconfigFields[0].Descriptor()
+	// proxysubscriberebateconfig.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	proxysubscriberebateconfig.IDValidator = proxysubscriberebateconfigDescID.Validators[0].(func(int64) error)
 	proxysystemFields := schema.ProxySystem{}.Fields()
 	_ = proxysystemFields
 	// proxysystemDescCategory is the schema descriptor for category field.

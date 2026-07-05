@@ -18,6 +18,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuserauthmethod"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	logmodel "github.com/npanel-dev/NPanel-backend/internal/model/log"
 	queueTypes "github.com/npanel-dev/NPanel-backend/internal/queue/types"
@@ -415,17 +416,14 @@ func (h *ActivateOrderHandler) handleCommission(ctx context.Context, userInfo *e
 		return
 	}
 
-	// 获取佣金比例
-	var referralPercentage uint8
-	if referer.ReferralPercentage != 0 {
-		referralPercentage = uint8(referer.ReferralPercentage)
-	} else {
-		percentage, err := h.loadGlobalReferralPercentage(ctx)
-		if err != nil {
-			h.logger.Errorf("[ActivateOrder] 加载全局佣金比例失败: %v", err)
-			return
-		}
-		referralPercentage = uint8(percentage)
+	// 解析返佣比例：
+	// 优先级 ① 档位专属配置 → ② 套餐默认配置 → ③ 推荐人个人比例 → ④ 全局比例
+	// 命中 enabled=false 的档位/套餐配置时，直接短路（不返佣，不兜底）
+	referralPercentage, ok := h.resolveRebateRate(ctx, referer, orderInfo)
+	if !ok {
+		h.logger.Infof("[ActivateOrder] 返佣被显式关闭，跳过: orderNo=%s subscribeID=%d priceOptionID=%d",
+			orderInfo.OrderNo, orderInfo.SubscribeID, orderInfo.PriceOptionID)
+		return
 	}
 
 	// 佣金计算公式：(订单金额 - 订单手续费) * 佣金比例
@@ -528,6 +526,64 @@ func (h *ActivateOrderHandler) shouldProcessCommission(userInfo *ent.ProxyUser, 
 // 复刻原项目 line 461-463
 func (h *ActivateOrderHandler) calculateCommission(price int64, percentage uint8) int64 {
 	return int64(float64(price) * (float64(percentage) / 100))
+}
+
+// resolveRebateRate 解析返佣比例，按优先级返回 (percentage, ok)。
+//
+// 优先级（命中即停）：
+//  1. 档位专属配置：subscribe_rebate_config 中 subscribe_id+price_option_id 的行
+//     - enabled=false → 短路，返回 (0, false)，不再兜底
+//     - enabled=true  → 用其 referral_percentage
+//  2. 套餐默认配置：subscribe_rebate_config 中 subscribe_id + price_option_id=0 的行
+//     - enabled=false → 短路 (0, false)
+//     - enabled=true  → 用其 referral_percentage
+//  3. 推荐人个人比例：referer.referral_percentage > 0 时使用（保留 only_first_purchase 逻辑）
+//  4. 全局比例：system.ReferralPercentage；为 0 时不返佣 (0, false)
+//
+// 说明：档位/套餐配置行不存在（未配置）→ 继续向下游兜底（区别于 enabled=false）。
+func (h *ActivateOrderHandler) resolveRebateRate(ctx context.Context, referer *ent.ProxyUser, orderInfo *ent.ProxyOrder) (uint8, bool) {
+	// 优先查询该套餐的全部返佣配置（一次查询覆盖档位专属 + 套餐默认）
+	configs, err := h.db.ProxySubscribeRebateConfig.Query().
+		Where(proxysubscriberebateconfig.SubscribeIDEQ(orderInfo.SubscribeID)).
+		All(ctx)
+	if err != nil {
+		h.logger.Errorf("[ActivateOrder] 查询套餐返佣配置失败，回退到个人/全局比例: %v", err)
+	} else {
+		// ① 档位专属
+		for _, c := range configs {
+			if c.PriceOptionID == orderInfo.PriceOptionID {
+				if !c.Enabled {
+					return 0, false // 显式关闭，短路
+				}
+				return uint8(c.ReferralPercentage), true
+			}
+		}
+		// ② 套餐默认 (price_option_id = 0)
+		for _, c := range configs {
+			if c.PriceOptionID == 0 {
+				if !c.Enabled {
+					return 0, false // 显式关闭，短路
+				}
+				return uint8(c.ReferralPercentage), true
+			}
+		}
+	}
+
+	// ③ 推荐人个人比例（已在外层 shouldProcessCommission 处理 only_first_purchase 短路）
+	if referer.ReferralPercentage != 0 {
+		return uint8(referer.ReferralPercentage), true
+	}
+
+	// ④ 全局比例
+	percentage, err := h.loadGlobalReferralPercentage(ctx)
+	if err != nil {
+		h.logger.Errorf("[ActivateOrder] 加载全局佣金比例失败: %v", err)
+		return 0, false
+	}
+	if percentage == 0 {
+		return 0, false
+	}
+	return uint8(percentage), true
 }
 
 // ============================================================================

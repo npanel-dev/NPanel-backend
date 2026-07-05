@@ -7992,3 +7992,873 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ResetAllSubscribeTokenReplyValidationError{}
+
+// Validate checks the field values on SubscribeRebateConfigItem with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *SubscribeRebateConfigItem) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SubscribeRebateConfigItem with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SubscribeRebateConfigItemMultiError, or nil if none found.
+func (m *SubscribeRebateConfigItem) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SubscribeRebateConfigItem) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for PriceOptionId
+
+	// no validation rules for ReferralPercentage
+
+	// no validation rules for Enabled
+
+	if len(errors) > 0 {
+		return SubscribeRebateConfigItemMultiError(errors)
+	}
+
+	return nil
+}
+
+// SubscribeRebateConfigItemMultiError is an error wrapping multiple validation
+// errors returned by SubscribeRebateConfigItem.ValidateAll() if the
+// designated constraints aren't met.
+type SubscribeRebateConfigItemMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SubscribeRebateConfigItemMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SubscribeRebateConfigItemMultiError) AllErrors() []error { return m }
+
+// SubscribeRebateConfigItemValidationError is the validation error returned by
+// SubscribeRebateConfigItem.Validate if the designated constraints aren't met.
+type SubscribeRebateConfigItemValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SubscribeRebateConfigItemValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SubscribeRebateConfigItemValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SubscribeRebateConfigItemValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SubscribeRebateConfigItemValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SubscribeRebateConfigItemValidationError) ErrorName() string {
+	return "SubscribeRebateConfigItemValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SubscribeRebateConfigItemValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSubscribeRebateConfigItem.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SubscribeRebateConfigItemValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SubscribeRebateConfigItemValidationError{}
+
+// Validate checks the field values on GetSubscribeRebateConfigRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetSubscribeRebateConfigRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetSubscribeRebateConfigRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetSubscribeRebateConfigRequestMultiError, or nil if none found.
+func (m *GetSubscribeRebateConfigRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetSubscribeRebateConfigRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for SubscribeId
+
+	if len(errors) > 0 {
+		return GetSubscribeRebateConfigRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetSubscribeRebateConfigRequestMultiError is an error wrapping multiple
+// validation errors returned by GetSubscribeRebateConfigRequest.ValidateAll()
+// if the designated constraints aren't met.
+type GetSubscribeRebateConfigRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetSubscribeRebateConfigRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetSubscribeRebateConfigRequestMultiError) AllErrors() []error { return m }
+
+// GetSubscribeRebateConfigRequestValidationError is the validation error
+// returned by GetSubscribeRebateConfigRequest.Validate if the designated
+// constraints aren't met.
+type GetSubscribeRebateConfigRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetSubscribeRebateConfigRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetSubscribeRebateConfigRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetSubscribeRebateConfigRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetSubscribeRebateConfigRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetSubscribeRebateConfigRequestValidationError) ErrorName() string {
+	return "GetSubscribeRebateConfigRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetSubscribeRebateConfigRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetSubscribeRebateConfigRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetSubscribeRebateConfigRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetSubscribeRebateConfigRequestValidationError{}
+
+// Validate checks the field values on GetSubscribeRebateConfigData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetSubscribeRebateConfigData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetSubscribeRebateConfigData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetSubscribeRebateConfigDataMultiError, or nil if none found.
+func (m *GetSubscribeRebateConfigData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetSubscribeRebateConfigData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetSubscribeRebateConfigDataValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetSubscribeRebateConfigDataValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetSubscribeRebateConfigDataValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetSubscribeRebateConfigDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetSubscribeRebateConfigDataMultiError is an error wrapping multiple
+// validation errors returned by GetSubscribeRebateConfigData.ValidateAll() if
+// the designated constraints aren't met.
+type GetSubscribeRebateConfigDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetSubscribeRebateConfigDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetSubscribeRebateConfigDataMultiError) AllErrors() []error { return m }
+
+// GetSubscribeRebateConfigDataValidationError is the validation error returned
+// by GetSubscribeRebateConfigData.Validate if the designated constraints
+// aren't met.
+type GetSubscribeRebateConfigDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetSubscribeRebateConfigDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetSubscribeRebateConfigDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetSubscribeRebateConfigDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetSubscribeRebateConfigDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetSubscribeRebateConfigDataValidationError) ErrorName() string {
+	return "GetSubscribeRebateConfigDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetSubscribeRebateConfigDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetSubscribeRebateConfigData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetSubscribeRebateConfigDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetSubscribeRebateConfigDataValidationError{}
+
+// Validate checks the field values on GetSubscribeRebateConfigReply with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetSubscribeRebateConfigReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetSubscribeRebateConfigReply with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetSubscribeRebateConfigReplyMultiError, or nil if none found.
+func (m *GetSubscribeRebateConfigReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetSubscribeRebateConfigReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GetSubscribeRebateConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GetSubscribeRebateConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GetSubscribeRebateConfigReplyValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return GetSubscribeRebateConfigReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetSubscribeRebateConfigReplyMultiError is an error wrapping multiple
+// validation errors returned by GetSubscribeRebateConfigReply.ValidateAll()
+// if the designated constraints aren't met.
+type GetSubscribeRebateConfigReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetSubscribeRebateConfigReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetSubscribeRebateConfigReplyMultiError) AllErrors() []error { return m }
+
+// GetSubscribeRebateConfigReplyValidationError is the validation error
+// returned by GetSubscribeRebateConfigReply.Validate if the designated
+// constraints aren't met.
+type GetSubscribeRebateConfigReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetSubscribeRebateConfigReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetSubscribeRebateConfigReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetSubscribeRebateConfigReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetSubscribeRebateConfigReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetSubscribeRebateConfigReplyValidationError) ErrorName() string {
+	return "GetSubscribeRebateConfigReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetSubscribeRebateConfigReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetSubscribeRebateConfigReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetSubscribeRebateConfigReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetSubscribeRebateConfigReplyValidationError{}
+
+// Validate checks the field values on UpdateSubscribeRebateConfigRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *UpdateSubscribeRebateConfigRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateSubscribeRebateConfigRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// UpdateSubscribeRebateConfigRequestMultiError, or nil if none found.
+func (m *UpdateSubscribeRebateConfigRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateSubscribeRebateConfigRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for SubscribeId
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateSubscribeRebateConfigRequestValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateSubscribeRebateConfigRequestValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateSubscribeRebateConfigRequestValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return UpdateSubscribeRebateConfigRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateSubscribeRebateConfigRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// UpdateSubscribeRebateConfigRequest.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateSubscribeRebateConfigRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateSubscribeRebateConfigRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateSubscribeRebateConfigRequestMultiError) AllErrors() []error { return m }
+
+// UpdateSubscribeRebateConfigRequestValidationError is the validation error
+// returned by UpdateSubscribeRebateConfigRequest.Validate if the designated
+// constraints aren't met.
+type UpdateSubscribeRebateConfigRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateSubscribeRebateConfigRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateSubscribeRebateConfigRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateSubscribeRebateConfigRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateSubscribeRebateConfigRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateSubscribeRebateConfigRequestValidationError) ErrorName() string {
+	return "UpdateSubscribeRebateConfigRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateSubscribeRebateConfigRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateSubscribeRebateConfigRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateSubscribeRebateConfigRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateSubscribeRebateConfigRequestValidationError{}
+
+// Validate checks the field values on UpdateSubscribeRebateConfigData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateSubscribeRebateConfigData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateSubscribeRebateConfigData with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// UpdateSubscribeRebateConfigDataMultiError, or nil if none found.
+func (m *UpdateSubscribeRebateConfigData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateSubscribeRebateConfigData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Success
+
+	if len(errors) > 0 {
+		return UpdateSubscribeRebateConfigDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateSubscribeRebateConfigDataMultiError is an error wrapping multiple
+// validation errors returned by UpdateSubscribeRebateConfigData.ValidateAll()
+// if the designated constraints aren't met.
+type UpdateSubscribeRebateConfigDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateSubscribeRebateConfigDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateSubscribeRebateConfigDataMultiError) AllErrors() []error { return m }
+
+// UpdateSubscribeRebateConfigDataValidationError is the validation error
+// returned by UpdateSubscribeRebateConfigData.Validate if the designated
+// constraints aren't met.
+type UpdateSubscribeRebateConfigDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateSubscribeRebateConfigDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateSubscribeRebateConfigDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateSubscribeRebateConfigDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateSubscribeRebateConfigDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateSubscribeRebateConfigDataValidationError) ErrorName() string {
+	return "UpdateSubscribeRebateConfigDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateSubscribeRebateConfigDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateSubscribeRebateConfigData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateSubscribeRebateConfigDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateSubscribeRebateConfigDataValidationError{}
+
+// Validate checks the field values on UpdateSubscribeRebateConfigReply with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *UpdateSubscribeRebateConfigReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateSubscribeRebateConfigReply with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// UpdateSubscribeRebateConfigReplyMultiError, or nil if none found.
+func (m *UpdateSubscribeRebateConfigReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateSubscribeRebateConfigReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateSubscribeRebateConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateSubscribeRebateConfigReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateSubscribeRebateConfigReplyValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateSubscribeRebateConfigReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateSubscribeRebateConfigReplyMultiError is an error wrapping multiple
+// validation errors returned by
+// UpdateSubscribeRebateConfigReply.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateSubscribeRebateConfigReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateSubscribeRebateConfigReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateSubscribeRebateConfigReplyMultiError) AllErrors() []error { return m }
+
+// UpdateSubscribeRebateConfigReplyValidationError is the validation error
+// returned by UpdateSubscribeRebateConfigReply.Validate if the designated
+// constraints aren't met.
+type UpdateSubscribeRebateConfigReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateSubscribeRebateConfigReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateSubscribeRebateConfigReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateSubscribeRebateConfigReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateSubscribeRebateConfigReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateSubscribeRebateConfigReplyValidationError) ErrorName() string {
+	return "UpdateSubscribeRebateConfigReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateSubscribeRebateConfigReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateSubscribeRebateConfigReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateSubscribeRebateConfigReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateSubscribeRebateConfigReplyValidationError{}

@@ -40,6 +40,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -91,6 +92,7 @@ const (
 	TypeProxySubscribeCategory      = "ProxySubscribeCategory"
 	TypeProxySubscribeGroup         = "ProxySubscribeGroup"
 	TypeProxySubscribePriceOption   = "ProxySubscribePriceOption"
+	TypeProxySubscribeRebateConfig  = "ProxySubscribeRebateConfig"
 	TypeProxySystem                 = "ProxySystem"
 	TypeProxySystemLog              = "ProxySystemLog"
 	TypeProxyTask                   = "ProxyTask"
@@ -29551,6 +29553,710 @@ func (m *ProxySubscribePriceOptionMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ProxySubscribePriceOptionMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ProxySubscribePriceOption edge %s", name)
+}
+
+// ProxySubscribeRebateConfigMutation represents an operation that mutates the ProxySubscribeRebateConfig nodes in the graph.
+type ProxySubscribeRebateConfigMutation struct {
+	config
+	op                     Op
+	typ                    string
+	id                     *int64
+	subscribe_id           *int64
+	addsubscribe_id        *int64
+	price_option_id        *int64
+	addprice_option_id     *int64
+	referral_percentage    *int8
+	addreferral_percentage *int8
+	enabled                *bool
+	created_at             *time.Time
+	updated_at             *time.Time
+	clearedFields          map[string]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*ProxySubscribeRebateConfig, error)
+	predicates             []predicate.ProxySubscribeRebateConfig
+}
+
+var _ ent.Mutation = (*ProxySubscribeRebateConfigMutation)(nil)
+
+// proxysubscriberebateconfigOption allows management of the mutation configuration using functional options.
+type proxysubscriberebateconfigOption func(*ProxySubscribeRebateConfigMutation)
+
+// newProxySubscribeRebateConfigMutation creates new mutation for the ProxySubscribeRebateConfig entity.
+func newProxySubscribeRebateConfigMutation(c config, op Op, opts ...proxysubscriberebateconfigOption) *ProxySubscribeRebateConfigMutation {
+	m := &ProxySubscribeRebateConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProxySubscribeRebateConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProxySubscribeRebateConfigID sets the ID field of the mutation.
+func withProxySubscribeRebateConfigID(id int64) proxysubscriberebateconfigOption {
+	return func(m *ProxySubscribeRebateConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProxySubscribeRebateConfig
+		)
+		m.oldValue = func(ctx context.Context) (*ProxySubscribeRebateConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProxySubscribeRebateConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProxySubscribeRebateConfig sets the old ProxySubscribeRebateConfig of the mutation.
+func withProxySubscribeRebateConfig(node *ProxySubscribeRebateConfig) proxysubscriberebateconfigOption {
+	return func(m *ProxySubscribeRebateConfigMutation) {
+		m.oldValue = func(context.Context) (*ProxySubscribeRebateConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProxySubscribeRebateConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProxySubscribeRebateConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ProxySubscribeRebateConfig entities.
+func (m *ProxySubscribeRebateConfigMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProxySubscribeRebateConfigMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProxySubscribeRebateConfigMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProxySubscribeRebateConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetSubscribeID sets the "subscribe_id" field.
+func (m *ProxySubscribeRebateConfigMutation) SetSubscribeID(i int64) {
+	m.subscribe_id = &i
+	m.addsubscribe_id = nil
+}
+
+// SubscribeID returns the value of the "subscribe_id" field in the mutation.
+func (m *ProxySubscribeRebateConfigMutation) SubscribeID() (r int64, exists bool) {
+	v := m.subscribe_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscribeID returns the old "subscribe_id" field's value of the ProxySubscribeRebateConfig entity.
+// If the ProxySubscribeRebateConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeRebateConfigMutation) OldSubscribeID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscribeID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscribeID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscribeID: %w", err)
+	}
+	return oldValue.SubscribeID, nil
+}
+
+// AddSubscribeID adds i to the "subscribe_id" field.
+func (m *ProxySubscribeRebateConfigMutation) AddSubscribeID(i int64) {
+	if m.addsubscribe_id != nil {
+		*m.addsubscribe_id += i
+	} else {
+		m.addsubscribe_id = &i
+	}
+}
+
+// AddedSubscribeID returns the value that was added to the "subscribe_id" field in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) AddedSubscribeID() (r int64, exists bool) {
+	v := m.addsubscribe_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubscribeID resets all changes to the "subscribe_id" field.
+func (m *ProxySubscribeRebateConfigMutation) ResetSubscribeID() {
+	m.subscribe_id = nil
+	m.addsubscribe_id = nil
+}
+
+// SetPriceOptionID sets the "price_option_id" field.
+func (m *ProxySubscribeRebateConfigMutation) SetPriceOptionID(i int64) {
+	m.price_option_id = &i
+	m.addprice_option_id = nil
+}
+
+// PriceOptionID returns the value of the "price_option_id" field in the mutation.
+func (m *ProxySubscribeRebateConfigMutation) PriceOptionID() (r int64, exists bool) {
+	v := m.price_option_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriceOptionID returns the old "price_option_id" field's value of the ProxySubscribeRebateConfig entity.
+// If the ProxySubscribeRebateConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeRebateConfigMutation) OldPriceOptionID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriceOptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriceOptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriceOptionID: %w", err)
+	}
+	return oldValue.PriceOptionID, nil
+}
+
+// AddPriceOptionID adds i to the "price_option_id" field.
+func (m *ProxySubscribeRebateConfigMutation) AddPriceOptionID(i int64) {
+	if m.addprice_option_id != nil {
+		*m.addprice_option_id += i
+	} else {
+		m.addprice_option_id = &i
+	}
+}
+
+// AddedPriceOptionID returns the value that was added to the "price_option_id" field in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) AddedPriceOptionID() (r int64, exists bool) {
+	v := m.addprice_option_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPriceOptionID resets all changes to the "price_option_id" field.
+func (m *ProxySubscribeRebateConfigMutation) ResetPriceOptionID() {
+	m.price_option_id = nil
+	m.addprice_option_id = nil
+}
+
+// SetReferralPercentage sets the "referral_percentage" field.
+func (m *ProxySubscribeRebateConfigMutation) SetReferralPercentage(i int8) {
+	m.referral_percentage = &i
+	m.addreferral_percentage = nil
+}
+
+// ReferralPercentage returns the value of the "referral_percentage" field in the mutation.
+func (m *ProxySubscribeRebateConfigMutation) ReferralPercentage() (r int8, exists bool) {
+	v := m.referral_percentage
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferralPercentage returns the old "referral_percentage" field's value of the ProxySubscribeRebateConfig entity.
+// If the ProxySubscribeRebateConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeRebateConfigMutation) OldReferralPercentage(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferralPercentage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferralPercentage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferralPercentage: %w", err)
+	}
+	return oldValue.ReferralPercentage, nil
+}
+
+// AddReferralPercentage adds i to the "referral_percentage" field.
+func (m *ProxySubscribeRebateConfigMutation) AddReferralPercentage(i int8) {
+	if m.addreferral_percentage != nil {
+		*m.addreferral_percentage += i
+	} else {
+		m.addreferral_percentage = &i
+	}
+}
+
+// AddedReferralPercentage returns the value that was added to the "referral_percentage" field in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) AddedReferralPercentage() (r int8, exists bool) {
+	v := m.addreferral_percentage
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReferralPercentage resets all changes to the "referral_percentage" field.
+func (m *ProxySubscribeRebateConfigMutation) ResetReferralPercentage() {
+	m.referral_percentage = nil
+	m.addreferral_percentage = nil
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *ProxySubscribeRebateConfigMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *ProxySubscribeRebateConfigMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the ProxySubscribeRebateConfig entity.
+// If the ProxySubscribeRebateConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeRebateConfigMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *ProxySubscribeRebateConfigMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProxySubscribeRebateConfigMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProxySubscribeRebateConfigMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProxySubscribeRebateConfig entity.
+// If the ProxySubscribeRebateConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeRebateConfigMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProxySubscribeRebateConfigMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProxySubscribeRebateConfigMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProxySubscribeRebateConfigMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProxySubscribeRebateConfig entity.
+// If the ProxySubscribeRebateConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeRebateConfigMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProxySubscribeRebateConfigMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the ProxySubscribeRebateConfigMutation builder.
+func (m *ProxySubscribeRebateConfigMutation) Where(ps ...predicate.ProxySubscribeRebateConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ProxySubscribeRebateConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ProxySubscribeRebateConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ProxySubscribeRebateConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ProxySubscribeRebateConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ProxySubscribeRebateConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ProxySubscribeRebateConfig).
+func (m *ProxySubscribeRebateConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProxySubscribeRebateConfigMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.subscribe_id != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldSubscribeID)
+	}
+	if m.price_option_id != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldPriceOptionID)
+	}
+	if m.referral_percentage != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldReferralPercentage)
+	}
+	if m.enabled != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldEnabled)
+	}
+	if m.created_at != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProxySubscribeRebateConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case proxysubscriberebateconfig.FieldSubscribeID:
+		return m.SubscribeID()
+	case proxysubscriberebateconfig.FieldPriceOptionID:
+		return m.PriceOptionID()
+	case proxysubscriberebateconfig.FieldReferralPercentage:
+		return m.ReferralPercentage()
+	case proxysubscriberebateconfig.FieldEnabled:
+		return m.Enabled()
+	case proxysubscriberebateconfig.FieldCreatedAt:
+		return m.CreatedAt()
+	case proxysubscriberebateconfig.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProxySubscribeRebateConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case proxysubscriberebateconfig.FieldSubscribeID:
+		return m.OldSubscribeID(ctx)
+	case proxysubscriberebateconfig.FieldPriceOptionID:
+		return m.OldPriceOptionID(ctx)
+	case proxysubscriberebateconfig.FieldReferralPercentage:
+		return m.OldReferralPercentage(ctx)
+	case proxysubscriberebateconfig.FieldEnabled:
+		return m.OldEnabled(ctx)
+	case proxysubscriberebateconfig.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case proxysubscriberebateconfig.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProxySubscribeRebateConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProxySubscribeRebateConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case proxysubscriberebateconfig.FieldSubscribeID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscribeID(v)
+		return nil
+	case proxysubscriberebateconfig.FieldPriceOptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriceOptionID(v)
+		return nil
+	case proxysubscriberebateconfig.FieldReferralPercentage:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferralPercentage(v)
+		return nil
+	case proxysubscriberebateconfig.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	case proxysubscriberebateconfig.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case proxysubscriberebateconfig.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProxySubscribeRebateConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProxySubscribeRebateConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addsubscribe_id != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldSubscribeID)
+	}
+	if m.addprice_option_id != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldPriceOptionID)
+	}
+	if m.addreferral_percentage != nil {
+		fields = append(fields, proxysubscriberebateconfig.FieldReferralPercentage)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProxySubscribeRebateConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case proxysubscriberebateconfig.FieldSubscribeID:
+		return m.AddedSubscribeID()
+	case proxysubscriberebateconfig.FieldPriceOptionID:
+		return m.AddedPriceOptionID()
+	case proxysubscriberebateconfig.FieldReferralPercentage:
+		return m.AddedReferralPercentage()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProxySubscribeRebateConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case proxysubscriberebateconfig.FieldSubscribeID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubscribeID(v)
+		return nil
+	case proxysubscriberebateconfig.FieldPriceOptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPriceOptionID(v)
+		return nil
+	case proxysubscriberebateconfig.FieldReferralPercentage:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReferralPercentage(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProxySubscribeRebateConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProxySubscribeRebateConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProxySubscribeRebateConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProxySubscribeRebateConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProxySubscribeRebateConfigMutation) ResetField(name string) error {
+	switch name {
+	case proxysubscriberebateconfig.FieldSubscribeID:
+		m.ResetSubscribeID()
+		return nil
+	case proxysubscriberebateconfig.FieldPriceOptionID:
+		m.ResetPriceOptionID()
+		return nil
+	case proxysubscriberebateconfig.FieldReferralPercentage:
+		m.ResetReferralPercentage()
+		return nil
+	case proxysubscriberebateconfig.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	case proxysubscriberebateconfig.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case proxysubscriberebateconfig.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ProxySubscribeRebateConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProxySubscribeRebateConfigMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProxySubscribeRebateConfigMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ProxySubscribeRebateConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProxySubscribeRebateConfigMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ProxySubscribeRebateConfig edge %s", name)
 }
 
 // ProxySystemMutation represents an operation that mutates the ProxySystem nodes in the graph.

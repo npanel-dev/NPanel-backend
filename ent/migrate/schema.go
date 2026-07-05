@@ -670,6 +670,34 @@ var (
 			},
 		},
 	}
+	// SubscribeRebateConfigColumns holds the columns for the "subscribe_rebate_config" table.
+	SubscribeRebateConfigColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "返佣配置ID"},
+		{Name: "subscribe_id", Type: field.TypeInt64, Comment: "订阅套餐ID"},
+		{Name: "price_option_id", Type: field.TypeInt64, Comment: "价格档位ID，0表示套餐整体默认", Default: 0},
+		{Name: "referral_percentage", Type: field.TypeInt8, Comment: "返佣百分比 0-100", Default: 0},
+		{Name: "enabled", Type: field.TypeBool, Comment: "是否启用，false表示显式关闭该档返佣（不回退兜底）", Default: true},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+	}
+	// SubscribeRebateConfigTable holds the schema information for the "subscribe_rebate_config" table.
+	SubscribeRebateConfigTable = &schema.Table{
+		Name:       "subscribe_rebate_config",
+		Columns:    SubscribeRebateConfigColumns,
+		PrimaryKey: []*schema.Column{SubscribeRebateConfigColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "proxysubscriberebateconfig_subscribe_id_price_option_id",
+				Unique:  true,
+				Columns: []*schema.Column{SubscribeRebateConfigColumns[1], SubscribeRebateConfigColumns[2]},
+			},
+			{
+				Name:    "proxysubscriberebateconfig_subscribe_id",
+				Unique:  false,
+				Columns: []*schema.Column{SubscribeRebateConfigColumns[1]},
+			},
+		},
+	}
 	// SystemColumns holds the columns for the "system" table.
 	SystemColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -951,6 +979,7 @@ var (
 		SubscribeCategoryTable,
 		SubscribeGroupTable,
 		SubscribePriceOptionTable,
+		SubscribeRebateConfigTable,
 		SystemTable,
 		SystemLogsTable,
 		TaskTable,
@@ -1052,6 +1081,9 @@ func init() {
 	}
 	SubscribePriceOptionTable.Annotation = &entsql.Annotation{
 		Table: "subscribe_price_option",
+	}
+	SubscribeRebateConfigTable.Annotation = &entsql.Annotation{
+		Table: "subscribe_rebate_config",
 	}
 	SystemTable.Annotation = &entsql.Annotation{
 		Table: "system",

@@ -345,6 +345,18 @@ func (f ProxySubscribePriceOptionFunc) Mutate(ctx context.Context, m ent.Mutatio
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProxySubscribePriceOptionMutation", m)
 }
 
+// The ProxySubscribeRebateConfigFunc type is an adapter to allow the use of ordinary
+// function as ProxySubscribeRebateConfig mutator.
+type ProxySubscribeRebateConfigFunc func(context.Context, *ent.ProxySubscribeRebateConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProxySubscribeRebateConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProxySubscribeRebateConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProxySubscribeRebateConfigMutation", m)
+}
+
 // The ProxySystemFunc type is an adapter to allow the use of ordinary
 // function as ProxySystem mutator.
 type ProxySystemFunc func(context.Context, *ent.ProxySystemMutation) (ent.Value, error)
