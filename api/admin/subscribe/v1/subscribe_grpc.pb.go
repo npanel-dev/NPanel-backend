@@ -37,6 +37,8 @@ const (
 	Subscribe_BatchDeleteSubscribeGroup_FullMethodName    = "/api.admin.subscribe.v1.Subscribe/BatchDeleteSubscribeGroup"
 	Subscribe_GetSubscribeGroupList_FullMethodName        = "/api.admin.subscribe.v1.Subscribe/GetSubscribeGroupList"
 	Subscribe_ResetAllSubscribeToken_FullMethodName       = "/api.admin.subscribe.v1.Subscribe/ResetAllSubscribeToken"
+	Subscribe_GetSubscribeRebateConfig_FullMethodName     = "/api.admin.subscribe.v1.Subscribe/GetSubscribeRebateConfig"
+	Subscribe_UpdateSubscribeRebateConfig_FullMethodName  = "/api.admin.subscribe.v1.Subscribe/UpdateSubscribeRebateConfig"
 )
 
 // SubscribeClient is the client API for Subscribe service.
@@ -79,6 +81,10 @@ type SubscribeClient interface {
 	GetSubscribeGroupList(ctx context.Context, in *GetSubscribeGroupListRequest, opts ...grpc.CallOption) (*GetSubscribeGroupListReply, error)
 	// ResetAllSubscribeToken 重置所有订阅Token
 	ResetAllSubscribeToken(ctx context.Context, in *ResetAllSubscribeTokenRequest, opts ...grpc.CallOption) (*ResetAllSubscribeTokenReply, error)
+	// GetSubscribeRebateConfig 获取订阅套餐返佣配置
+	GetSubscribeRebateConfig(ctx context.Context, in *GetSubscribeRebateConfigRequest, opts ...grpc.CallOption) (*GetSubscribeRebateConfigReply, error)
+	// UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+	UpdateSubscribeRebateConfig(ctx context.Context, in *UpdateSubscribeRebateConfigRequest, opts ...grpc.CallOption) (*UpdateSubscribeRebateConfigReply, error)
 }
 
 type subscribeClient struct {
@@ -269,6 +275,26 @@ func (c *subscribeClient) ResetAllSubscribeToken(ctx context.Context, in *ResetA
 	return out, nil
 }
 
+func (c *subscribeClient) GetSubscribeRebateConfig(ctx context.Context, in *GetSubscribeRebateConfigRequest, opts ...grpc.CallOption) (*GetSubscribeRebateConfigReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSubscribeRebateConfigReply)
+	err := c.cc.Invoke(ctx, Subscribe_GetSubscribeRebateConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *subscribeClient) UpdateSubscribeRebateConfig(ctx context.Context, in *UpdateSubscribeRebateConfigRequest, opts ...grpc.CallOption) (*UpdateSubscribeRebateConfigReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSubscribeRebateConfigReply)
+	err := c.cc.Invoke(ctx, Subscribe_UpdateSubscribeRebateConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SubscribeServer is the server API for Subscribe service.
 // All implementations must embed UnimplementedSubscribeServer
 // for forward compatibility.
@@ -309,6 +335,10 @@ type SubscribeServer interface {
 	GetSubscribeGroupList(context.Context, *GetSubscribeGroupListRequest) (*GetSubscribeGroupListReply, error)
 	// ResetAllSubscribeToken 重置所有订阅Token
 	ResetAllSubscribeToken(context.Context, *ResetAllSubscribeTokenRequest) (*ResetAllSubscribeTokenReply, error)
+	// GetSubscribeRebateConfig 获取订阅套餐返佣配置
+	GetSubscribeRebateConfig(context.Context, *GetSubscribeRebateConfigRequest) (*GetSubscribeRebateConfigReply, error)
+	// UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+	UpdateSubscribeRebateConfig(context.Context, *UpdateSubscribeRebateConfigRequest) (*UpdateSubscribeRebateConfigReply, error)
 	mustEmbedUnimplementedSubscribeServer()
 }
 
@@ -372,6 +402,12 @@ func (UnimplementedSubscribeServer) GetSubscribeGroupList(context.Context, *GetS
 }
 func (UnimplementedSubscribeServer) ResetAllSubscribeToken(context.Context, *ResetAllSubscribeTokenRequest) (*ResetAllSubscribeTokenReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetAllSubscribeToken not implemented")
+}
+func (UnimplementedSubscribeServer) GetSubscribeRebateConfig(context.Context, *GetSubscribeRebateConfigRequest) (*GetSubscribeRebateConfigReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubscribeRebateConfig not implemented")
+}
+func (UnimplementedSubscribeServer) UpdateSubscribeRebateConfig(context.Context, *UpdateSubscribeRebateConfigRequest) (*UpdateSubscribeRebateConfigReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscribeRebateConfig not implemented")
 }
 func (UnimplementedSubscribeServer) mustEmbedUnimplementedSubscribeServer() {}
 func (UnimplementedSubscribeServer) testEmbeddedByValue()                   {}
@@ -718,6 +754,42 @@ func _Subscribe_ResetAllSubscribeToken_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Subscribe_GetSubscribeRebateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubscribeRebateConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubscribeServer).GetSubscribeRebateConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Subscribe_GetSubscribeRebateConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubscribeServer).GetSubscribeRebateConfig(ctx, req.(*GetSubscribeRebateConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Subscribe_UpdateSubscribeRebateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSubscribeRebateConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubscribeServer).UpdateSubscribeRebateConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Subscribe_UpdateSubscribeRebateConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubscribeServer).UpdateSubscribeRebateConfig(ctx, req.(*UpdateSubscribeRebateConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Subscribe_ServiceDesc is the grpc.ServiceDesc for Subscribe service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -796,6 +868,14 @@ var Subscribe_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetAllSubscribeToken",
 			Handler:    _Subscribe_ResetAllSubscribeToken_Handler,
+		},
+		{
+			MethodName: "GetSubscribeRebateConfig",
+			Handler:    _Subscribe_GetSubscribeRebateConfig_Handler,
+		},
+		{
+			MethodName: "UpdateSubscribeRebateConfig",
+			Handler:    _Subscribe_UpdateSubscribeRebateConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

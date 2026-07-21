@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package api.public.promotion.v1;
+
+option go_package = "github.com/npanel-dev/NPanel-backend/api/public/promotion/v1;v1";
+
+import "google/api/annotations.proto";
+
+// RechargePromotionPublicService 充值促销用户端服务（查询当前有效活动）
+service RechargePromotionPublicService {
+  // ListActiveRechargePromotion 列出当前生效的充值促销活动（含档位）
+  rpc ListActiveRechargePromotion (ListActiveRechargePromotionRequest) returns (ListActiveRechargePromotionReply) {
+    option (google.api.http) = {
+      get: "/v1/public/promotion/recharge/active"
+    };
+  }
+}
+
+message ListActiveRechargePromotionRequest {}
+
+// ActiveRechargePromotionTier 用户端档位（脱敏，仅展示字段）
+message ActiveRechargePromotionTier {
+  int64 amount = 1;   // 充值档位金额 分
+  int64 bonus = 2;    // 赠送金额 分
+  string label = 3;   // 档位标签
+  int32 sort = 4;     // 档位排序 ASC
+}
+
+// ActiveRechargePromotion 用户端活动（脱敏，仅展示字段）
+message ActiveRechargePromotion {
+  int64 id = 1;
+  string name = 2;
+  string description = 3;
+  int64 end_time = 4;       // Unix 毫秒，0=长期（用户端只关心截止时间）
+  int32 stack_mode = 5;     // 叠加策略（用于前端理解）
+  bool custom_bonus_enabled = 6;
+  int32 custom_bonus_percent = 7;  // 万分比
+  repeated ActiveRechargePromotionTier tiers = 8;
+}
+
+message ListActiveRechargePromotionReply {
+  int32 total = 1;
+  repeated ActiveRechargePromotion list = 2;
+}

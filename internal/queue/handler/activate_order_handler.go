@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -14,10 +15,12 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxycoupon"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotion"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptionrecord"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuserauthmethod"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	logmodel "github.com/npanel-dev/NPanel-backend/internal/model/log"
 	queueTypes "github.com/npanel-dev/NPanel-backend/internal/queue/types"
@@ -415,17 +418,14 @@ func (h *ActivateOrderHandler) handleCommission(ctx context.Context, userInfo *e
 		return
 	}
 
-	// 获取佣金比例
-	var referralPercentage uint8
-	if referer.ReferralPercentage != 0 {
-		referralPercentage = uint8(referer.ReferralPercentage)
-	} else {
-		percentage, err := h.loadGlobalReferralPercentage(ctx)
-		if err != nil {
-			h.logger.Errorf("[ActivateOrder] 加载全局佣金比例失败: %v", err)
-			return
-		}
-		referralPercentage = uint8(percentage)
+	// 解析返佣比例：
+	// 优先级 ① 档位专属配置 → ② 套餐默认配置 → ③ 推荐人个人比例 → ④ 全局比例
+	// 命中 enabled=false 的档位/套餐配置时，直接短路（不返佣，不兜底）
+	referralPercentage, ok := h.resolveRebateRate(ctx, referer, orderInfo)
+	if !ok {
+		h.logger.Infof("[ActivateOrder] 返佣被显式关闭，跳过: orderNo=%s subscribeID=%d priceOptionID=%d",
+			orderInfo.OrderNo, orderInfo.SubscribeID, orderInfo.PriceOptionID)
+		return
 	}
 
 	// 佣金计算公式：(订单金额 - 订单手续费) * 佣金比例
@@ -528,6 +528,64 @@ func (h *ActivateOrderHandler) shouldProcessCommission(userInfo *ent.ProxyUser, 
 // 复刻原项目 line 461-463
 func (h *ActivateOrderHandler) calculateCommission(price int64, percentage uint8) int64 {
 	return int64(float64(price) * (float64(percentage) / 100))
+}
+
+// resolveRebateRate 解析返佣比例，按优先级返回 (percentage, ok)。
+//
+// 优先级（命中即停）：
+//  1. 档位专属配置：subscribe_rebate_config 中 subscribe_id+price_option_id 的行
+//     - enabled=false → 短路，返回 (0, false)，不再兜底
+//     - enabled=true  → 用其 referral_percentage
+//  2. 套餐默认配置：subscribe_rebate_config 中 subscribe_id + price_option_id=0 的行
+//     - enabled=false → 短路 (0, false)
+//     - enabled=true  → 用其 referral_percentage
+//  3. 推荐人个人比例：referer.referral_percentage > 0 时使用（保留 only_first_purchase 逻辑）
+//  4. 全局比例：system.ReferralPercentage；为 0 时不返佣 (0, false)
+//
+// 说明：档位/套餐配置行不存在（未配置）→ 继续向下游兜底（区别于 enabled=false）。
+func (h *ActivateOrderHandler) resolveRebateRate(ctx context.Context, referer *ent.ProxyUser, orderInfo *ent.ProxyOrder) (uint8, bool) {
+	// 优先查询该套餐的全部返佣配置（一次查询覆盖档位专属 + 套餐默认）
+	configs, err := h.db.ProxySubscribeRebateConfig.Query().
+		Where(proxysubscriberebateconfig.SubscribeIDEQ(orderInfo.SubscribeID)).
+		All(ctx)
+	if err != nil {
+		h.logger.Errorf("[ActivateOrder] 查询套餐返佣配置失败，回退到个人/全局比例: %v", err)
+	} else {
+		// ① 档位专属
+		for _, c := range configs {
+			if c.PriceOptionID == orderInfo.PriceOptionID {
+				if !c.Enabled {
+					return 0, false // 显式关闭，短路
+				}
+				return uint8(c.ReferralPercentage), true
+			}
+		}
+		// ② 套餐默认 (price_option_id = 0)
+		for _, c := range configs {
+			if c.PriceOptionID == 0 {
+				if !c.Enabled {
+					return 0, false // 显式关闭，短路
+				}
+				return uint8(c.ReferralPercentage), true
+			}
+		}
+	}
+
+	// ③ 推荐人个人比例（已在外层 shouldProcessCommission 处理 only_first_purchase 短路）
+	if referer.ReferralPercentage != 0 {
+		return uint8(referer.ReferralPercentage), true
+	}
+
+	// ④ 全局比例
+	percentage, err := h.loadGlobalReferralPercentage(ctx)
+	if err != nil {
+		h.logger.Errorf("[ActivateOrder] 加载全局佣金比例失败: %v", err)
+		return 0, false
+	}
+	if percentage == 0 {
+		return 0, false
+	}
+	return uint8(percentage), true
 }
 
 // ============================================================================
@@ -746,8 +804,10 @@ func (h *ActivateOrderHandler) Recharge(ctx context.Context, orderInfo *ent.Prox
 
 	// 保存新余额用于通知
 	var newBalance int64
+	// 保存赠送金额（用于通知/日志），0 表示无赠送
+	var bonus int64
 
-	// 2. 在事务中更新余额
+	// 2. 在事务中更新余额 + 计算并应用充值赠送
 	err = h.db.TX(ctx, func(tx *ent.Tx) error {
 		// 获取当前余额
 		currentBalance := int64(0)
@@ -756,29 +816,79 @@ func (h *ActivateOrderHandler) Recharge(ctx context.Context, orderInfo *ent.Prox
 		}
 		newBalance = currentBalance + int64(orderInfo.Price)
 
-		// 更新用户余额
-		if err := tx.ProxyUser.UpdateOneID(userInfo.ID).
-			SetBalance(newBalance).
-			Exec(ctx); err != nil {
+		// 计算充值赠送（只读，事务外算也行；放事务内保证 bonus 计算和余额更新原子性）
+		bonusResult, bErr := h.resolveRechargeBonus(ctx, int64(orderInfo.Price))
+		if bErr != nil {
+			// bonus 计算失败不应阻断充值到账，记录日志后按 bonus=0 处理
+			h.logger.Errorf("[ActivateOrder] 计算充值赠送失败，本次不赠送: %v", bErr)
+			bonusResult = rechargeBonusResult{}
+		}
+		bonus = bonusResult.Bonus
+
+		// 更新用户余额（以及赠送金额）
+		userUpdate := tx.ProxyUser.UpdateOneID(userInfo.ID).SetBalance(newBalance)
+		if bonus > 0 {
+			currentGift := int64(0)
+			if userInfo.GiftAmount != nil {
+				currentGift = int64(*userInfo.GiftAmount)
+			}
+			newGift := currentGift + bonus
+			userUpdate = userUpdate.SetGiftAmount(newGift)
+		}
+		if err := userUpdate.Exec(ctx); err != nil {
 			return err
 		}
+		// 注意：不写 order.gift_amount —— 该字段语义是「抵扣掉的礼品金」，
+		// CloseOrder 关单时会把 order.gift_amount 退回用户；充值订单若写会触发误退款（资金安全）。
 
 		// 创建余额日志
+		now := time.Now()
 		balanceLog := map[string]interface{}{
 			"amount":    orderInfo.Price,
 			"type":      logmodel.BalanceTypeRecharge,
 			"order_no":  orderInfo.OrderNo,
 			"balance":   newBalance,
-			"timestamp": time.Now().UnixMilli(),
+			"timestamp": now.UnixMilli(),
 		}
-		content, _ := json.Marshal(balanceLog)
-
-		return tx.ProxySystemLog.Create().
+		balanceContent, _ := json.Marshal(balanceLog)
+		if err := tx.ProxySystemLog.Create().
 			SetType(int8(logmodel.TypeBalance)).
-			SetDate(time.Now().Format(time.DateOnly)).
+			SetDate(now.Format(time.DateOnly)).
 			SetObjectID(userInfo.ID).
-			SetContent(string(content)).
-			Exec(ctx)
+			SetContent(string(balanceContent)).
+			Exec(ctx); err != nil {
+			return err
+		}
+
+		// 创建赠送礼品金日志（仅 bonus > 0）
+		// content.type 用字符串 "increase"（与现有 gift log 一致），活动名塞 remark
+		if bonus > 0 {
+			currentGiftForLog := int64(0)
+			if userInfo.GiftAmount != nil {
+				currentGiftForLog = int64(*userInfo.GiftAmount)
+			}
+			newGiftForLog := currentGiftForLog + bonus
+			giftLog := map[string]interface{}{
+				"type":         "increase",
+				"order_no":     orderInfo.OrderNo,
+				"subscribe_id": 0,
+				"amount":       bonus,
+				"balance":      newGiftForLog,
+				"remark":       "充值赠送:" + bonusResult.PromoNames(),
+				"timestamp":    now.UnixMilli(),
+			}
+			giftContent, _ := json.Marshal(giftLog)
+			if err := tx.ProxySystemLog.Create().
+				SetType(int8(logmodel.TypeGift)).
+				SetDate(now.Format(time.DateOnly)).
+				SetObjectID(userInfo.ID).
+				SetContent(string(giftContent)).
+				Exec(ctx); err != nil {
+				// 流水写入失败不阻断主流程（与现有 Purchase gift log 行为一致）
+				h.logger.Errorf("[ActivateOrder] 写入充值赠送礼品金日志失败: %v", err)
+			}
+		}
+		return nil
 	})
 
 	if err != nil {
@@ -786,8 +896,12 @@ func (h *ActivateOrderHandler) Recharge(ctx context.Context, orderInfo *ent.Prox
 		return err
 	}
 
-	// 3. 更新userInfo的Balance字段（用于通知）
+	// 3. 更新userInfo的Balance/GiftAmount字段（用于通知）
 	userInfo.Balance = &newBalance
+	if bonus > 0 && userInfo.GiftAmount != nil {
+		newGift := int64(*userInfo.GiftAmount) + bonus
+		userInfo.GiftAmount = &newGift
+	}
 
 	// 4. 清理用户缓存
 	if err = h.updateUserCache(ctx, userInfo); err != nil {
@@ -799,6 +913,106 @@ func (h *ActivateOrderHandler) Recharge(ctx context.Context, orderInfo *ent.Prox
 	h.sendRechargeNotifications(ctx, orderInfo, userInfo)
 
 	return nil
+}
+
+// ============================================================================
+// RechargeBonus - 充值赠送计算
+// 仿照 resolveRebateRate（531-587 行）的模式：handler 跨领域直接查 ent，不依赖 usecase。
+// 命中算法：档位精确匹配优先；未命中档位且活动开启 custom_bonus 时按比例算；
+// stack_mode=0 互斥取 priority 最高的命中活动，stack_mode=1 叠加所有命中活动 bonus 求和。
+// ============================================================================
+
+// matchedPromo 命中的活动（用于审计日志）
+type matchedPromo struct {
+	ID   int64
+	Name string
+}
+
+// rechargeBonusResult 赠送计算结果
+type rechargeBonusResult struct {
+	Bonus   int64
+	Matched []matchedPromo
+}
+
+// PromoNames 返回命中活动名（逗号分隔，用于流水 remark）
+func (r rechargeBonusResult) PromoNames() string {
+	if len(r.Matched) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(r.Matched))
+	for _, m := range r.Matched {
+		names = append(names, m.Name)
+	}
+	return strings.Join(names, ",")
+}
+
+// resolveRechargeBonus 计算充值赠送金额
+func (h *ActivateOrderHandler) resolveRechargeBonus(ctx context.Context, amount int64) (rechargeBonusResult, error) {
+	result := rechargeBonusResult{}
+	if amount <= 0 {
+		return result, nil
+	}
+
+	now := time.Now().UnixMilli()
+	// 查询有效活动：status=true && start_time<=now && (end_time=0 或 end_time>=now)
+	// 按 priority DESC 排序
+	promotions, err := h.db.ProxyRechargePromotion.Query().
+		Where(
+			proxyrechargepromotion.StatusEQ(true),
+			proxyrechargepromotion.StartTimeLTE(now),
+			proxyrechargepromotion.Or(
+				proxyrechargepromotion.EndTimeEQ(0),
+				proxyrechargepromotion.EndTimeGTE(now),
+			),
+		).
+		WithTiers().
+		Order(ent.Desc(proxyrechargepromotion.FieldPriority), ent.Asc(proxyrechargepromotion.FieldID)).
+		All(ctx)
+	if err != nil {
+		return result, err
+	}
+
+	stackMode := int8(0) // 0=互斥（默认）
+	for _, p := range promotions {
+		perBonus, hit := calcPromotionBonus(p, amount)
+		if !hit {
+			continue
+		}
+		if len(result.Matched) == 0 {
+			// 第一个命中的活动决定 stack_mode
+			stackMode = p.StackMode
+		}
+		result.Bonus += perBonus
+		result.Matched = append(result.Matched, matchedPromo{ID: p.ID, Name: p.Name})
+		// 互斥模式：只取 priority 最高的命中活动，break
+		if stackMode == 0 {
+			break
+		}
+		// 叠加模式：继续累加后续命中活动
+	}
+	return result, nil
+}
+
+// calcPromotionBonus 计算单个活动的赠送金额
+// 返回 (bonus, hit)，hit=false 表示该活动未命中（档位不匹配且未开 custom）
+func calcPromotionBonus(p *ent.ProxyRechargePromotion, amount int64) (int64, bool) {
+	// 优先精确档位匹配
+	if p.Edges.Tiers != nil {
+		for _, t := range p.Edges.Tiers {
+			if t == nil || !t.Enable {
+				continue
+			}
+			if t.Amount == amount {
+				return t.Bonus, true
+			}
+		}
+	}
+	// 未命中档位，按自定义金额比例算
+	if p.CustomBonusEnabled && p.CustomBonusPercent > 0 {
+		// 万分比换算：bonus = amount * percent / 10000
+		return (amount * int64(p.CustomBonusPercent)) / 10000, true
+	}
+	return 0, false
 }
 
 // ============================================================================

@@ -13,6 +13,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/subscribe"
 	"github.com/npanel-dev/NPanel-backend/internal/model"
@@ -668,4 +669,58 @@ func rollback(tx *ent.Tx, err error) error {
 		return rerr
 	}
 	return err
+}
+
+// ==================== Subscribe Rebate Config ====================
+
+// GetSubscribeRebateConfig 获取套餐的返佣配置列表
+func (r *subscribeRepo) GetSubscribeRebateConfig(ctx context.Context, subscribeID int64) ([]*ent.ProxySubscribeRebateConfig, error) {
+	return r.data.db.ProxySubscribeRebateConfig.Query().
+		Where(proxysubscriberebateconfig.SubscribeIDEQ(subscribeID)).
+		All(ctx)
+}
+
+// ReplaceSubscribeRebateConfig 全量替换某套餐的返佣配置。
+// 先删除该套餐的全部旧配置，再插入新配置，保证语义清晰（管理员提交即为该套餐的最终态）。
+func (r *subscribeRepo) ReplaceSubscribeRebateConfig(ctx context.Context, subscribeID int64, items []*subscribe.SubscribeRebateConfigItem) error {
+	tx, err := r.data.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 删除该套餐的所有旧配置
+	if _, err := tx.ProxySubscribeRebateConfig.Delete().
+		Where(proxysubscriberebateconfig.SubscribeIDEQ(subscribeID)).
+		Exec(ctx); err != nil {
+		return rollback(tx, err)
+	}
+
+	// 插入新配置（按 price_option_id 去重，保留最后一条）
+	seen := make(map[int64]struct{}, len(items))
+	builders := make([]*ent.ProxySubscribeRebateConfigCreate, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		if _, exists := seen[item.PriceOptionID]; exists {
+			continue
+		}
+		seen[item.PriceOptionID] = struct{}{}
+		builders = append(builders, tx.ProxySubscribeRebateConfig.Create().
+			SetSubscribeID(subscribeID).
+			SetPriceOptionID(item.PriceOptionID).
+			SetReferralPercentage(int8(item.ReferralPercentage)).
+			SetEnabled(item.Enabled))
+	}
+
+	if len(builders) > 0 {
+		if _, err := tx.ProxySubscribeRebateConfig.CreateBulk(builders...).Save(ctx); err != nil {
+			return rollback(tx, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return rollback(tx, err)
+	}
+	return nil
 }

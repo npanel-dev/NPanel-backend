@@ -308,3 +308,32 @@ func (s *SubscribeService) ResetAllSubscribeToken(ctx context.Context, req *v1.R
 		},
 	}, nil
 }
+
+// ==================== Subscribe Rebate Config ====================
+
+// GetSubscribeRebateConfig 获取订阅套餐返佣配置
+func (s *SubscribeService) GetSubscribeRebateConfig(ctx context.Context, req *v1.GetSubscribeRebateConfigRequest) (*v1.GetSubscribeRebateConfigReply, error) {
+	data, err := s.uc.GetSubscribeRebateConfig(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetSubscribeRebateConfigReply{
+		Code:    200,
+		Message: "success",
+		Data:    data,
+	}, nil
+}
+
+// UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+func (s *SubscribeService) UpdateSubscribeRebateConfig(ctx context.Context, req *v1.UpdateSubscribeRebateConfigRequest) (*v1.UpdateSubscribeRebateConfigReply, error) {
+	if err := s.uc.UpdateSubscribeRebateConfig(ctx, req); err != nil {
+		return nil, err
+	}
+	return &v1.UpdateSubscribeRebateConfigReply{
+		Code:    200,
+		Message: "success",
+		Data: &v1.UpdateSubscribeRebateConfigData{
+			Success: true,
+		},
+	}, nil
+}

@@ -32,11 +32,13 @@ const OperationSubscribeGetSubscribeCategoryList = "/api.admin.subscribe.v1.Subs
 const OperationSubscribeGetSubscribeDetails = "/api.admin.subscribe.v1.Subscribe/GetSubscribeDetails"
 const OperationSubscribeGetSubscribeGroupList = "/api.admin.subscribe.v1.Subscribe/GetSubscribeGroupList"
 const OperationSubscribeGetSubscribeList = "/api.admin.subscribe.v1.Subscribe/GetSubscribeList"
+const OperationSubscribeGetSubscribeRebateConfig = "/api.admin.subscribe.v1.Subscribe/GetSubscribeRebateConfig"
 const OperationSubscribeResetAllSubscribeToken = "/api.admin.subscribe.v1.Subscribe/ResetAllSubscribeToken"
 const OperationSubscribeSubscribeSort = "/api.admin.subscribe.v1.Subscribe/SubscribeSort"
 const OperationSubscribeUpdateSubscribe = "/api.admin.subscribe.v1.Subscribe/UpdateSubscribe"
 const OperationSubscribeUpdateSubscribeCategory = "/api.admin.subscribe.v1.Subscribe/UpdateSubscribeCategory"
 const OperationSubscribeUpdateSubscribeGroup = "/api.admin.subscribe.v1.Subscribe/UpdateSubscribeGroup"
+const OperationSubscribeUpdateSubscribeRebateConfig = "/api.admin.subscribe.v1.Subscribe/UpdateSubscribeRebateConfig"
 
 type SubscribeHTTPServer interface {
 	// BatchDeleteSubscribe BatchDeleteSubscribe 批量删除订阅套餐
@@ -65,6 +67,8 @@ type SubscribeHTTPServer interface {
 	GetSubscribeGroupList(context.Context, *GetSubscribeGroupListRequest) (*GetSubscribeGroupListReply, error)
 	// GetSubscribeList GetSubscribeList 获取订阅套餐列表
 	GetSubscribeList(context.Context, *GetSubscribeListRequest) (*GetSubscribeListReply, error)
+	// GetSubscribeRebateConfig GetSubscribeRebateConfig 获取订阅套餐返佣配置
+	GetSubscribeRebateConfig(context.Context, *GetSubscribeRebateConfigRequest) (*GetSubscribeRebateConfigReply, error)
 	// ResetAllSubscribeToken ResetAllSubscribeToken 重置所有订阅Token
 	ResetAllSubscribeToken(context.Context, *ResetAllSubscribeTokenRequest) (*ResetAllSubscribeTokenReply, error)
 	// SubscribeSort SubscribeSort 订阅套餐排序
@@ -75,6 +79,8 @@ type SubscribeHTTPServer interface {
 	UpdateSubscribeCategory(context.Context, *UpdateSubscribeCategoryRequest) (*UpdateSubscribeCategoryReply, error)
 	// UpdateSubscribeGroup UpdateSubscribeGroup 更新订阅组
 	UpdateSubscribeGroup(context.Context, *UpdateSubscribeGroupRequest) (*UpdateSubscribeGroupReply, error)
+	// UpdateSubscribeRebateConfig UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+	UpdateSubscribeRebateConfig(context.Context, *UpdateSubscribeRebateConfigRequest) (*UpdateSubscribeRebateConfigReply, error)
 }
 
 func RegisterSubscribeHTTPServer(s *http.Server, srv SubscribeHTTPServer) {
@@ -97,6 +103,8 @@ func RegisterSubscribeHTTPServer(s *http.Server, srv SubscribeHTTPServer) {
 	r.DELETE("/v1/admin/subscribe/group/batch", _Subscribe_BatchDeleteSubscribeGroup0_HTTP_Handler(srv))
 	r.GET("/v1/admin/subscribe/group/list", _Subscribe_GetSubscribeGroupList0_HTTP_Handler(srv))
 	r.POST("/v1/admin/subscribe/reset_all_token", _Subscribe_ResetAllSubscribeToken0_HTTP_Handler(srv))
+	r.GET("/v1/admin/subscribe/rebate_config", _Subscribe_GetSubscribeRebateConfig0_HTTP_Handler(srv))
+	r.PUT("/v1/admin/subscribe/rebate_config", _Subscribe_UpdateSubscribeRebateConfig0_HTTP_Handler(srv))
 }
 
 func _Subscribe_CreateSubscribe0_HTTP_Handler(srv SubscribeHTTPServer) func(ctx http.Context) error {
@@ -483,6 +491,47 @@ func _Subscribe_ResetAllSubscribeToken0_HTTP_Handler(srv SubscribeHTTPServer) fu
 	}
 }
 
+func _Subscribe_GetSubscribeRebateConfig0_HTTP_Handler(srv SubscribeHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSubscribeRebateConfigRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSubscribeGetSubscribeRebateConfig)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSubscribeRebateConfig(ctx, req.(*GetSubscribeRebateConfigRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSubscribeRebateConfigReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Subscribe_UpdateSubscribeRebateConfig0_HTTP_Handler(srv SubscribeHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateSubscribeRebateConfigRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSubscribeUpdateSubscribeRebateConfig)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSubscribeRebateConfig(ctx, req.(*UpdateSubscribeRebateConfigRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateSubscribeRebateConfigReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type SubscribeHTTPClient interface {
 	// BatchDeleteSubscribe BatchDeleteSubscribe 批量删除订阅套餐
 	BatchDeleteSubscribe(ctx context.Context, req *BatchDeleteSubscribeRequest, opts ...http.CallOption) (rsp *BatchDeleteSubscribeReply, err error)
@@ -510,6 +559,8 @@ type SubscribeHTTPClient interface {
 	GetSubscribeGroupList(ctx context.Context, req *GetSubscribeGroupListRequest, opts ...http.CallOption) (rsp *GetSubscribeGroupListReply, err error)
 	// GetSubscribeList GetSubscribeList 获取订阅套餐列表
 	GetSubscribeList(ctx context.Context, req *GetSubscribeListRequest, opts ...http.CallOption) (rsp *GetSubscribeListReply, err error)
+	// GetSubscribeRebateConfig GetSubscribeRebateConfig 获取订阅套餐返佣配置
+	GetSubscribeRebateConfig(ctx context.Context, req *GetSubscribeRebateConfigRequest, opts ...http.CallOption) (rsp *GetSubscribeRebateConfigReply, err error)
 	// ResetAllSubscribeToken ResetAllSubscribeToken 重置所有订阅Token
 	ResetAllSubscribeToken(ctx context.Context, req *ResetAllSubscribeTokenRequest, opts ...http.CallOption) (rsp *ResetAllSubscribeTokenReply, err error)
 	// SubscribeSort SubscribeSort 订阅套餐排序
@@ -520,6 +571,8 @@ type SubscribeHTTPClient interface {
 	UpdateSubscribeCategory(ctx context.Context, req *UpdateSubscribeCategoryRequest, opts ...http.CallOption) (rsp *UpdateSubscribeCategoryReply, err error)
 	// UpdateSubscribeGroup UpdateSubscribeGroup 更新订阅组
 	UpdateSubscribeGroup(ctx context.Context, req *UpdateSubscribeGroupRequest, opts ...http.CallOption) (rsp *UpdateSubscribeGroupReply, err error)
+	// UpdateSubscribeRebateConfig UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+	UpdateSubscribeRebateConfig(ctx context.Context, req *UpdateSubscribeRebateConfigRequest, opts ...http.CallOption) (rsp *UpdateSubscribeRebateConfigReply, err error)
 }
 
 type SubscribeHTTPClientImpl struct {
@@ -712,6 +765,20 @@ func (c *SubscribeHTTPClientImpl) GetSubscribeList(ctx context.Context, in *GetS
 	return &out, nil
 }
 
+// GetSubscribeRebateConfig GetSubscribeRebateConfig 获取订阅套餐返佣配置
+func (c *SubscribeHTTPClientImpl) GetSubscribeRebateConfig(ctx context.Context, in *GetSubscribeRebateConfigRequest, opts ...http.CallOption) (*GetSubscribeRebateConfigReply, error) {
+	var out GetSubscribeRebateConfigReply
+	pattern := "/v1/admin/subscribe/rebate_config"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationSubscribeGetSubscribeRebateConfig))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ResetAllSubscribeToken ResetAllSubscribeToken 重置所有订阅Token
 func (c *SubscribeHTTPClientImpl) ResetAllSubscribeToken(ctx context.Context, in *ResetAllSubscribeTokenRequest, opts ...http.CallOption) (*ResetAllSubscribeTokenReply, error) {
 	var out ResetAllSubscribeTokenReply
@@ -774,6 +841,20 @@ func (c *SubscribeHTTPClientImpl) UpdateSubscribeGroup(ctx context.Context, in *
 	pattern := "/v1/admin/subscribe/group"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationSubscribeUpdateSubscribeGroup))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateSubscribeRebateConfig UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+func (c *SubscribeHTTPClientImpl) UpdateSubscribeRebateConfig(ctx context.Context, in *UpdateSubscribeRebateConfigRequest, opts ...http.CallOption) (*UpdateSubscribeRebateConfigReply, error) {
+	var out UpdateSubscribeRebateConfigReply
+	pattern := "/v1/admin/subscribe/rebate_config"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationSubscribeUpdateSubscribeRebateConfig))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {

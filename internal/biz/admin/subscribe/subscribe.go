@@ -106,6 +106,17 @@ type SubscribeRepo interface {
 	GetActiveUserSubscriptionCount(ctx context.Context, subscribeID int) (int64, error)
 	GetActiveUserSubscriptionCountByIDs(ctx context.Context, subscribeIDs []int64) (map[int64]int64, error)
 	ResetAllSubscribeToken(ctx context.Context) error
+
+	// Subscribe rebate config operations
+	GetSubscribeRebateConfig(ctx context.Context, subscribeID int64) ([]*ent.ProxySubscribeRebateConfig, error)
+	ReplaceSubscribeRebateConfig(ctx context.Context, subscribeID int64, items []*SubscribeRebateConfigItem) error
+}
+
+// SubscribeRebateConfigItem 返佣配置项（biz 层模型，与 proto 解耦）
+type SubscribeRebateConfigItem struct {
+	PriceOptionID      int64 // 价格档位ID，0表示套餐整体默认
+	ReferralPercentage int8  // 返佣百分比 0-100
+	Enabled            bool  // 是否启用，false表示显式关闭该档返佣（不回退兜底）
 }
 
 // ==================== Subscribe Operations ====================
@@ -1290,4 +1301,62 @@ func convertSubscribeToProtoItem(sub *ent.ProxySubscribe) *v1.SubscribeItem {
 		UpdatedAt:         sub.UpdatedAt.Unix(),
 		Sold:              0, // Will be set by caller
 	}
+}
+
+// ==================== Subscribe Rebate Config Operations ====================
+
+// GetSubscribeRebateConfig 获取套餐返佣配置
+func (uc *SubscribeUseCase) GetSubscribeRebateConfig(ctx context.Context, req *v1.GetSubscribeRebateConfigRequest) (*v1.GetSubscribeRebateConfigData, error) {
+	if req.SubscribeId <= 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+
+	configs, err := uc.repo.GetSubscribeRebateConfig(ctx, req.SubscribeId)
+	if err != nil {
+		uc.log.WithContext(ctx).Errorf("获取套餐返佣配置失败: %v", err)
+		return nil, responsecode.NewKratosError(responsecode.ErrInternalError)
+	}
+
+	items := make([]*v1.SubscribeRebateConfigItem, 0, len(configs))
+	for _, c := range configs {
+		items = append(items, &v1.SubscribeRebateConfigItem{
+			PriceOptionId:      c.PriceOptionID,
+			ReferralPercentage: int32(c.ReferralPercentage),
+			Enabled:            c.Enabled,
+		})
+	}
+
+	return &v1.GetSubscribeRebateConfigData{Items: items}, nil
+}
+
+// UpdateSubscribeRebateConfig 更新套餐返佣配置（全量替换）
+func (uc *SubscribeUseCase) UpdateSubscribeRebateConfig(ctx context.Context, req *v1.UpdateSubscribeRebateConfigRequest) error {
+	if req.SubscribeId <= 0 {
+		return responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+
+	items := make([]*SubscribeRebateConfigItem, 0, len(req.Items))
+	for _, item := range req.Items {
+		if item == nil {
+			continue
+		}
+		// 校验百分比范围 0-100
+		if item.ReferralPercentage < 0 || item.ReferralPercentage > 100 {
+			return responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+		}
+		if item.PriceOptionId < 0 {
+			return responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+		}
+		items = append(items, &SubscribeRebateConfigItem{
+			PriceOptionID:      item.PriceOptionId,
+			ReferralPercentage: int8(item.ReferralPercentage),
+			Enabled:            item.Enabled,
+		})
+	}
+
+	if err := uc.repo.ReplaceSubscribeRebateConfig(ctx, req.SubscribeId, items); err != nil {
+		uc.log.WithContext(ctx).Errorf("更新套餐返佣配置失败: %v", err)
+		return responsecode.NewKratosError(responsecode.ErrInternalError)
+	}
+	return nil
 }

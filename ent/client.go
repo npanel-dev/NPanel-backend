@@ -25,6 +25,8 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotion"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotiontier"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptioncode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptionrecord"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyroutingdnsresolver"
@@ -43,6 +45,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -82,6 +85,10 @@ type Client struct {
 	ProxyOrder *ProxyOrderClient
 	// ProxyPayment is the client for interacting with the ProxyPayment builders.
 	ProxyPayment *ProxyPaymentClient
+	// ProxyRechargePromotion is the client for interacting with the ProxyRechargePromotion builders.
+	ProxyRechargePromotion *ProxyRechargePromotionClient
+	// ProxyRechargePromotionTier is the client for interacting with the ProxyRechargePromotionTier builders.
+	ProxyRechargePromotionTier *ProxyRechargePromotionTierClient
 	// ProxyRedemptionCode is the client for interacting with the ProxyRedemptionCode builders.
 	ProxyRedemptionCode *ProxyRedemptionCodeClient
 	// ProxyRedemptionRecord is the client for interacting with the ProxyRedemptionRecord builders.
@@ -118,6 +125,8 @@ type Client struct {
 	ProxySubscribeGroup *ProxySubscribeGroupClient
 	// ProxySubscribePriceOption is the client for interacting with the ProxySubscribePriceOption builders.
 	ProxySubscribePriceOption *ProxySubscribePriceOptionClient
+	// ProxySubscribeRebateConfig is the client for interacting with the ProxySubscribeRebateConfig builders.
+	ProxySubscribeRebateConfig *ProxySubscribeRebateConfigClient
 	// ProxySystem is the client for interacting with the ProxySystem builders.
 	ProxySystem *ProxySystemClient
 	// ProxySystemLog is the client for interacting with the ProxySystemLog builders.
@@ -163,6 +172,8 @@ func (c *Client) init() {
 	c.ProxyNode = NewProxyNodeClient(c.config)
 	c.ProxyOrder = NewProxyOrderClient(c.config)
 	c.ProxyPayment = NewProxyPaymentClient(c.config)
+	c.ProxyRechargePromotion = NewProxyRechargePromotionClient(c.config)
+	c.ProxyRechargePromotionTier = NewProxyRechargePromotionTierClient(c.config)
 	c.ProxyRedemptionCode = NewProxyRedemptionCodeClient(c.config)
 	c.ProxyRedemptionRecord = NewProxyRedemptionRecordClient(c.config)
 	c.ProxyRoutingDNSResolver = NewProxyRoutingDNSResolverClient(c.config)
@@ -181,6 +192,7 @@ func (c *Client) init() {
 	c.ProxySubscribeCategory = NewProxySubscribeCategoryClient(c.config)
 	c.ProxySubscribeGroup = NewProxySubscribeGroupClient(c.config)
 	c.ProxySubscribePriceOption = NewProxySubscribePriceOptionClient(c.config)
+	c.ProxySubscribeRebateConfig = NewProxySubscribeRebateConfigClient(c.config)
 	c.ProxySystem = NewProxySystemClient(c.config)
 	c.ProxySystemLog = NewProxySystemLogClient(c.config)
 	c.ProxyTask = NewProxyTaskClient(c.config)
@@ -295,6 +307,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProxyNode:                   NewProxyNodeClient(cfg),
 		ProxyOrder:                  NewProxyOrderClient(cfg),
 		ProxyPayment:                NewProxyPaymentClient(cfg),
+		ProxyRechargePromotion:      NewProxyRechargePromotionClient(cfg),
+		ProxyRechargePromotionTier:  NewProxyRechargePromotionTierClient(cfg),
 		ProxyRedemptionCode:         NewProxyRedemptionCodeClient(cfg),
 		ProxyRedemptionRecord:       NewProxyRedemptionRecordClient(cfg),
 		ProxyRoutingDNSResolver:     NewProxyRoutingDNSResolverClient(cfg),
@@ -313,6 +327,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProxySubscribeCategory:      NewProxySubscribeCategoryClient(cfg),
 		ProxySubscribeGroup:         NewProxySubscribeGroupClient(cfg),
 		ProxySubscribePriceOption:   NewProxySubscribePriceOptionClient(cfg),
+		ProxySubscribeRebateConfig:  NewProxySubscribeRebateConfigClient(cfg),
 		ProxySystem:                 NewProxySystemClient(cfg),
 		ProxySystemLog:              NewProxySystemLogClient(cfg),
 		ProxyTask:                   NewProxyTaskClient(cfg),
@@ -354,6 +369,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProxyNode:                   NewProxyNodeClient(cfg),
 		ProxyOrder:                  NewProxyOrderClient(cfg),
 		ProxyPayment:                NewProxyPaymentClient(cfg),
+		ProxyRechargePromotion:      NewProxyRechargePromotionClient(cfg),
+		ProxyRechargePromotionTier:  NewProxyRechargePromotionTierClient(cfg),
 		ProxyRedemptionCode:         NewProxyRedemptionCodeClient(cfg),
 		ProxyRedemptionRecord:       NewProxyRedemptionRecordClient(cfg),
 		ProxyRoutingDNSResolver:     NewProxyRoutingDNSResolverClient(cfg),
@@ -372,6 +389,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProxySubscribeCategory:      NewProxySubscribeCategoryClient(cfg),
 		ProxySubscribeGroup:         NewProxySubscribeGroupClient(cfg),
 		ProxySubscribePriceOption:   NewProxySubscribePriceOptionClient(cfg),
+		ProxySubscribeRebateConfig:  NewProxySubscribeRebateConfigClient(cfg),
 		ProxySystem:                 NewProxySystemClient(cfg),
 		ProxySystemLog:              NewProxySystemLogClient(cfg),
 		ProxyTask:                   NewProxyTaskClient(cfg),
@@ -415,16 +433,17 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ProxyAds, c.ProxyAnnouncement, c.ProxyAuthMethod, c.ProxyCoupon,
 		c.ProxyDocument, c.ProxyGroupHistory, c.ProxyGroupHistoryDetail, c.ProxyNode,
-		c.ProxyOrder, c.ProxyPayment, c.ProxyRedemptionCode, c.ProxyRedemptionRecord,
+		c.ProxyOrder, c.ProxyPayment, c.ProxyRechargePromotion,
+		c.ProxyRechargePromotionTier, c.ProxyRedemptionCode, c.ProxyRedemptionRecord,
 		c.ProxyRoutingDNSResolver, c.ProxyRoutingGrayRelease,
 		c.ProxyRoutingHealthReport, c.ProxyRoutingOutbound, c.ProxyRoutingProfile,
 		c.ProxyRoutingRouteEvent, c.ProxyRoutingRule, c.ProxyRoutingUnlockService,
 		c.ProxySchemaMigrations, c.ProxyServer, c.ProxyServerGroup, c.ProxySubscribe,
 		c.ProxySubscribeApplication, c.ProxySubscribeCategory, c.ProxySubscribeGroup,
-		c.ProxySubscribePriceOption, c.ProxySystem, c.ProxySystemLog, c.ProxyTask,
-		c.ProxyTicket, c.ProxyTicketFollow, c.ProxyTrafficLog, c.ProxyUser,
-		c.ProxyUserAuthMethod, c.ProxyUserDevice, c.ProxyUserDeviceOnlineRecord,
-		c.ProxyUserSubscribe, c.ProxyUserWithdrawal,
+		c.ProxySubscribePriceOption, c.ProxySubscribeRebateConfig, c.ProxySystem,
+		c.ProxySystemLog, c.ProxyTask, c.ProxyTicket, c.ProxyTicketFollow,
+		c.ProxyTrafficLog, c.ProxyUser, c.ProxyUserAuthMethod, c.ProxyUserDevice,
+		c.ProxyUserDeviceOnlineRecord, c.ProxyUserSubscribe, c.ProxyUserWithdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -436,16 +455,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ProxyAds, c.ProxyAnnouncement, c.ProxyAuthMethod, c.ProxyCoupon,
 		c.ProxyDocument, c.ProxyGroupHistory, c.ProxyGroupHistoryDetail, c.ProxyNode,
-		c.ProxyOrder, c.ProxyPayment, c.ProxyRedemptionCode, c.ProxyRedemptionRecord,
+		c.ProxyOrder, c.ProxyPayment, c.ProxyRechargePromotion,
+		c.ProxyRechargePromotionTier, c.ProxyRedemptionCode, c.ProxyRedemptionRecord,
 		c.ProxyRoutingDNSResolver, c.ProxyRoutingGrayRelease,
 		c.ProxyRoutingHealthReport, c.ProxyRoutingOutbound, c.ProxyRoutingProfile,
 		c.ProxyRoutingRouteEvent, c.ProxyRoutingRule, c.ProxyRoutingUnlockService,
 		c.ProxySchemaMigrations, c.ProxyServer, c.ProxyServerGroup, c.ProxySubscribe,
 		c.ProxySubscribeApplication, c.ProxySubscribeCategory, c.ProxySubscribeGroup,
-		c.ProxySubscribePriceOption, c.ProxySystem, c.ProxySystemLog, c.ProxyTask,
-		c.ProxyTicket, c.ProxyTicketFollow, c.ProxyTrafficLog, c.ProxyUser,
-		c.ProxyUserAuthMethod, c.ProxyUserDevice, c.ProxyUserDeviceOnlineRecord,
-		c.ProxyUserSubscribe, c.ProxyUserWithdrawal,
+		c.ProxySubscribePriceOption, c.ProxySubscribeRebateConfig, c.ProxySystem,
+		c.ProxySystemLog, c.ProxyTask, c.ProxyTicket, c.ProxyTicketFollow,
+		c.ProxyTrafficLog, c.ProxyUser, c.ProxyUserAuthMethod, c.ProxyUserDevice,
+		c.ProxyUserDeviceOnlineRecord, c.ProxyUserSubscribe, c.ProxyUserWithdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -474,6 +494,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProxyOrder.mutate(ctx, m)
 	case *ProxyPaymentMutation:
 		return c.ProxyPayment.mutate(ctx, m)
+	case *ProxyRechargePromotionMutation:
+		return c.ProxyRechargePromotion.mutate(ctx, m)
+	case *ProxyRechargePromotionTierMutation:
+		return c.ProxyRechargePromotionTier.mutate(ctx, m)
 	case *ProxyRedemptionCodeMutation:
 		return c.ProxyRedemptionCode.mutate(ctx, m)
 	case *ProxyRedemptionRecordMutation:
@@ -510,6 +534,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProxySubscribeGroup.mutate(ctx, m)
 	case *ProxySubscribePriceOptionMutation:
 		return c.ProxySubscribePriceOption.mutate(ctx, m)
+	case *ProxySubscribeRebateConfigMutation:
+		return c.ProxySubscribeRebateConfig.mutate(ctx, m)
 	case *ProxySystemMutation:
 		return c.ProxySystem.mutate(ctx, m)
 	case *ProxySystemLogMutation:
@@ -1866,6 +1892,304 @@ func (c *ProxyPaymentClient) mutate(ctx context.Context, m *ProxyPaymentMutation
 		return (&ProxyPaymentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ProxyPayment mutation op: %q", m.Op())
+	}
+}
+
+// ProxyRechargePromotionClient is a client for the ProxyRechargePromotion schema.
+type ProxyRechargePromotionClient struct {
+	config
+}
+
+// NewProxyRechargePromotionClient returns a client for the ProxyRechargePromotion from the given config.
+func NewProxyRechargePromotionClient(c config) *ProxyRechargePromotionClient {
+	return &ProxyRechargePromotionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `proxyrechargepromotion.Hooks(f(g(h())))`.
+func (c *ProxyRechargePromotionClient) Use(hooks ...Hook) {
+	c.hooks.ProxyRechargePromotion = append(c.hooks.ProxyRechargePromotion, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `proxyrechargepromotion.Intercept(f(g(h())))`.
+func (c *ProxyRechargePromotionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProxyRechargePromotion = append(c.inters.ProxyRechargePromotion, interceptors...)
+}
+
+// Create returns a builder for creating a ProxyRechargePromotion entity.
+func (c *ProxyRechargePromotionClient) Create() *ProxyRechargePromotionCreate {
+	mutation := newProxyRechargePromotionMutation(c.config, OpCreate)
+	return &ProxyRechargePromotionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProxyRechargePromotion entities.
+func (c *ProxyRechargePromotionClient) CreateBulk(builders ...*ProxyRechargePromotionCreate) *ProxyRechargePromotionCreateBulk {
+	return &ProxyRechargePromotionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProxyRechargePromotionClient) MapCreateBulk(slice any, setFunc func(*ProxyRechargePromotionCreate, int)) *ProxyRechargePromotionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProxyRechargePromotionCreateBulk{err: fmt.Errorf("calling to ProxyRechargePromotionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProxyRechargePromotionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProxyRechargePromotionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProxyRechargePromotion.
+func (c *ProxyRechargePromotionClient) Update() *ProxyRechargePromotionUpdate {
+	mutation := newProxyRechargePromotionMutation(c.config, OpUpdate)
+	return &ProxyRechargePromotionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProxyRechargePromotionClient) UpdateOne(_m *ProxyRechargePromotion) *ProxyRechargePromotionUpdateOne {
+	mutation := newProxyRechargePromotionMutation(c.config, OpUpdateOne, withProxyRechargePromotion(_m))
+	return &ProxyRechargePromotionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProxyRechargePromotionClient) UpdateOneID(id int64) *ProxyRechargePromotionUpdateOne {
+	mutation := newProxyRechargePromotionMutation(c.config, OpUpdateOne, withProxyRechargePromotionID(id))
+	return &ProxyRechargePromotionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProxyRechargePromotion.
+func (c *ProxyRechargePromotionClient) Delete() *ProxyRechargePromotionDelete {
+	mutation := newProxyRechargePromotionMutation(c.config, OpDelete)
+	return &ProxyRechargePromotionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProxyRechargePromotionClient) DeleteOne(_m *ProxyRechargePromotion) *ProxyRechargePromotionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProxyRechargePromotionClient) DeleteOneID(id int64) *ProxyRechargePromotionDeleteOne {
+	builder := c.Delete().Where(proxyrechargepromotion.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProxyRechargePromotionDeleteOne{builder}
+}
+
+// Query returns a query builder for ProxyRechargePromotion.
+func (c *ProxyRechargePromotionClient) Query() *ProxyRechargePromotionQuery {
+	return &ProxyRechargePromotionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProxyRechargePromotion},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProxyRechargePromotion entity by its id.
+func (c *ProxyRechargePromotionClient) Get(ctx context.Context, id int64) (*ProxyRechargePromotion, error) {
+	return c.Query().Where(proxyrechargepromotion.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProxyRechargePromotionClient) GetX(ctx context.Context, id int64) *ProxyRechargePromotion {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTiers queries the tiers edge of a ProxyRechargePromotion.
+func (c *ProxyRechargePromotionClient) QueryTiers(_m *ProxyRechargePromotion) *ProxyRechargePromotionTierQuery {
+	query := (&ProxyRechargePromotionTierClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(proxyrechargepromotion.Table, proxyrechargepromotion.FieldID, id),
+			sqlgraph.To(proxyrechargepromotiontier.Table, proxyrechargepromotiontier.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, proxyrechargepromotion.TiersTable, proxyrechargepromotion.TiersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProxyRechargePromotionClient) Hooks() []Hook {
+	return c.hooks.ProxyRechargePromotion
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProxyRechargePromotionClient) Interceptors() []Interceptor {
+	return c.inters.ProxyRechargePromotion
+}
+
+func (c *ProxyRechargePromotionClient) mutate(ctx context.Context, m *ProxyRechargePromotionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProxyRechargePromotionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProxyRechargePromotionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProxyRechargePromotionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProxyRechargePromotionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProxyRechargePromotion mutation op: %q", m.Op())
+	}
+}
+
+// ProxyRechargePromotionTierClient is a client for the ProxyRechargePromotionTier schema.
+type ProxyRechargePromotionTierClient struct {
+	config
+}
+
+// NewProxyRechargePromotionTierClient returns a client for the ProxyRechargePromotionTier from the given config.
+func NewProxyRechargePromotionTierClient(c config) *ProxyRechargePromotionTierClient {
+	return &ProxyRechargePromotionTierClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `proxyrechargepromotiontier.Hooks(f(g(h())))`.
+func (c *ProxyRechargePromotionTierClient) Use(hooks ...Hook) {
+	c.hooks.ProxyRechargePromotionTier = append(c.hooks.ProxyRechargePromotionTier, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `proxyrechargepromotiontier.Intercept(f(g(h())))`.
+func (c *ProxyRechargePromotionTierClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProxyRechargePromotionTier = append(c.inters.ProxyRechargePromotionTier, interceptors...)
+}
+
+// Create returns a builder for creating a ProxyRechargePromotionTier entity.
+func (c *ProxyRechargePromotionTierClient) Create() *ProxyRechargePromotionTierCreate {
+	mutation := newProxyRechargePromotionTierMutation(c.config, OpCreate)
+	return &ProxyRechargePromotionTierCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProxyRechargePromotionTier entities.
+func (c *ProxyRechargePromotionTierClient) CreateBulk(builders ...*ProxyRechargePromotionTierCreate) *ProxyRechargePromotionTierCreateBulk {
+	return &ProxyRechargePromotionTierCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProxyRechargePromotionTierClient) MapCreateBulk(slice any, setFunc func(*ProxyRechargePromotionTierCreate, int)) *ProxyRechargePromotionTierCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProxyRechargePromotionTierCreateBulk{err: fmt.Errorf("calling to ProxyRechargePromotionTierClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProxyRechargePromotionTierCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProxyRechargePromotionTierCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProxyRechargePromotionTier.
+func (c *ProxyRechargePromotionTierClient) Update() *ProxyRechargePromotionTierUpdate {
+	mutation := newProxyRechargePromotionTierMutation(c.config, OpUpdate)
+	return &ProxyRechargePromotionTierUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProxyRechargePromotionTierClient) UpdateOne(_m *ProxyRechargePromotionTier) *ProxyRechargePromotionTierUpdateOne {
+	mutation := newProxyRechargePromotionTierMutation(c.config, OpUpdateOne, withProxyRechargePromotionTier(_m))
+	return &ProxyRechargePromotionTierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProxyRechargePromotionTierClient) UpdateOneID(id int64) *ProxyRechargePromotionTierUpdateOne {
+	mutation := newProxyRechargePromotionTierMutation(c.config, OpUpdateOne, withProxyRechargePromotionTierID(id))
+	return &ProxyRechargePromotionTierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProxyRechargePromotionTier.
+func (c *ProxyRechargePromotionTierClient) Delete() *ProxyRechargePromotionTierDelete {
+	mutation := newProxyRechargePromotionTierMutation(c.config, OpDelete)
+	return &ProxyRechargePromotionTierDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProxyRechargePromotionTierClient) DeleteOne(_m *ProxyRechargePromotionTier) *ProxyRechargePromotionTierDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProxyRechargePromotionTierClient) DeleteOneID(id int64) *ProxyRechargePromotionTierDeleteOne {
+	builder := c.Delete().Where(proxyrechargepromotiontier.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProxyRechargePromotionTierDeleteOne{builder}
+}
+
+// Query returns a query builder for ProxyRechargePromotionTier.
+func (c *ProxyRechargePromotionTierClient) Query() *ProxyRechargePromotionTierQuery {
+	return &ProxyRechargePromotionTierQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProxyRechargePromotionTier},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProxyRechargePromotionTier entity by its id.
+func (c *ProxyRechargePromotionTierClient) Get(ctx context.Context, id int64) (*ProxyRechargePromotionTier, error) {
+	return c.Query().Where(proxyrechargepromotiontier.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProxyRechargePromotionTierClient) GetX(ctx context.Context, id int64) *ProxyRechargePromotionTier {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPromotion queries the promotion edge of a ProxyRechargePromotionTier.
+func (c *ProxyRechargePromotionTierClient) QueryPromotion(_m *ProxyRechargePromotionTier) *ProxyRechargePromotionQuery {
+	query := (&ProxyRechargePromotionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(proxyrechargepromotiontier.Table, proxyrechargepromotiontier.FieldID, id),
+			sqlgraph.To(proxyrechargepromotion.Table, proxyrechargepromotion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, proxyrechargepromotiontier.PromotionTable, proxyrechargepromotiontier.PromotionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProxyRechargePromotionTierClient) Hooks() []Hook {
+	return c.hooks.ProxyRechargePromotionTier
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProxyRechargePromotionTierClient) Interceptors() []Interceptor {
+	return c.inters.ProxyRechargePromotionTier
+}
+
+func (c *ProxyRechargePromotionTierClient) mutate(ctx context.Context, m *ProxyRechargePromotionTierMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProxyRechargePromotionTierCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProxyRechargePromotionTierUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProxyRechargePromotionTierUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProxyRechargePromotionTierDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProxyRechargePromotionTier mutation op: %q", m.Op())
 	}
 }
 
@@ -4311,6 +4635,139 @@ func (c *ProxySubscribePriceOptionClient) mutate(ctx context.Context, m *ProxySu
 	}
 }
 
+// ProxySubscribeRebateConfigClient is a client for the ProxySubscribeRebateConfig schema.
+type ProxySubscribeRebateConfigClient struct {
+	config
+}
+
+// NewProxySubscribeRebateConfigClient returns a client for the ProxySubscribeRebateConfig from the given config.
+func NewProxySubscribeRebateConfigClient(c config) *ProxySubscribeRebateConfigClient {
+	return &ProxySubscribeRebateConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `proxysubscriberebateconfig.Hooks(f(g(h())))`.
+func (c *ProxySubscribeRebateConfigClient) Use(hooks ...Hook) {
+	c.hooks.ProxySubscribeRebateConfig = append(c.hooks.ProxySubscribeRebateConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `proxysubscriberebateconfig.Intercept(f(g(h())))`.
+func (c *ProxySubscribeRebateConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProxySubscribeRebateConfig = append(c.inters.ProxySubscribeRebateConfig, interceptors...)
+}
+
+// Create returns a builder for creating a ProxySubscribeRebateConfig entity.
+func (c *ProxySubscribeRebateConfigClient) Create() *ProxySubscribeRebateConfigCreate {
+	mutation := newProxySubscribeRebateConfigMutation(c.config, OpCreate)
+	return &ProxySubscribeRebateConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProxySubscribeRebateConfig entities.
+func (c *ProxySubscribeRebateConfigClient) CreateBulk(builders ...*ProxySubscribeRebateConfigCreate) *ProxySubscribeRebateConfigCreateBulk {
+	return &ProxySubscribeRebateConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProxySubscribeRebateConfigClient) MapCreateBulk(slice any, setFunc func(*ProxySubscribeRebateConfigCreate, int)) *ProxySubscribeRebateConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProxySubscribeRebateConfigCreateBulk{err: fmt.Errorf("calling to ProxySubscribeRebateConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProxySubscribeRebateConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProxySubscribeRebateConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProxySubscribeRebateConfig.
+func (c *ProxySubscribeRebateConfigClient) Update() *ProxySubscribeRebateConfigUpdate {
+	mutation := newProxySubscribeRebateConfigMutation(c.config, OpUpdate)
+	return &ProxySubscribeRebateConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProxySubscribeRebateConfigClient) UpdateOne(_m *ProxySubscribeRebateConfig) *ProxySubscribeRebateConfigUpdateOne {
+	mutation := newProxySubscribeRebateConfigMutation(c.config, OpUpdateOne, withProxySubscribeRebateConfig(_m))
+	return &ProxySubscribeRebateConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProxySubscribeRebateConfigClient) UpdateOneID(id int64) *ProxySubscribeRebateConfigUpdateOne {
+	mutation := newProxySubscribeRebateConfigMutation(c.config, OpUpdateOne, withProxySubscribeRebateConfigID(id))
+	return &ProxySubscribeRebateConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProxySubscribeRebateConfig.
+func (c *ProxySubscribeRebateConfigClient) Delete() *ProxySubscribeRebateConfigDelete {
+	mutation := newProxySubscribeRebateConfigMutation(c.config, OpDelete)
+	return &ProxySubscribeRebateConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProxySubscribeRebateConfigClient) DeleteOne(_m *ProxySubscribeRebateConfig) *ProxySubscribeRebateConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProxySubscribeRebateConfigClient) DeleteOneID(id int64) *ProxySubscribeRebateConfigDeleteOne {
+	builder := c.Delete().Where(proxysubscriberebateconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProxySubscribeRebateConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for ProxySubscribeRebateConfig.
+func (c *ProxySubscribeRebateConfigClient) Query() *ProxySubscribeRebateConfigQuery {
+	return &ProxySubscribeRebateConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProxySubscribeRebateConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProxySubscribeRebateConfig entity by its id.
+func (c *ProxySubscribeRebateConfigClient) Get(ctx context.Context, id int64) (*ProxySubscribeRebateConfig, error) {
+	return c.Query().Where(proxysubscriberebateconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProxySubscribeRebateConfigClient) GetX(ctx context.Context, id int64) *ProxySubscribeRebateConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProxySubscribeRebateConfigClient) Hooks() []Hook {
+	return c.hooks.ProxySubscribeRebateConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProxySubscribeRebateConfigClient) Interceptors() []Interceptor {
+	return c.inters.ProxySubscribeRebateConfig
+}
+
+func (c *ProxySubscribeRebateConfigClient) mutate(ctx context.Context, m *ProxySubscribeRebateConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProxySubscribeRebateConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProxySubscribeRebateConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProxySubscribeRebateConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProxySubscribeRebateConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProxySubscribeRebateConfig mutation op: %q", m.Op())
+	}
+}
+
 // ProxySystemClient is a client for the ProxySystem schema.
 type ProxySystemClient struct {
 	config
@@ -5960,28 +6417,31 @@ type (
 	hooks struct {
 		ProxyAds, ProxyAnnouncement, ProxyAuthMethod, ProxyCoupon, ProxyDocument,
 		ProxyGroupHistory, ProxyGroupHistoryDetail, ProxyNode, ProxyOrder,
-		ProxyPayment, ProxyRedemptionCode, ProxyRedemptionRecord,
-		ProxyRoutingDNSResolver, ProxyRoutingGrayRelease, ProxyRoutingHealthReport,
-		ProxyRoutingOutbound, ProxyRoutingProfile, ProxyRoutingRouteEvent,
-		ProxyRoutingRule, ProxyRoutingUnlockService, ProxySchemaMigrations,
-		ProxyServer, ProxyServerGroup, ProxySubscribe, ProxySubscribeApplication,
+		ProxyPayment, ProxyRechargePromotion, ProxyRechargePromotionTier,
+		ProxyRedemptionCode, ProxyRedemptionRecord, ProxyRoutingDNSResolver,
+		ProxyRoutingGrayRelease, ProxyRoutingHealthReport, ProxyRoutingOutbound,
+		ProxyRoutingProfile, ProxyRoutingRouteEvent, ProxyRoutingRule,
+		ProxyRoutingUnlockService, ProxySchemaMigrations, ProxyServer,
+		ProxyServerGroup, ProxySubscribe, ProxySubscribeApplication,
 		ProxySubscribeCategory, ProxySubscribeGroup, ProxySubscribePriceOption,
-		ProxySystem, ProxySystemLog, ProxyTask, ProxyTicket, ProxyTicketFollow,
-		ProxyTrafficLog, ProxyUser, ProxyUserAuthMethod, ProxyUserDevice,
-		ProxyUserDeviceOnlineRecord, ProxyUserSubscribe, ProxyUserWithdrawal []ent.Hook
+		ProxySubscribeRebateConfig, ProxySystem, ProxySystemLog, ProxyTask,
+		ProxyTicket, ProxyTicketFollow, ProxyTrafficLog, ProxyUser,
+		ProxyUserAuthMethod, ProxyUserDevice, ProxyUserDeviceOnlineRecord,
+		ProxyUserSubscribe, ProxyUserWithdrawal []ent.Hook
 	}
 	inters struct {
 		ProxyAds, ProxyAnnouncement, ProxyAuthMethod, ProxyCoupon, ProxyDocument,
 		ProxyGroupHistory, ProxyGroupHistoryDetail, ProxyNode, ProxyOrder,
-		ProxyPayment, ProxyRedemptionCode, ProxyRedemptionRecord,
-		ProxyRoutingDNSResolver, ProxyRoutingGrayRelease, ProxyRoutingHealthReport,
-		ProxyRoutingOutbound, ProxyRoutingProfile, ProxyRoutingRouteEvent,
-		ProxyRoutingRule, ProxyRoutingUnlockService, ProxySchemaMigrations,
-		ProxyServer, ProxyServerGroup, ProxySubscribe, ProxySubscribeApplication,
+		ProxyPayment, ProxyRechargePromotion, ProxyRechargePromotionTier,
+		ProxyRedemptionCode, ProxyRedemptionRecord, ProxyRoutingDNSResolver,
+		ProxyRoutingGrayRelease, ProxyRoutingHealthReport, ProxyRoutingOutbound,
+		ProxyRoutingProfile, ProxyRoutingRouteEvent, ProxyRoutingRule,
+		ProxyRoutingUnlockService, ProxySchemaMigrations, ProxyServer,
+		ProxyServerGroup, ProxySubscribe, ProxySubscribeApplication,
 		ProxySubscribeCategory, ProxySubscribeGroup, ProxySubscribePriceOption,
-		ProxySystem, ProxySystemLog, ProxyTask, ProxyTicket, ProxyTicketFollow,
-		ProxyTrafficLog, ProxyUser, ProxyUserAuthMethod, ProxyUserDevice,
-		ProxyUserDeviceOnlineRecord, ProxyUserSubscribe,
-		ProxyUserWithdrawal []ent.Interceptor
+		ProxySubscribeRebateConfig, ProxySystem, ProxySystemLog, ProxyTask,
+		ProxyTicket, ProxyTicketFollow, ProxyTrafficLog, ProxyUser,
+		ProxyUserAuthMethod, ProxyUserDevice, ProxyUserDeviceOnlineRecord,
+		ProxyUserSubscribe, ProxyUserWithdrawal []ent.Interceptor
 	}
 )

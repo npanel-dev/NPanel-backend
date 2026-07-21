@@ -15,6 +15,8 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotion"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotiontier"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptioncode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptionrecord"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyroutingdnsresolver"
@@ -32,6 +34,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -687,6 +690,98 @@ func init() {
 			return nil
 		}
 	}()
+	proxyrechargepromotionFields := schema.ProxyRechargePromotion{}.Fields()
+	_ = proxyrechargepromotionFields
+	// proxyrechargepromotionDescName is the schema descriptor for name field.
+	proxyrechargepromotionDescName := proxyrechargepromotionFields[1].Descriptor()
+	// proxyrechargepromotion.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	proxyrechargepromotion.NameValidator = proxyrechargepromotionDescName.Validators[0].(func(string) error)
+	// proxyrechargepromotionDescDescription is the schema descriptor for description field.
+	proxyrechargepromotionDescDescription := proxyrechargepromotionFields[2].Descriptor()
+	// proxyrechargepromotion.DefaultDescription holds the default value on creation for the description field.
+	proxyrechargepromotion.DefaultDescription = proxyrechargepromotionDescDescription.Default.(string)
+	// proxyrechargepromotionDescStartTime is the schema descriptor for start_time field.
+	proxyrechargepromotionDescStartTime := proxyrechargepromotionFields[3].Descriptor()
+	// proxyrechargepromotion.DefaultStartTime holds the default value on creation for the start_time field.
+	proxyrechargepromotion.DefaultStartTime = proxyrechargepromotionDescStartTime.Default.(int64)
+	// proxyrechargepromotionDescEndTime is the schema descriptor for end_time field.
+	proxyrechargepromotionDescEndTime := proxyrechargepromotionFields[4].Descriptor()
+	// proxyrechargepromotion.DefaultEndTime holds the default value on creation for the end_time field.
+	proxyrechargepromotion.DefaultEndTime = proxyrechargepromotionDescEndTime.Default.(int64)
+	// proxyrechargepromotionDescStatus is the schema descriptor for status field.
+	proxyrechargepromotionDescStatus := proxyrechargepromotionFields[5].Descriptor()
+	// proxyrechargepromotion.DefaultStatus holds the default value on creation for the status field.
+	proxyrechargepromotion.DefaultStatus = proxyrechargepromotionDescStatus.Default.(bool)
+	// proxyrechargepromotionDescPriority is the schema descriptor for priority field.
+	proxyrechargepromotionDescPriority := proxyrechargepromotionFields[6].Descriptor()
+	// proxyrechargepromotion.DefaultPriority holds the default value on creation for the priority field.
+	proxyrechargepromotion.DefaultPriority = proxyrechargepromotionDescPriority.Default.(int32)
+	// proxyrechargepromotionDescStackMode is the schema descriptor for stack_mode field.
+	proxyrechargepromotionDescStackMode := proxyrechargepromotionFields[7].Descriptor()
+	// proxyrechargepromotion.DefaultStackMode holds the default value on creation for the stack_mode field.
+	proxyrechargepromotion.DefaultStackMode = proxyrechargepromotionDescStackMode.Default.(int8)
+	// proxyrechargepromotionDescCustomBonusEnabled is the schema descriptor for custom_bonus_enabled field.
+	proxyrechargepromotionDescCustomBonusEnabled := proxyrechargepromotionFields[8].Descriptor()
+	// proxyrechargepromotion.DefaultCustomBonusEnabled holds the default value on creation for the custom_bonus_enabled field.
+	proxyrechargepromotion.DefaultCustomBonusEnabled = proxyrechargepromotionDescCustomBonusEnabled.Default.(bool)
+	// proxyrechargepromotionDescCustomBonusPercent is the schema descriptor for custom_bonus_percent field.
+	proxyrechargepromotionDescCustomBonusPercent := proxyrechargepromotionFields[9].Descriptor()
+	// proxyrechargepromotion.DefaultCustomBonusPercent holds the default value on creation for the custom_bonus_percent field.
+	proxyrechargepromotion.DefaultCustomBonusPercent = proxyrechargepromotionDescCustomBonusPercent.Default.(int32)
+	// proxyrechargepromotionDescSort is the schema descriptor for sort field.
+	proxyrechargepromotionDescSort := proxyrechargepromotionFields[10].Descriptor()
+	// proxyrechargepromotion.DefaultSort holds the default value on creation for the sort field.
+	proxyrechargepromotion.DefaultSort = proxyrechargepromotionDescSort.Default.(int32)
+	// proxyrechargepromotionDescCreatedAt is the schema descriptor for created_at field.
+	proxyrechargepromotionDescCreatedAt := proxyrechargepromotionFields[11].Descriptor()
+	// proxyrechargepromotion.DefaultCreatedAt holds the default value on creation for the created_at field.
+	proxyrechargepromotion.DefaultCreatedAt = proxyrechargepromotionDescCreatedAt.Default.(func() time.Time)
+	// proxyrechargepromotionDescUpdatedAt is the schema descriptor for updated_at field.
+	proxyrechargepromotionDescUpdatedAt := proxyrechargepromotionFields[12].Descriptor()
+	// proxyrechargepromotion.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	proxyrechargepromotion.DefaultUpdatedAt = proxyrechargepromotionDescUpdatedAt.Default.(func() time.Time)
+	// proxyrechargepromotion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	proxyrechargepromotion.UpdateDefaultUpdatedAt = proxyrechargepromotionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// proxyrechargepromotionDescID is the schema descriptor for id field.
+	proxyrechargepromotionDescID := proxyrechargepromotionFields[0].Descriptor()
+	// proxyrechargepromotion.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	proxyrechargepromotion.IDValidator = proxyrechargepromotionDescID.Validators[0].(func(int64) error)
+	proxyrechargepromotiontierFields := schema.ProxyRechargePromotionTier{}.Fields()
+	_ = proxyrechargepromotiontierFields
+	// proxyrechargepromotiontierDescAmount is the schema descriptor for amount field.
+	proxyrechargepromotiontierDescAmount := proxyrechargepromotiontierFields[2].Descriptor()
+	// proxyrechargepromotiontier.DefaultAmount holds the default value on creation for the amount field.
+	proxyrechargepromotiontier.DefaultAmount = proxyrechargepromotiontierDescAmount.Default.(int64)
+	// proxyrechargepromotiontierDescBonus is the schema descriptor for bonus field.
+	proxyrechargepromotiontierDescBonus := proxyrechargepromotiontierFields[3].Descriptor()
+	// proxyrechargepromotiontier.DefaultBonus holds the default value on creation for the bonus field.
+	proxyrechargepromotiontier.DefaultBonus = proxyrechargepromotiontierDescBonus.Default.(int64)
+	// proxyrechargepromotiontierDescLabel is the schema descriptor for label field.
+	proxyrechargepromotiontierDescLabel := proxyrechargepromotiontierFields[4].Descriptor()
+	// proxyrechargepromotiontier.DefaultLabel holds the default value on creation for the label field.
+	proxyrechargepromotiontier.DefaultLabel = proxyrechargepromotiontierDescLabel.Default.(string)
+	// proxyrechargepromotiontierDescSort is the schema descriptor for sort field.
+	proxyrechargepromotiontierDescSort := proxyrechargepromotiontierFields[5].Descriptor()
+	// proxyrechargepromotiontier.DefaultSort holds the default value on creation for the sort field.
+	proxyrechargepromotiontier.DefaultSort = proxyrechargepromotiontierDescSort.Default.(int32)
+	// proxyrechargepromotiontierDescEnable is the schema descriptor for enable field.
+	proxyrechargepromotiontierDescEnable := proxyrechargepromotiontierFields[6].Descriptor()
+	// proxyrechargepromotiontier.DefaultEnable holds the default value on creation for the enable field.
+	proxyrechargepromotiontier.DefaultEnable = proxyrechargepromotiontierDescEnable.Default.(bool)
+	// proxyrechargepromotiontierDescCreatedAt is the schema descriptor for created_at field.
+	proxyrechargepromotiontierDescCreatedAt := proxyrechargepromotiontierFields[7].Descriptor()
+	// proxyrechargepromotiontier.DefaultCreatedAt holds the default value on creation for the created_at field.
+	proxyrechargepromotiontier.DefaultCreatedAt = proxyrechargepromotiontierDescCreatedAt.Default.(func() time.Time)
+	// proxyrechargepromotiontierDescUpdatedAt is the schema descriptor for updated_at field.
+	proxyrechargepromotiontierDescUpdatedAt := proxyrechargepromotiontierFields[8].Descriptor()
+	// proxyrechargepromotiontier.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	proxyrechargepromotiontier.DefaultUpdatedAt = proxyrechargepromotiontierDescUpdatedAt.Default.(func() time.Time)
+	// proxyrechargepromotiontier.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	proxyrechargepromotiontier.UpdateDefaultUpdatedAt = proxyrechargepromotiontierDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// proxyrechargepromotiontierDescID is the schema descriptor for id field.
+	proxyrechargepromotiontierDescID := proxyrechargepromotiontierFields[0].Descriptor()
+	// proxyrechargepromotiontier.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	proxyrechargepromotiontier.IDValidator = proxyrechargepromotiontierDescID.Validators[0].(func(int64) error)
 	proxyredemptioncodeFields := schema.ProxyRedemptionCode{}.Fields()
 	_ = proxyredemptioncodeFields
 	// proxyredemptioncodeDescCode is the schema descriptor for code field.
@@ -1907,6 +2002,34 @@ func init() {
 	proxysubscribepriceoptionDescID := proxysubscribepriceoptionFields[0].Descriptor()
 	// proxysubscribepriceoption.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	proxysubscribepriceoption.IDValidator = proxysubscribepriceoptionDescID.Validators[0].(func(int64) error)
+	proxysubscriberebateconfigFields := schema.ProxySubscribeRebateConfig{}.Fields()
+	_ = proxysubscriberebateconfigFields
+	// proxysubscriberebateconfigDescPriceOptionID is the schema descriptor for price_option_id field.
+	proxysubscriberebateconfigDescPriceOptionID := proxysubscriberebateconfigFields[2].Descriptor()
+	// proxysubscriberebateconfig.DefaultPriceOptionID holds the default value on creation for the price_option_id field.
+	proxysubscriberebateconfig.DefaultPriceOptionID = proxysubscriberebateconfigDescPriceOptionID.Default.(int64)
+	// proxysubscriberebateconfigDescReferralPercentage is the schema descriptor for referral_percentage field.
+	proxysubscriberebateconfigDescReferralPercentage := proxysubscriberebateconfigFields[3].Descriptor()
+	// proxysubscriberebateconfig.DefaultReferralPercentage holds the default value on creation for the referral_percentage field.
+	proxysubscriberebateconfig.DefaultReferralPercentage = proxysubscriberebateconfigDescReferralPercentage.Default.(int8)
+	// proxysubscriberebateconfigDescEnabled is the schema descriptor for enabled field.
+	proxysubscriberebateconfigDescEnabled := proxysubscriberebateconfigFields[4].Descriptor()
+	// proxysubscriberebateconfig.DefaultEnabled holds the default value on creation for the enabled field.
+	proxysubscriberebateconfig.DefaultEnabled = proxysubscriberebateconfigDescEnabled.Default.(bool)
+	// proxysubscriberebateconfigDescCreatedAt is the schema descriptor for created_at field.
+	proxysubscriberebateconfigDescCreatedAt := proxysubscriberebateconfigFields[5].Descriptor()
+	// proxysubscriberebateconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	proxysubscriberebateconfig.DefaultCreatedAt = proxysubscriberebateconfigDescCreatedAt.Default.(func() time.Time)
+	// proxysubscriberebateconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	proxysubscriberebateconfigDescUpdatedAt := proxysubscriberebateconfigFields[6].Descriptor()
+	// proxysubscriberebateconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	proxysubscriberebateconfig.DefaultUpdatedAt = proxysubscriberebateconfigDescUpdatedAt.Default.(func() time.Time)
+	// proxysubscriberebateconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	proxysubscriberebateconfig.UpdateDefaultUpdatedAt = proxysubscriberebateconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// proxysubscriberebateconfigDescID is the schema descriptor for id field.
+	proxysubscriberebateconfigDescID := proxysubscriberebateconfigFields[0].Descriptor()
+	// proxysubscriberebateconfig.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	proxysubscriberebateconfig.IDValidator = proxysubscriberebateconfigDescID.Validators[0].(func(int64) error)
 	proxysystemFields := schema.ProxySystem{}.Fields()
 	_ = proxysystemFields
 	// proxysystemDescCategory is the schema descriptor for category field.

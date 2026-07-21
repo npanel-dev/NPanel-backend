@@ -246,6 +246,73 @@ var (
 			},
 		},
 	}
+	// RechargePromotionColumns holds the columns for the "recharge_promotion" table.
+	RechargePromotionColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "活动ID"},
+		{Name: "name", Type: field.TypeString, Comment: "活动名称"},
+		{Name: "description", Type: field.TypeString, Size: 2147483647, Comment: "活动描述 Markdown", Default: ""},
+		{Name: "start_time", Type: field.TypeInt64, Comment: "开始时间 Unix毫秒 0=不限", Default: 0},
+		{Name: "end_time", Type: field.TypeInt64, Comment: "结束时间 Unix毫秒 0=长期", Default: 0},
+		{Name: "status", Type: field.TypeBool, Comment: "启用状态 false=停用 true=启用", Default: false},
+		{Name: "priority", Type: field.TypeInt32, Comment: "优先级 DESC（大优先）", Default: 0},
+		{Name: "stack_mode", Type: field.TypeInt8, Comment: "叠加策略 0=互斥 1=叠加", Default: 0},
+		{Name: "custom_bonus_enabled", Type: field.TypeBool, Comment: "是否对自定义金额赠送", Default: false},
+		{Name: "custom_bonus_percent", Type: field.TypeInt32, Comment: "自定义金额赠送比例 万分比 0-10000（500=5%）", Default: 0},
+		{Name: "sort", Type: field.TypeInt32, Comment: "列表排序", Default: 0},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+	}
+	// RechargePromotionTable holds the schema information for the "recharge_promotion" table.
+	RechargePromotionTable = &schema.Table{
+		Name:       "recharge_promotion",
+		Columns:    RechargePromotionColumns,
+		PrimaryKey: []*schema.Column{RechargePromotionColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "proxyrechargepromotion_status_start_time_end_time",
+				Unique:  false,
+				Columns: []*schema.Column{RechargePromotionColumns[5], RechargePromotionColumns[3], RechargePromotionColumns[4]},
+			},
+		},
+	}
+	// RechargePromotionTierColumns holds the columns for the "recharge_promotion_tier" table.
+	RechargePromotionTierColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "档位ID"},
+		{Name: "amount", Type: field.TypeInt64, Comment: "充值档位金额 分", Default: 0},
+		{Name: "bonus", Type: field.TypeInt64, Comment: "赠送金额 分", Default: 0},
+		{Name: "label", Type: field.TypeString, Comment: "档位标签（如 热门/推荐）", Default: ""},
+		{Name: "sort", Type: field.TypeInt32, Comment: "档位排序 ASC", Default: 0},
+		{Name: "enable", Type: field.TypeBool, Comment: "单档启停", Default: true},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+		{Name: "promotion_id", Type: field.TypeInt64, Comment: "所属活动ID"},
+	}
+	// RechargePromotionTierTable holds the schema information for the "recharge_promotion_tier" table.
+	RechargePromotionTierTable = &schema.Table{
+		Name:       "recharge_promotion_tier",
+		Columns:    RechargePromotionTierColumns,
+		PrimaryKey: []*schema.Column{RechargePromotionTierColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "recharge_promotion_tier_recharge_promotion_tiers",
+				Columns:    []*schema.Column{RechargePromotionTierColumns[8]},
+				RefColumns: []*schema.Column{RechargePromotionColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "proxyrechargepromotiontier_promotion_id",
+				Unique:  false,
+				Columns: []*schema.Column{RechargePromotionTierColumns[8]},
+			},
+			{
+				Name:    "proxyrechargepromotiontier_promotion_id_amount_enable",
+				Unique:  false,
+				Columns: []*schema.Column{RechargePromotionTierColumns[8], RechargePromotionTierColumns[1], RechargePromotionTierColumns[5]},
+			},
+		},
+	}
 	// RedemptionCodeColumns holds the columns for the "redemption_code" table.
 	RedemptionCodeColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "兑换码ID"},
@@ -670,6 +737,34 @@ var (
 			},
 		},
 	}
+	// SubscribeRebateConfigColumns holds the columns for the "subscribe_rebate_config" table.
+	SubscribeRebateConfigColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "返佣配置ID"},
+		{Name: "subscribe_id", Type: field.TypeInt64, Comment: "订阅套餐ID"},
+		{Name: "price_option_id", Type: field.TypeInt64, Comment: "价格档位ID，0表示套餐整体默认", Default: 0},
+		{Name: "referral_percentage", Type: field.TypeInt8, Comment: "返佣百分比 0-100", Default: 0},
+		{Name: "enabled", Type: field.TypeBool, Comment: "是否启用，false表示显式关闭该档返佣（不回退兜底）", Default: true},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+	}
+	// SubscribeRebateConfigTable holds the schema information for the "subscribe_rebate_config" table.
+	SubscribeRebateConfigTable = &schema.Table{
+		Name:       "subscribe_rebate_config",
+		Columns:    SubscribeRebateConfigColumns,
+		PrimaryKey: []*schema.Column{SubscribeRebateConfigColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "proxysubscriberebateconfig_subscribe_id_price_option_id",
+				Unique:  true,
+				Columns: []*schema.Column{SubscribeRebateConfigColumns[1], SubscribeRebateConfigColumns[2]},
+			},
+			{
+				Name:    "proxysubscriberebateconfig_subscribe_id",
+				Unique:  false,
+				Columns: []*schema.Column{SubscribeRebateConfigColumns[1]},
+			},
+		},
+	}
 	// SystemColumns holds the columns for the "system" table.
 	SystemColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -933,6 +1028,8 @@ var (
 		NodesTable,
 		OrderTable,
 		PaymentTable,
+		RechargePromotionTable,
+		RechargePromotionTierTable,
 		RedemptionCodeTable,
 		RedemptionRecordTable,
 		RoutingDNSResolverTable,
@@ -951,6 +1048,7 @@ var (
 		SubscribeCategoryTable,
 		SubscribeGroupTable,
 		SubscribePriceOptionTable,
+		SubscribeRebateConfigTable,
 		SystemTable,
 		SystemLogsTable,
 		TaskTable,
@@ -996,6 +1094,13 @@ func init() {
 	}
 	PaymentTable.Annotation = &entsql.Annotation{
 		Table: "payment",
+	}
+	RechargePromotionTable.Annotation = &entsql.Annotation{
+		Table: "recharge_promotion",
+	}
+	RechargePromotionTierTable.ForeignKeys[0].RefTable = RechargePromotionTable
+	RechargePromotionTierTable.Annotation = &entsql.Annotation{
+		Table: "recharge_promotion_tier",
 	}
 	RedemptionCodeTable.Annotation = &entsql.Annotation{
 		Table: "redemption_code",
@@ -1052,6 +1157,9 @@ func init() {
 	}
 	SubscribePriceOptionTable.Annotation = &entsql.Annotation{
 		Table: "subscribe_price_option",
+	}
+	SubscribeRebateConfigTable.Annotation = &entsql.Annotation{
+		Table: "subscribe_rebate_config",
 	}
 	SystemTable.Annotation = &entsql.Annotation{
 		Table: "system",

@@ -58,7 +58,9 @@ var legacySQLMigrations = []legacySQLMigration{
 	{version: 2152, path: "legacy_sql/02152_unwrap_subscribe_description_json.up.sql"},
 	{version: 2153, path: "legacy_sql/02153_cleanup_inactive_unreferenced_price_options.up.sql"},
 	{version: 2154, path: "legacy_sql/02154_node_target_node_id.up.sql"},
-}
+		{version: 2155, path: "legacy_sql/02155_subscribe_rebate_config.up.sql"},
+		{version: 2156, path: "legacy_sql/02156_recharge_promotion.up.sql"},
+	}
 
 var legacyCompatibilityMigrationVersions = map[int64]struct{}{
 	2141: {},

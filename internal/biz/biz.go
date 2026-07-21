@@ -15,6 +15,7 @@ import (
 	adminmarketing "github.com/npanel-dev/NPanel-backend/internal/biz/admin/marketing"
 	adminorder "github.com/npanel-dev/NPanel-backend/internal/biz/admin/order"
 	adminpayment "github.com/npanel-dev/NPanel-backend/internal/biz/admin/payment"
+	adminrechargepromotion "github.com/npanel-dev/NPanel-backend/internal/biz/admin/recharge_promotion"
 	adminredemption "github.com/npanel-dev/NPanel-backend/internal/biz/admin/redemption"
 	adminrouting "github.com/npanel-dev/NPanel-backend/internal/biz/admin/routing"
 	adminserver "github.com/npanel-dev/NPanel-backend/internal/biz/admin/server"
@@ -32,6 +33,7 @@ import (
 	publicdocument "github.com/npanel-dev/NPanel-backend/internal/biz/public/document"
 	publicpayment "github.com/npanel-dev/NPanel-backend/internal/biz/public/payment"
 	publicportal "github.com/npanel-dev/NPanel-backend/internal/biz/public/portal"
+	publicrechargepromotion "github.com/npanel-dev/NPanel-backend/internal/biz/public/recharge_promotion"
 	publicredemption "github.com/npanel-dev/NPanel-backend/internal/biz/public/redemption"
 	publicsubscribe "github.com/npanel-dev/NPanel-backend/internal/biz/public/subscribe"
 	subscription "github.com/npanel-dev/NPanel-backend/internal/biz/public/subscription"
@@ -57,6 +59,7 @@ var ProviderSet = wire.NewSet(
 	adminmarketing.NewMarketingUsecase,
 	adminorder.NewOrderUseCase,
 	adminpayment.NewPaymentUsecase,
+	adminrechargepromotion.NewRechargePromotionUsecase,
 	adminserver.NewServerUsecase,
 	adminrouting.NewRoutingUsecase,
 	adminserver.NewNodeUsecase,
@@ -89,6 +92,8 @@ var ProviderSet = wire.NewSet(
 	publicpayment.NewPaymentUseCase,
 	// Public Portal模块用例
 	publicportal.NewPortalUseCase,
+	// Public RechargePromotion模块用例（充值促销）
+	publicrechargepromotion.NewRechargePromotionPublicUsecase,
 	// Public Redemption模块用例
 	publicredemption.NewRedemptionUseCase,
 	// Public Subscribe模块用例

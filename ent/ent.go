@@ -22,6 +22,8 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxynode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotion"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotiontier"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptioncode"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyredemptionrecord"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyroutingdnsresolver"
@@ -40,6 +42,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribecategory"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribegroup"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
+	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
@@ -122,6 +125,8 @@ func checkColumn(t, c string) error {
 			proxynode.Table:                   proxynode.ValidColumn,
 			proxyorder.Table:                  proxyorder.ValidColumn,
 			proxypayment.Table:                proxypayment.ValidColumn,
+			proxyrechargepromotion.Table:      proxyrechargepromotion.ValidColumn,
+			proxyrechargepromotiontier.Table:  proxyrechargepromotiontier.ValidColumn,
 			proxyredemptioncode.Table:         proxyredemptioncode.ValidColumn,
 			proxyredemptionrecord.Table:       proxyredemptionrecord.ValidColumn,
 			proxyroutingdnsresolver.Table:     proxyroutingdnsresolver.ValidColumn,
@@ -140,6 +145,7 @@ func checkColumn(t, c string) error {
 			proxysubscribecategory.Table:      proxysubscribecategory.ValidColumn,
 			proxysubscribegroup.Table:         proxysubscribegroup.ValidColumn,
 			proxysubscribepriceoption.Table:   proxysubscribepriceoption.ValidColumn,
+			proxysubscriberebateconfig.Table:  proxysubscriberebateconfig.ValidColumn,
 			proxysystem.Table:                 proxysystem.ValidColumn,
 			proxysystemlog.Table:              proxysystemlog.ValidColumn,
 			proxytask.Table:                   proxytask.ValidColumn,

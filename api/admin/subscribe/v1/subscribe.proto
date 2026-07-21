@@ -148,6 +148,21 @@ service Subscribe {
       body: "*"
     };
   }
+
+  // GetSubscribeRebateConfig 获取订阅套餐返佣配置
+  rpc GetSubscribeRebateConfig (GetSubscribeRebateConfigRequest) returns (GetSubscribeRebateConfigReply) {
+    option (google.api.http) = {
+      get: "/v1/admin/subscribe/rebate_config"
+    };
+  }
+
+  // UpdateSubscribeRebateConfig 更新订阅套餐返佣配置
+  rpc UpdateSubscribeRebateConfig (UpdateSubscribeRebateConfigRequest) returns (UpdateSubscribeRebateConfigReply) {
+    option (google.api.http) = {
+      put: "/v1/admin/subscribe/rebate_config"
+      body: "*"
+    };
+  }
 }
 
 // ==================== Subscribe Messages ====================
@@ -683,4 +698,48 @@ message ResetAllSubscribeTokenReply {
   int32 code = 1;                              // 状态码
   string message = 2;                          // 消息内容
   ResetAllSubscribeTokenData data = 3;         // 响应数据
+}
+
+// ==================== Subscribe Rebate Config Messages ====================
+
+// SubscribeRebateConfigItem 返佣配置项
+message SubscribeRebateConfigItem {
+  int64 price_option_id = 1;     // 价格档位ID，0表示套餐整体默认
+  int32 referral_percentage = 2; // 返佣百分比 0-100
+  bool enabled = 3;              // 是否启用，false表示显式关闭该档返佣（不回退兜底）
+}
+
+// GetSubscribeRebateConfigRequest 获取订阅套餐返佣配置请求
+message GetSubscribeRebateConfigRequest {
+  int64 subscribe_id = 1;  // 订阅套餐ID
+}
+
+// GetSubscribeRebateConfigData 获取订阅套餐返佣配置数据
+message GetSubscribeRebateConfigData {
+  repeated SubscribeRebateConfigItem items = 1;  // 返佣配置列表
+}
+
+// GetSubscribeRebateConfigReply 获取订阅套餐返佣配置响应
+message GetSubscribeRebateConfigReply {
+  int32 code = 1;                               // 状态码
+  string message = 2;                           // 消息内容
+  GetSubscribeRebateConfigData data = 3;        // 响应数据
+}
+
+// UpdateSubscribeRebateConfigRequest 更新订阅套餐返佣配置请求
+message UpdateSubscribeRebateConfigRequest {
+  int64 subscribe_id = 1;                                // 订阅套餐ID
+  repeated SubscribeRebateConfigItem items = 2;          // 返佣配置列表（全量替换）
+}
+
+// UpdateSubscribeRebateConfigData 更新订阅套餐返佣配置数据
+message UpdateSubscribeRebateConfigData {
+  bool success = 1;  // 是否成功
+}
+
+// UpdateSubscribeRebateConfigReply 更新订阅套餐返佣配置响应
+message UpdateSubscribeRebateConfigReply {
+  int32 code = 1;                                  // 状态码
+  string message = 2;                              // 消息内容
+  UpdateSubscribeRebateConfigData data = 3;        // 响应数据
 }

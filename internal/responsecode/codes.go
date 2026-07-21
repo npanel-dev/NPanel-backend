@@ -230,6 +230,13 @@ const (
 	AdminBatchDeleteCouponSuccess = 200 // 批量删除优惠券成功
 	AdminGetCouponListSuccess     = 200 // 获取优惠券列表成功
 
+	// Admin RechargePromotion 相关 (2006208-2006212)  // 充值促销
+	AdminCreateRechargePromotionSuccess       = 200 // 创建充值促销活动成功
+	AdminUpdateRechargePromotionSuccess       = 200 // 更新充值促销活动成功
+	AdminDeleteRechargePromotionSuccess       = 200 // 删除充值促销活动成功
+	AdminGetRechargePromotionListSuccess      = 200 // 获取充值促销活动列表成功
+	AdminUpdateRechargePromotionStatusSuccess = 200 // 更新充值促销活动状态成功
+
 	// Admin Payment 相关 (2006182-2006186)
 	AdminCreatePaymentMethodSuccess  = 200 // 创建支付方式成功
 	AdminUpdatePaymentMethodSuccess  = 200 // 更新支付方式成功

@@ -44,6 +44,29 @@ type adminUserSubscribeRepo struct {
 	logger *log.Helper
 }
 
+const unixMillisecondsThreshold int64 = 10_000_000_000
+
+// resolveAdminUserSubscribeExpiry keeps the admin API compatible with both
+// Unix seconds (the canonical API format) and legacy Unix milliseconds.
+func resolveAdminUserSubscribeExpiry(expiredAt int64, now time.Time) (expireTime *time.Time, status int8, finishedAt *time.Time) {
+	if expiredAt <= 0 {
+		return nil, 1, nil
+	}
+
+	var expiry time.Time
+	if expiredAt >= unixMillisecondsThreshold {
+		expiry = time.UnixMilli(expiredAt)
+	} else {
+		expiry = time.Unix(expiredAt, 0)
+	}
+	if expiry.After(now) {
+		return &expiry, 1, nil
+	}
+
+	finished := now
+	return &expiry, 3, &finished
+}
+
 func (r *adminUserSubscribeRepo) clearUserSubscribeCaches(ctx context.Context, userSub *ent.ProxyUserSubscribe) error {
 	if userSub == nil || r.data == nil || r.data.rdb == nil {
 		return nil
@@ -192,6 +215,7 @@ func (r *adminUserSubscribeRepo) CreateUserSubscribe(ctx context.Context, req *v
 	subscribeUUID := uuid.New().String()
 
 	startTime := time.Now()
+	expireTime, status, finishedAt := resolveAdminUserSubscribeExpiry(req.ExpiredAt, startTime)
 
 	create := r.data.db.ProxyUserSubscribe.Create().
 		SetUserID(userID).
@@ -205,9 +229,12 @@ func (r *adminUserSubscribeRepo) CreateUserSubscribe(ctx context.Context, req *v
 		SetGroupLocked(false).
 		SetToken(tokenStr).
 		SetUUID(subscribeUUID).
-		SetStatus(1)
-	if req.ExpiredAt > 0 {
-		create = create.SetExpireTime(time.UnixMilli(req.ExpiredAt))
+		SetStatus(status)
+	if expireTime != nil {
+		create = create.SetExpireTime(*expireTime)
+	}
+	if finishedAt != nil {
+		create = create.SetFinishedAt(*finishedAt)
 	}
 
 	created, err := create.Save(ctx)
@@ -242,26 +269,24 @@ func (r *adminUserSubscribeRepo) UpdateUserSubscribe(ctx context.Context, req *v
 		return err
 	}
 
-	status := int8(1)
-	var expireTime *time.Time
-	if req.ExpiredAt > 0 {
-		t := time.UnixMilli(req.ExpiredAt)
-		expireTime = &t
-		if time.Since(t).Minutes() > 0 {
-			status = 3
-		}
-	}
+	now := time.Now()
+	expireTime, status, finishedAt := resolveAdminUserSubscribeExpiry(req.ExpiredAt, now)
 
 	update := userSub.Update().
 		SetTraffic(req.Traffic).
 		SetDownload(req.Download).
 		SetUpload(req.Upload).
 		SetStatus(status).
-		SetUpdatedAt(time.Now())
+		SetUpdatedAt(now)
 	if expireTime != nil {
 		update.SetExpireTime(*expireTime)
 	} else {
 		update.ClearExpireTime()
+	}
+	if finishedAt != nil {
+		update.SetFinishedAt(*finishedAt)
+	} else {
+		update.ClearFinishedAt()
 	}
 	if req.SubscribeId > 0 {
 		update.SetSubscribeID(req.SubscribeId)
