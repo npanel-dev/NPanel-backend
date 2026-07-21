@@ -413,4 +413,3 @@ message TrafficLog {
   int64 timestamp = 7;
 }
 
-
