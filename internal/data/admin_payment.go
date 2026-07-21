@@ -147,7 +147,7 @@ func (r *adminPaymentRepo) List(ctx context.Context, page, size int, platform, s
 		query = query.Where(proxypayment.Enable(*enable))
 	}
 	if search != "" {
-		query = query.Where(proxypayment.NameContains(search))
+		query = query.Where(proxypayment.NameContainsFold(search))
 	}
 
 	total, err := query.Count(ctx)

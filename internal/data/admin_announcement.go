@@ -186,7 +186,7 @@ func (r *adminAnnouncementRepo) ListAll(ctx context.Context, page, size int, sea
 
 	// 根据条件过滤
 	if search != "" {
-		query = query.Where(proxyannouncement.TitleContains(search))
+		query = query.Where(proxyannouncement.TitleContainsFold(search))
 	}
 	if show != nil {
 		query = query.Where(proxyannouncement.Show(*show))

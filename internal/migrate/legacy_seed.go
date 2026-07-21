@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	mysql "github.com/go-sql-driver/mysql"
+	"github.com/npanel-dev/NPanel-backend/internal/database"
 )
 
 //go:embed legacy_sql/*.sql
@@ -58,9 +59,9 @@ var legacySQLMigrations = []legacySQLMigration{
 	{version: 2152, path: "legacy_sql/02152_unwrap_subscribe_description_json.up.sql"},
 	{version: 2153, path: "legacy_sql/02153_cleanup_inactive_unreferenced_price_options.up.sql"},
 	{version: 2154, path: "legacy_sql/02154_node_target_node_id.up.sql"},
-		{version: 2155, path: "legacy_sql/02155_subscribe_rebate_config.up.sql"},
-		{version: 2156, path: "legacy_sql/02156_recharge_promotion.up.sql"},
-	}
+	{version: 2155, path: "legacy_sql/02155_subscribe_rebate_config.up.sql"},
+	{version: 2156, path: "legacy_sql/02156_recharge_promotion.up.sql"},
+}
 
 var legacyCompatibilityMigrationVersions = map[int64]struct{}{
 	2141: {},
@@ -130,7 +131,7 @@ func (m *Migrator) initLegacyDefaultData(ctx context.Context) error {
 		return fmt.Errorf("database connection info is empty")
 	}
 
-	db, err := sql.Open(m.dbDriver, m.dbSource)
+	db, err := database.OpenSQL(database.MySQL, m.dbSource)
 	if err != nil {
 		return fmt.Errorf("open sql db: %w", err)
 	}
@@ -215,8 +216,15 @@ func (m *Migrator) EnsureLegacyCompatibilitySchema(ctx context.Context) error {
 	if m.dbDriver == "" || m.dbSource == "" {
 		return fmt.Errorf("database connection info is empty")
 	}
+	driver, err := database.NormalizeDriver(m.dbDriver)
+	if err != nil {
+		return err
+	}
+	if driver != database.MySQL {
+		return fmt.Errorf("legacy compatibility migration only supports mysql, got %q", m.dbDriver)
+	}
 
-	db, err := sql.Open(m.dbDriver, m.dbSource)
+	db, err := database.OpenSQL(driver, m.dbSource)
 	if err != nil {
 		return fmt.Errorf("open sql db: %w", err)
 	}

@@ -169,7 +169,7 @@ func (r *subscribeRepo) GetSubscribeList(ctx context.Context, req *model.Subscri
 	}
 
 	if req.Search != "" {
-		query = query.Where(proxysubscribe.NameContains(req.Search))
+		query = query.Where(proxysubscribe.NameContainsFold(req.Search))
 	}
 
 	if req.NodeGroupID > 0 {

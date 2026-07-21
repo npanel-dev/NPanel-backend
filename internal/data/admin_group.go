@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/go-kratos/kratos/v2/log"
 	v1 "github.com/npanel-dev/NPanel-backend/api/admin/group/v1"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxygrouphistory"
@@ -22,7 +23,6 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	groupbiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/group"
 	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
-	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -246,7 +246,7 @@ func (r *adminGroupRepo) DeleteNodeGroup(ctx context.Context, id int64) error {
 	// 2. 【关键】检查是否有关联节点
 	nodeCount, err := r.data.db.ProxyNode.Query().
 		Where(func(s *sql.Selector) {
-			s.Where(sql.ExprP("JSON_CONTAINS(node_group_ids, ?)", fmt.Sprintf("[%d]", id)))
+			s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, id))
 		}).
 		Count(ctx)
 
@@ -361,7 +361,7 @@ func (r *adminGroupRepo) GetNodeGroupList(ctx context.Context, req *v1.GetNodeGr
 	for _, item := range groups {
 		nodeCount, countErr := r.data.db.ProxyNode.Query().
 			Where(func(s *sql.Selector) {
-				s.Where(sql.ExprP("JSON_CONTAINS(node_group_ids, ?)", fmt.Sprintf("[%d]", item.ID)))
+				s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, item.ID))
 			}).
 			Count(ctx)
 		if countErr != nil {
@@ -784,7 +784,7 @@ func (r *adminGroupRepo) executeAverageGrouping(ctx context.Context, historyID i
 		if nodeGroupID > 0 {
 			nodeCount, err = r.data.db.ProxyNode.Query().
 				Where(func(s *sql.Selector) {
-					s.Where(sql.Contains(s.C(proxynode.FieldNodeGroupIds), fmt.Sprintf("%d", nodeGroupID)))
+					s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, nodeGroupID))
 				}).
 				Count(ctx)
 
@@ -947,7 +947,7 @@ func (r *adminGroupRepo) executeSubscribeGrouping(ctx context.Context, historyID
 		if nodeGroupID > 0 {
 			nodeCount, err = r.data.db.ProxyNode.Query().
 				Where(func(s *sql.Selector) {
-					s.Where(sql.Contains(s.C(proxynode.FieldNodeGroupIds), fmt.Sprintf("%d", nodeGroupID)))
+					s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, nodeGroupID))
 				}).
 				Count(ctx)
 
@@ -1105,7 +1105,7 @@ func (r *adminGroupRepo) executeTrafficGrouping(ctx context.Context, historyID i
 		if nodeGroupID > 0 {
 			nodeCount, err = r.data.db.ProxyNode.Query().
 				Where(func(s *sql.Selector) {
-					s.Where(sql.Contains(s.C(proxynode.FieldNodeGroupIds), fmt.Sprintf("%d", nodeGroupID)))
+					s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, nodeGroupID))
 				}).
 				Count(ctx)
 
@@ -1814,7 +1814,7 @@ func (r *adminGroupRepo) executeAverageGroupingTx(tx *ent.Tx, ctx context.Contex
 		if nodeGroupId > 0 {
 			if count, err := tx.ProxyNode.Query().
 				Where(func(s *sql.Selector) {
-					s.Where(sql.Contains(s.C(proxynode.FieldNodeGroupIds), fmt.Sprintf("%d", nodeGroupId)))
+					s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, nodeGroupId))
 				}).
 				Count(ctx); err == nil {
 				nodeCount = count
@@ -2031,7 +2031,7 @@ func (r *adminGroupRepo) executeSubscribeGroupingTx(tx *ent.Tx, ctx context.Cont
 		if nodeGroupId > 0 {
 			if count, err := tx.ProxyNode.Query().
 				Where(func(s *sql.Selector) {
-					s.Where(sql.Contains(s.C(proxynode.FieldNodeGroupIds), fmt.Sprintf("%d", nodeGroupId)))
+					s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, nodeGroupId))
 				}).
 				Count(ctx); err == nil {
 				nodeCount = count

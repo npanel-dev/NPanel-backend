@@ -283,11 +283,6 @@ func (_u *ProxyPaymentUpdate) check() error {
 			return &ValidationError{Name: "domain", err: fmt.Errorf(`ent: validator failed for field "ProxyPayment.domain": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Config(); ok {
-		if err := proxypayment.ConfigValidator(v); err != nil {
-			return &ValidationError{Name: "config", err: fmt.Errorf(`ent: validator failed for field "ProxyPayment.config": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Token(); ok {
 		if err := proxypayment.TokenValidator(v); err != nil {
 			return &ValidationError{Name: "token", err: fmt.Errorf(`ent: validator failed for field "ProxyPayment.token": %w`, err)}
@@ -646,11 +641,6 @@ func (_u *ProxyPaymentUpdateOne) check() error {
 	if v, ok := _u.mutation.Domain(); ok {
 		if err := proxypayment.DomainValidator(v); err != nil {
 			return &ValidationError{Name: "domain", err: fmt.Errorf(`ent: validator failed for field "ProxyPayment.domain": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Config(); ok {
-		if err := proxypayment.ConfigValidator(v); err != nil {
-			return &ValidationError{Name: "config", err: fmt.Errorf(`ent: validator failed for field "ProxyPayment.config": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Token(); ok {

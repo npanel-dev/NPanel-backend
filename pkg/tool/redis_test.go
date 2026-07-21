@@ -1,9 +1,19 @@
 package tool
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+func testRedisURI() string {
+	if uri := os.Getenv("NPANEL_TEST_REDIS_URI"); uri != "" {
+		return uri
+	}
+	return "redis://localhost:6379"
+}
 
 func TestParseRedisURI(t *testing.T) {
-	uri := "redis://localhost:6379"
+	uri := testRedisURI()
 	addr, password, database, err := ParseRedisURI(uri)
 	if err != nil {
 		t.Fatal(err)
@@ -12,7 +22,7 @@ func TestParseRedisURI(t *testing.T) {
 }
 
 func TestRedisPing(t *testing.T) {
-	uri := "redis://localhost:6379"
+	uri := testRedisURI()
 	addr, password, database, err := ParseRedisURI(uri)
 	if err != nil {
 		t.Fatal(err)

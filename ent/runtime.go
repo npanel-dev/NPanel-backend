@@ -648,10 +648,6 @@ func init() {
 	proxypayment.DefaultDomain = proxypaymentDescDomain.Default.(string)
 	// proxypayment.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
 	proxypayment.DomainValidator = proxypaymentDescDomain.Validators[0].(func(string) error)
-	// proxypaymentDescConfig is the schema descriptor for config field.
-	proxypaymentDescConfig := proxypaymentFields[5].Descriptor()
-	// proxypayment.ConfigValidator is a validator for the "config" field. It is called by the builders before save.
-	proxypayment.ConfigValidator = proxypaymentDescConfig.Validators[0].(func(string) error)
 	// proxypaymentDescFeeMode is the schema descriptor for fee_mode field.
 	proxypaymentDescFeeMode := proxypaymentFields[7].Descriptor()
 	// proxypayment.DefaultFeeMode holds the default value on creation for the fee_mode field.
@@ -675,21 +671,7 @@ func init() {
 	// proxypaymentDescToken is the schema descriptor for token field.
 	proxypaymentDescToken := proxypaymentFields[12].Descriptor()
 	// proxypayment.TokenValidator is a validator for the "token" field. It is called by the builders before save.
-	proxypayment.TokenValidator = func() func(string) error {
-		validators := proxypaymentDescToken.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(token string) error {
-			for _, fn := range fns {
-				if err := fn(token); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
+	proxypayment.TokenValidator = proxypaymentDescToken.Validators[0].(func(string) error)
 	proxyrechargepromotionFields := schema.ProxyRechargePromotion{}.Fields()
 	_ = proxyrechargepromotionFields
 	// proxyrechargepromotionDescName is the schema descriptor for name field.

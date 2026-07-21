@@ -95,10 +95,10 @@ func (r *adminDocumentRepo) List(ctx context.Context, page, size int, tag, searc
 	query := r.data.db.ProxyDocument.
 		Query()
 
-	// 第38-40行：tag 过滤（使用 FIND_IN_SET）
+	// tag 过滤（方言相关的 CSV 成员查询）
 	if tag != "" {
 		query = query.Where(func(s *sql.Selector) {
-			s.Where(sql.ExprP("FIND_IN_SET(?, "+proxydocument.FieldTags+")", tag))
+			s.Where(csvContains(r.data.databaseDriver, proxydocument.FieldTags, tag))
 		})
 	}
 
@@ -106,8 +106,8 @@ func (r *adminDocumentRepo) List(ctx context.Context, page, size int, tag, searc
 	if search != "" {
 		query = query.Where(
 			proxydocument.Or(
-				proxydocument.TitleContains(search),
-				proxydocument.ContentContains(search),
+				proxydocument.TitleContainsFold(search),
+				proxydocument.ContentContainsFold(search),
 			),
 		)
 	}

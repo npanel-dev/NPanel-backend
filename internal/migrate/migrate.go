@@ -78,9 +78,12 @@ func (m *Migrator) AutoMigrateWithData(ctx context.Context) error {
 		return err
 	}
 
-	// 初始化基础数据
-	if err := m.InitBasicData(ctx); err != nil {
+	// 全新数据库使用与方言无关的 Ent 基线，不重放 MySQL 历史 SQL。
+	if err := m.InitPortableBaseline(ctx); err != nil {
 		return fmt.Errorf("failed to initialize basic data: %w", err)
+	}
+	if err := m.ensureEmailAuthMethodTemplates(ctx); err != nil {
+		return fmt.Errorf("failed to ensure email auth method templates: %w", err)
 	}
 
 	// 创建默认管理员用户
@@ -94,7 +97,10 @@ func (m *Migrator) AutoMigrateWithData(ctx context.Context) error {
 
 // InitBasicData 初始化基础数据
 func (m *Migrator) InitBasicData(ctx context.Context) error {
-	m.logger.Info("Starting basic data initialization...")
+	if m.dbDriver != "mysql" {
+		return fmt.Errorf("legacy SQL initialization only supports mysql, got %q", m.dbDriver)
+	}
+	m.logger.Info("Starting MySQL legacy data initialization...")
 	if err := m.initLegacyDefaultData(ctx); err != nil {
 		return fmt.Errorf("failed to init legacy default data: %w", err)
 	}
@@ -162,7 +168,6 @@ func (m *Migrator) CreateDefaultAdminUser(ctx context.Context) error {
 	}
 
 	m.logger.Infof("Default admin user created successfully with email: %s", email)
-	m.logger.Infof("Default admin credentials - Email: %s, Password: %s", email, password)
 	m.logger.Infof("Please change the default password immediately after first login!")
 	return nil
 }

@@ -7,13 +7,13 @@ import (
 
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/internal/conf"
+	"github.com/npanel-dev/NPanel-backend/internal/database"
 	"github.com/npanel-dev/NPanel-backend/internal/migrate"
 	"github.com/npanel-dev/NPanel-backend/internal/queue/handler"
 	"github.com/npanel-dev/NPanel-backend/internal/service"
 	"github.com/npanel-dev/NPanel-backend/pkg/device"
 
 	"github.com/go-kratos/kratos/v2/log"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/wire"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
@@ -105,11 +105,16 @@ type Data struct {
 	serverConf     *conf.Server
 	conf           *conf.Application     // 应用配置（包含JWT等配置）
 	deviceMgr      *device.DeviceManager // 设备管理器
+	databaseDriver database.Driver
 }
 
 // DB 获取数据库客户端
 func (d *Data) DB() *ent.Client {
 	return d.db
+}
+
+func (d *Data) DatabaseDriver() database.Driver {
+	return d.databaseDriver
 }
 
 // RDB 获取Redis客户端
@@ -144,55 +149,75 @@ func (d *Data) FindOne(ctx context.Context, userId int64) (*ent.ProxyUser, error
 
 // NewData
 func NewData(c *conf.Data, serverConf *conf.Server, appConf *conf.Application, logger log.Logger) (*Data, func(), error) {
+	if err := conf.ValidateData(c); err != nil {
+		return nil, nil, fmt.Errorf("validate data config: %w", err)
+	}
 	bootstrapCtx := context.Background()
-	log.NewHelper(logger).Infof("connecting to database: %s", c.Database.Source)
+	driver, err := database.NormalizeDriver(c.Database.Driver)
+	if err != nil {
+		return nil, nil, err
+	}
+	log.NewHelper(logger).Infof("connecting to database: driver=%s", driver)
 
-	client, err := ent.Open(c.Database.Driver, c.Database.Source)
+	client, err := database.OpenEnt(driver, c.Database.Source)
 	if err != nil {
 		log.NewHelper(logger).Errorf("failed opening connection to database: %v", err)
 		return nil, nil, err
 	}
-	client = client.Debug()
+	clientReady := false
+	defer func() {
+		if !clientReady {
+			_ = client.Close()
+		}
+	}()
 
-	migrator := migrate.NewMigrator(client, logger, appConf, c.Database.Driver, c.Database.Source)
-	existingLegacySchema, err := hasExistingLegacySchema(bootstrapCtx, c.Database.Driver, c.Database.Source)
-	if err != nil {
-		log.NewHelper(logger).Errorf("failed detecting database schema state: %v", err)
-		return nil, nil, err
-	}
-
-	if existingLegacySchema {
-		log.NewHelper(logger).Info("existing legacy schema detected; running safe ent schema compatibility migration")
-		hasMigrationsTable, err := hasDatabaseTable(bootstrapCtx, c.Database.Driver, c.Database.Source, "schema_migrations")
-		if err != nil {
-			log.NewHelper(logger).Errorf("failed checking schema_migrations table: %v", err)
-			return nil, nil, err
-		}
-		if err := migrator.AutoMigrateLegacySchema(bootstrapCtx); err != nil {
-			log.NewHelper(logger).Errorf("failed to migrate legacy compatible schema: %v", err)
-			return nil, nil, fmt.Errorf("failed to migrate legacy compatible schema: %w", err)
-		}
-		if hasMigrationsTable {
-			if err := migrator.InitBasicData(bootstrapCtx); err != nil {
-				log.NewHelper(logger).Errorf("failed to initialize legacy default data: %v", err)
-				return nil, nil, fmt.Errorf("failed to initialize legacy default data: %w", err)
-			}
-		} else {
-			log.NewHelper(logger).Warn("schema_migrations table not found; skipping legacy default data sync for existing database")
-			if err := migrator.EnsureLegacyCompatibilitySchema(bootstrapCtx); err != nil {
-				log.NewHelper(logger).Errorf("failed to ensure legacy compatibility schema: %v", err)
-				return nil, nil, fmt.Errorf("failed to ensure legacy compatibility schema: %w", err)
-			}
-		}
-		if err := migrator.CreateDefaultAdminUser(bootstrapCtx); err != nil {
-			log.NewHelper(logger).Errorf("failed to ensure default admin user: %v", err)
-			return nil, nil, fmt.Errorf("failed to ensure default admin user: %w", err)
+	migrator := migrate.NewMigrator(client, logger, appConf, driver.String(), c.Database.Source)
+	if driver == database.Postgres {
+		log.NewHelper(logger).Info("running PostgreSQL schema and portable baseline migration")
+		if err := migrator.AutoMigrateWithData(bootstrapCtx); err != nil {
+			log.NewHelper(logger).Errorf("failed to initialize PostgreSQL schema/data: %v", err)
+			return nil, nil, fmt.Errorf("failed to initialize PostgreSQL schema/data: %w", err)
 		}
 	} else {
-		log.NewHelper(logger).Info("no existing legacy schema detected; running bootstrap migration path")
-		if err := migrator.AutoMigrateWithData(bootstrapCtx); err != nil {
-			log.NewHelper(logger).Errorf("failed to initialize schema/data: %v", err)
-			return nil, nil, fmt.Errorf("failed to initialize schema/data: %w", err)
+		existingLegacySchema, err := hasExistingLegacySchema(bootstrapCtx, driver.String(), c.Database.Source)
+		if err != nil {
+			log.NewHelper(logger).Errorf("failed detecting database schema state: %v", err)
+			return nil, nil, err
+		}
+
+		if existingLegacySchema {
+			log.NewHelper(logger).Info("existing MySQL schema detected; running safe legacy compatibility migration")
+			hasMigrationsTable, err := hasDatabaseTable(bootstrapCtx, driver.String(), c.Database.Source, "schema_migrations")
+			if err != nil {
+				log.NewHelper(logger).Errorf("failed checking schema_migrations table: %v", err)
+				return nil, nil, err
+			}
+			if err := migrator.AutoMigrateLegacySchema(bootstrapCtx); err != nil {
+				log.NewHelper(logger).Errorf("failed to migrate legacy compatible schema: %v", err)
+				return nil, nil, fmt.Errorf("failed to migrate legacy compatible schema: %w", err)
+			}
+			if hasMigrationsTable {
+				if err := migrator.InitBasicData(bootstrapCtx); err != nil {
+					log.NewHelper(logger).Errorf("failed to initialize legacy default data: %v", err)
+					return nil, nil, fmt.Errorf("failed to initialize legacy default data: %w", err)
+				}
+			} else {
+				log.NewHelper(logger).Warn("schema_migrations table not found; skipping legacy default data sync for existing database")
+				if err := migrator.EnsureLegacyCompatibilitySchema(bootstrapCtx); err != nil {
+					log.NewHelper(logger).Errorf("failed to ensure legacy compatibility schema: %v", err)
+					return nil, nil, fmt.Errorf("failed to ensure legacy compatibility schema: %w", err)
+				}
+			}
+			if err := migrator.CreateDefaultAdminUser(bootstrapCtx); err != nil {
+				log.NewHelper(logger).Errorf("failed to ensure default admin user: %v", err)
+				return nil, nil, fmt.Errorf("failed to ensure default admin user: %w", err)
+			}
+		} else {
+			log.NewHelper(logger).Info("empty MySQL database detected; running portable baseline migration")
+			if err := migrator.AutoMigrateWithData(bootstrapCtx); err != nil {
+				log.NewHelper(logger).Errorf("failed to initialize schema/data: %v", err)
+				return nil, nil, fmt.Errorf("failed to initialize schema/data: %w", err)
+			}
 		}
 	}
 
@@ -221,6 +246,7 @@ func NewData(c *conf.Data, serverConf *conf.Server, appConf *conf.Application, l
 	// 测试 Redis 连接
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		log.NewHelper(logger).Errorf("failed connecting to redis: %v", err)
+		_ = rdb.Close()
 		return nil, nil, err
 	}
 	log.NewHelper(logger).Infof("connected to redis: %s", c.Redis.Addr)
@@ -257,6 +283,7 @@ func NewData(c *conf.Data, serverConf *conf.Server, appConf *conf.Application, l
 		serverConf:     serverConf,
 		conf:           appConf,
 		deviceMgr:      deviceManager,
+		databaseDriver: driver,
 	}
 
 	// 启动 asynq 队列服务器
@@ -299,6 +326,7 @@ func NewData(c *conf.Data, serverConf *conf.Server, appConf *conf.Application, l
 		}
 	}
 
+	clientReady = true
 	return d, cleanup, nil
 }
 

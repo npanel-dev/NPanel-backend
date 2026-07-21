@@ -96,7 +96,7 @@ func (r *couponRepo) GetCouponList(ctx context.Context, page, size, subscribe in
 
 	if subscribe != 0 {
 		query = query.Where(func(s *sql.Selector) {
-			s.Where(sql.ExprP("FIND_IN_SET(?, "+proxycoupon.FieldSubscribe+")", subscribe))
+			s.Where(csvContains(r.data.databaseDriver, proxycoupon.FieldSubscribe, subscribe))
 		})
 	}
 
@@ -104,8 +104,8 @@ func (r *couponRepo) GetCouponList(ctx context.Context, page, size, subscribe in
 	if search != "" {
 		query = query.Where(
 			proxycoupon.Or(
-				proxycoupon.NameContains(search),
-				proxycoupon.CodeContains(search),
+				proxycoupon.NameContainsFold(search),
+				proxycoupon.CodeContainsFold(search),
 			),
 		)
 	}

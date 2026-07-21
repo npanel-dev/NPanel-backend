@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // ProxyUserWithdrawal holds the schema definition for the ProxyUserWithdrawal entity.
@@ -40,5 +41,11 @@ func (ProxyUserWithdrawal) Fields() []ent.Field {
 func (ProxyUserWithdrawal) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("user", ProxyUser.Type).Ref("withdrawals").Field("user_id").Unique().Required(),
+	}
+}
+
+func (ProxyUserWithdrawal) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("user_id"),
 	}
 }

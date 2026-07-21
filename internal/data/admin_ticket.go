@@ -104,8 +104,8 @@ func (r *ticketRepo) GetTicketList(ctx context.Context, page, size int, userId i
 	if search != "" {
 		query = query.Where(
 			proxyticket.Or(
-				proxyticket.TitleContains(search),
-				proxyticket.DescriptionContains(search),
+				proxyticket.TitleContainsFold(search),
+				proxyticket.DescriptionContainsFold(search),
 			),
 		)
 	}

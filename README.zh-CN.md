@@ -19,7 +19,7 @@ NPanel 由 [npanel-dev](https://github.com/npanel-dev) 组织维护。项目目�
 
 ## 系统架构
 
-NPanel Backend 基于 Kratos、Proto、Ent ORM、MySQL、Redis 与异步任务队列构建，采用分层架构，便于扩展和维护。
+NPanel Backend 基于 Kratos、Proto、Ent ORM、MySQL/PostgreSQL、Redis 与异步任务队列构建，采用分层架构，便于扩展和维护。
 
 ```text
 Admin / User / Node Clients
@@ -34,7 +34,7 @@ Admin / User / Node Clients
           |
  internal/data + ent
           |
-    MySQL + Redis
+    MySQL/PostgreSQL + Redis
 
 异步任务: internal/queue
 通用能力: pkg/*
@@ -50,7 +50,7 @@ Admin / User / Node Clients
 - `internal/server`：HTTP/gRPC 服务注册、中间件、兼容路由与 CORS。
 - `internal/service`：接口服务层。
 - `internal/biz`：用户、订阅、订单、支付、工单、公告、营销、节点、系统设置等领域逻辑。
-- `internal/data`：MySQL、Redis、Ent 仓储、运行时配置同步与队列初始化。
+- `internal/data`：MySQL/PostgreSQL、Redis、Ent 仓储、运行时配置同步与队列初始化。
 - `internal/queue`：邮件、短信、流量统计、配额更新、订单生命周期、订阅检查等异步任务。
 - `pkg`：支付、邮件、短信、JWT、缓存、模板渲染、追踪、客户端适配与工具函数等通用包。
 
@@ -66,7 +66,7 @@ Admin / User / Node Clients
 
 ## Docker Compose 快速上手
 
-这是本地或小型服务器部署的推荐方式。Compose 会构建后端镜像，并同时启动 MySQL、Redis 与 NPanel Backend。
+这是本地或小型服务器部署的推荐方式。默认 Compose 会构建后端镜像，并同时启动 MySQL、Redis 与 NPanel Backend。
 
 环境要求：
 
@@ -77,6 +77,21 @@ Admin / User / Node Clients
 
 ```bash
 docker compose up -d --build
+```
+
+使用 PostgreSQL 17：
+
+```bash
+docker compose -f docker-compose.postgres.yml up -d --build
+```
+
+PostgreSQL 模式下的 `ps`、`logs`、`restart`、`down` 命令也应带上 `-f docker-compose.postgres.yml`。
+
+Linux 一键安装脚本也可交互选择数据库，非交互模式可显式指定：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/npanel-dev/NPanel-backend/dev/scripts/install.sh \
+  | sudo bash -s -- --mode docker --database postgres
 ```
 
 查看状态：
@@ -121,6 +136,7 @@ docker compose down -v
 Compose 部署会使用 Docker volume 持久化运行数据：
 
 - `npanel_mysql`：MySQL 数据
+- `npanel_postgres`：PostgreSQL 数据（PostgreSQL Compose 模式）
 - `npanel_redis`：Redis 数据
 - `npanel_logs`：后端日志
 
@@ -142,7 +158,7 @@ Compose 模式下对应宿主机文件：
 - 修改 `app.admin.email`
 - 修改 `app.admin.password`
 - 将 `app.site.host` 设置为真实域名
-- 检查 `docker-compose.yml` 中的 MySQL 和 Redis 凭据
+- 检查所用 Compose 文件中的数据库和 Redis 凭据
 
 修改配置后重启后端：
 
@@ -152,7 +168,7 @@ docker compose restart npanel
 
 ## 单容器模式
 
-仅在你已经有外部 MySQL 和 Redis 时使用。
+仅在你已经有外部 MySQL/PostgreSQL 和 Redis 时使用。`data.database.driver` 支持 `mysql`、`postgres`（也接受 `postgresql` 别名）。
 
 构建镜像：
 
@@ -200,7 +216,13 @@ docker restart npanel
 ./scripts/docker-upgrade.sh
 ```
 
-脚本会执行 `git pull --ff-only`、重新构建 NPanel 后端镜像，并只重建 `npanel` 后端容器。它不会拉取、升级或重建 MySQL 和 Redis。
+PostgreSQL Compose 部署请指定对应文件：
+
+```bash
+NPANEL_COMPOSE_FILE=docker-compose.postgres.yml ./scripts/docker-upgrade.sh
+```
+
+脚本会执行 `git pull --ff-only`、重新构建 NPanel 后端镜像，并只重建 `npanel` 后端容器。它不会拉取、升级或重建数据库和 Redis。
 
 如果部署目录存在本地改动，不希望脚本执行 `git pull`，可以运行：
 
@@ -223,7 +245,7 @@ docker rm npanel || true
 docker run -d --name npanel -p 8081:8081 -p 9012:9012 -v "$(pwd)/npanel-config:/data/conf:ro" npanel
 ```
 
-生产环境升级前，请先备份 MySQL 数据和配置文件。
+生产环境升级前，请先备份数据库和配置文件。
 
 ## Release 打包
 
@@ -246,7 +268,7 @@ docker run -d --name npanel -p 8081:8081 -p 9012:9012 -v "$(pwd)/npanel-config:/
 环境要求：
 
 - Go `1.25+`；当前仓库声明的 toolchain 为 `go1.26.4`
-- MySQL 与 Redis
+- MySQL 或 PostgreSQL，以及 Redis
 - 用于重新生成 Proto 的 `protoc`
 - `make init` 安装的 Go 代码生成工具
 
@@ -329,7 +351,7 @@ lsof -nP -iTCP:9012 -sTCP:LISTEN
 docker compose logs npanel
 ```
 
-常见原因包括配置文件错误、MySQL 不可达、Redis 不可达、宿主机端口被占用。
+常见原因包括配置文件错误、数据库不可达、Redis 不可达、宿主机端口被占用。
 
 ### 修改配置后没有生效怎么办？
 
@@ -349,11 +371,13 @@ NPANEL_HTTP_PORT=18081 NPANEL_GRPC_PORT=19012 docker compose up -d --build
 
 ### 如何备份部署？
 
-请备份 MySQL 数据和配置文件。Compose 部署至少保留：
+请备份数据库数据和配置文件。Compose 部署至少保留：
 
 ```text
 configs/config.docker.yaml
 docker-compose.yml
+configs/config.postgres.yaml
+docker-compose.postgres.yml
 ```
 
 ## License

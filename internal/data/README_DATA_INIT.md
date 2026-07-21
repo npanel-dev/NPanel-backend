@@ -51,7 +51,7 @@
 ```
 
 ### 2. 手动数据初始化
-默认数据在**服务启动时**由 `internal/migrate` 自动写入（`InitBasicData` + legacy SQL seed）。`make seed` 仅打印提示，不会单独执行 seed：
+默认数据在**服务启动时**由 `internal/migrate` 自动写入。MySQL legacy 库保留旧 SQL seed 兼容路径，新 MySQL/PostgreSQL 库使用 portable baseline。`make seed` 仅打印提示，不会单独执行 seed：
 
 ```bash
 make dev
@@ -69,7 +69,7 @@ go run ./cmd/npanel -conf ./configs
 ```
 
 ### 4. 数据备份和导出
-当前仓库未提供独立导出命令，请使用数据库原生备份工具（如 `mysqldump`）备份重要数据。
+当前仓库未提供独立导出命令，请使用数据库原生备份工具（如 `mysqldump` 或 `pg_dump`）备份重要数据。
 
 ## 配置文件
 
@@ -87,6 +87,15 @@ data:
     db: 0
     pool_size: 10
     min_idle_conns: 5
+```
+
+PostgreSQL 示例：
+
+```yaml
+data:
+  database:
+    driver: postgres
+    source: postgres://npanel:password@127.0.0.1:5432/npanel?sslmode=disable
 ```
 
 ## 注意事项

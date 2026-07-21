@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribe"
+	"github.com/npanel-dev/NPanel-backend/internal/database"
 )
 
 type feature struct {
@@ -31,8 +31,10 @@ type legacyObject struct {
 
 func main() {
 	var dsn string
+	var driverName string
 	var apply bool
-	flag.StringVar(&dsn, "dsn", os.Getenv("NPANEL_DATABASE_DSN"), "MySQL DSN. Defaults to NPANEL_DATABASE_DSN.")
+	flag.StringVar(&driverName, "driver", envOrDefault("NPANEL_DATABASE_DRIVER", "mysql"), "Database driver: mysql or postgres. Defaults to NPANEL_DATABASE_DRIVER.")
+	flag.StringVar(&dsn, "dsn", os.Getenv("NPANEL_DATABASE_DSN"), "Database DSN. Defaults to NPANEL_DATABASE_DSN.")
 	flag.BoolVar(&apply, "apply", false, "Write changes. Without this flag the script only prints a dry-run summary.")
 	flag.Parse()
 
@@ -40,7 +42,11 @@ func main() {
 		log.Fatal("missing DSN: pass --dsn or set NPANEL_DATABASE_DSN")
 	}
 
-	client, err := ent.Open("mysql", dsn)
+	driver, err := database.NormalizeDriver(driverName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	client, err := database.OpenEnt(driver, dsn)
 	if err != nil {
 		log.Fatalf("open database: %v", err)
 	}
@@ -97,6 +103,13 @@ func main() {
 	} else {
 		fmt.Printf("dry-run found %d subscribe descriptions to migrate; rerun with --apply to write changes\n", changed)
 	}
+}
+
+func envOrDefault(key, fallback string) string {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+		return value
+	}
+	return fallback
 }
 
 func hasNewDescriptionFields(item *ent.ProxySubscribe) bool {

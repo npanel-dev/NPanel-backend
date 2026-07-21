@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -65,7 +64,7 @@ func (r *publicSubscriptionRepo) createExpiredNodesFromDB(ctx context.Context, u
 			proxynode.IsHiddenEQ(false),
 		).
 		Where(func(s *sql.Selector) {
-			s.Where(sql.ExprP("JSON_CONTAINS("+proxynode.FieldNodeGroupIds+", ?)", fmt.Sprintf("%d", expiredGroup.ID)))
+			s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, expiredGroup.ID))
 		}).
 		Order(ent.Asc(proxynode.FieldSort)).
 		Limit(1000).

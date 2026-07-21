@@ -293,7 +293,13 @@ func getSubscribeConfig(conf *conf.Application) *conf.Subscribe {
 func buildSiteConfig(app *conf.Application, values map[string]string) *conf.Site {
 	var result conf.Site
 	if app != nil && app.Site != nil {
-		result = *app.Site
+		result.Host = app.Site.Host
+		result.SiteName = app.Site.SiteName
+		result.SiteDesc = app.Site.SiteDesc
+		result.SiteLogo = app.Site.SiteLogo
+		result.Keywords = app.Site.Keywords
+		result.CustomHtml = app.Site.CustomHtml
+		result.CustomData = app.Site.CustomData
 	}
 	if value := stringFromMap(values, "Host", "host"); value != "" {
 		result.Host = value
@@ -322,7 +328,12 @@ func buildSiteConfig(app *conf.Application, values map[string]string) *conf.Site
 func buildSubscribeConfig(app *conf.Application, values map[string]string) *conf.Subscribe {
 	var result conf.Subscribe
 	if app != nil && app.Subscribe != nil {
-		result = *app.Subscribe
+		result.SingleModel = app.Subscribe.SingleModel
+		result.SubscribePath = app.Subscribe.SubscribePath
+		result.SubscribeDomain = app.Subscribe.SubscribeDomain
+		result.PanDomain = app.Subscribe.PanDomain
+		result.UserAgentLimit = app.Subscribe.UserAgentLimit
+		result.UserAgentList = app.Subscribe.UserAgentList
 	}
 	result.SingleModel = boolFromMap(values, result.SingleModel, "SingleModel", "single_model")
 	if value := stringFromMap(values, "SubscribePath", "subscribe_path"); value != "" {
@@ -400,7 +411,14 @@ func buildDeviceAuthConfig(ctx context.Context, repo CommonRepo) *DeviceAuthConf
 func buildRegisterConfig(app *conf.Application, values map[string]string) *conf.Register {
 	var result conf.Register
 	if app != nil && app.Register != nil {
-		result = *app.Register
+		result.StopRegister = app.Register.StopRegister
+		result.EnableIpRegisterLimit = app.Register.EnableIpRegisterLimit
+		result.IpRegisterLimit = app.Register.IpRegisterLimit
+		result.IpRegisterLimitDuration = app.Register.IpRegisterLimitDuration
+		result.EnableTrial = app.Register.EnableTrial
+		result.TrialSubscribe = app.Register.TrialSubscribe
+		result.TrialTimeUnit = app.Register.TrialTimeUnit
+		result.TrialTime = app.Register.TrialTime
 	}
 	result.StopRegister = boolFromMap(values, result.StopRegister, "StopRegister", "stop_register")
 	result.EnableIpRegisterLimit = boolFromMap(values, result.EnableIpRegisterLimit, "EnableIpRegisterLimit", "enable_ip_register_limit")
@@ -418,7 +436,11 @@ func buildRegisterConfig(app *conf.Application, values map[string]string) *conf.
 func buildInviteConfig(app *conf.Application, values map[string]string) *conf.Invite {
 	var result conf.Invite
 	if app != nil && app.Invite != nil {
-		result = *app.Invite
+		result.ForcedInvite = app.Invite.ForcedInvite
+		result.ReferralPercentage = app.Invite.ReferralPercentage
+		result.OnlyFirstPurchase = app.Invite.OnlyFirstPurchase
+		result.WithdrawalMinAmount = app.Invite.WithdrawalMinAmount
+		result.WithdrawalMethods = app.Invite.WithdrawalMethods
 	}
 	result.ForcedInvite = boolFromMap(values, result.ForcedInvite, "ForcedInvite", "forced_invite")
 	result.OnlyFirstPurchase = boolFromMap(values, result.OnlyFirstPurchase, "OnlyFirstPurchase", "only_first_purchase")

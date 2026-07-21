@@ -107,24 +107,18 @@ func (r *adminNodeRepo) FilterNodeList(ctx context.Context, page, size int32, se
 	query := r.data.db.ProxyNode.Query()
 	if nodeGroupID != nil && *nodeGroupID > 0 {
 		query = query.Where(func(s *sql.Selector) {
-			s.Where(sql.P(func(b *sql.Builder) {
-				b.WriteString("JSON_CONTAINS(")
-				b.Ident(proxynode.FieldNodeGroupIds)
-				b.WriteString(", ")
-				b.Arg(fmt.Sprintf("[%d]", *nodeGroupID))
-				b.WriteString(")")
-			}))
+			s.Where(jsonArrayContainsInt64(r.data.databaseDriver, proxynode.FieldNodeGroupIds, *nodeGroupID))
 		})
 	}
 	if search != "" {
 		searchPattern := "%" + search + "%"
 		query = query.Where(func(s *sql.Selector) {
-			s.Where(sql.Or(sql.Like(s.C(proxynode.FieldName), searchPattern), sql.Like(s.C(proxynode.FieldAddress), searchPattern), sql.Like(s.C(proxynode.FieldTags), searchPattern), sql.P(func(b *sql.Builder) {
-				b.WriteString("CAST(")
-				b.Ident(proxynode.FieldPort)
-				b.WriteString(" AS CHAR) LIKE ")
-				b.Arg(searchPattern)
-			})))
+			s.Where(sql.Or(
+				sql.ContainsFold(s.C(proxynode.FieldName), search),
+				sql.ContainsFold(s.C(proxynode.FieldAddress), search),
+				sql.ContainsFold(s.C(proxynode.FieldTags), search),
+				numericColumnLike(r.data.databaseDriver, proxynode.FieldPort, searchPattern),
+			))
 		})
 	}
 	total, err := query.Count(ctx)

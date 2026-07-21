@@ -3,43 +3,55 @@ package handler
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotion"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyrechargepromotiontier"
 	"github.com/redis/go-redis/v9"
 )
 
-// 本测试为 e2e 验证：连接本地 docker MySQL，直接测试充值赠送的核心逻辑：
+// 本测试为 e2e 验证：连接本地 Docker MySQL 或 PostgreSQL，直接测试充值赠送的核心逻辑：
 //   1. public data 层 ListActive 能否正确查出有效活动
 //   2. handler.resolveRechargeBonus 的命中算法（档位匹配 / 自定义比例 / 互斥）
 //
 // 运行方式（需先启动后端完成建表）：
 //
+//	NPANEL_E2E_DATABASE_DRIVER=mysql \
 //	NPANEL_E2E_DSN="npanel:npanel_password@tcp(127.0.0.1:13306)/npanel?parseTime=True&loc=Local" \
+//	  go test ./internal/queue/handler/ -run TestE2ERechargePromotion -v -count=1
+//
+//	NPANEL_E2E_DATABASE_DRIVER=postgres \
+//	NPANEL_E2E_DSN="postgres://npanel:npanel_password@127.0.0.1:15432/npanel?sslmode=disable" \
 //	  go test ./internal/queue/handler/ -run TestE2ERechargePromotion -v -count=1
 
 func newRechargePromoClient(t *testing.T) *ent.Client {
-	t.Helper()
-	dsn := os.Getenv("NPANEL_E2E_DSN")
-	if dsn == "" {
-		t.Skip("NPANEL_E2E_DSN not set; skipping e2e recharge promotion test")
-	}
-	client, err := ent.Open("mysql", dsn)
-	if err != nil {
-		t.Fatalf("open ent client: %v", err)
-	}
-	return client
+	return newE2EClient(t)
 }
 
 func cleanRechargePromoFixtures(t *testing.T, ctx context.Context, client *ent.Client) {
 	t.Helper()
-	_, _ = client.ProxyRechargePromotionTier.Delete().Exec(ctx)
-	_, _ = client.ProxyRechargePromotion.Delete().Exec(ctx)
+	promotions, err := client.ProxyRechargePromotion.Query().
+		Where(proxyrechargepromotion.DescriptionEQ("e2e test")).All(ctx)
+	if err != nil {
+		t.Errorf("query recharge promotion fixtures: %v", err)
+		return
+	}
+	ids := make([]int64, 0, len(promotions))
+	for _, promotion := range promotions {
+		ids = append(ids, promotion.ID)
+	}
+	if len(ids) == 0 {
+		return
+	}
+	_, err = client.ProxyRechargePromotionTier.Delete().
+		Where(proxyrechargepromotiontier.PromotionIDIn(ids...)).Exec(ctx)
+	cleanupE2E(t, "recharge promotion tiers", err)
+	_, err = client.ProxyRechargePromotion.Delete().
+		Where(proxyrechargepromotion.IDIn(ids...)).Exec(ctx)
+	cleanupE2E(t, "recharge promotions", err)
 }
 
 // seedPromotion 创建一个活动（含档位），返回活动 ID
@@ -83,10 +95,10 @@ func seedPromotion(t *testing.T, ctx context.Context, client *ent.Client,
 func TestE2ERechargePromotion(t *testing.T) {
 	ctx := context.Background()
 	client := newRechargePromoClient(t)
-	defer client.Close()
 
 	// 清理旧的 e2e 数据
 	cleanRechargePromoFixtures(t, ctx, client)
+	t.Cleanup(func() { cleanRechargePromoFixtures(t, ctx, client) })
 
 	nowMs := time.Now().UnixMilli()
 	futureMs := nowMs + 86400000 // +1 天
@@ -136,8 +148,8 @@ func TestE2ERechargePromotion(t *testing.T) {
 
 	// 构造 handler（只需要 db，bonus 计算只读）
 	h := &ActivateOrderHandler{
-		db:    client,
-		rdb:   redis.NewClient(&redis.Options{Addr: "127.0.0.1:16379"}),
+		db:     client,
+		rdb:    redis.NewClient(&redis.Options{Addr: "127.0.0.1:16379"}),
 		logger: log.NewHelper(log.DefaultLogger),
 	}
 
@@ -230,8 +242,8 @@ func TestE2ERechargePromotion(t *testing.T) {
 func TestE2ERechargePromotionStackMode(t *testing.T) {
 	ctx := context.Background()
 	client := newRechargePromoClient(t)
-	defer client.Close()
 	cleanRechargePromoFixtures(t, ctx, client)
+	t.Cleanup(func() { cleanRechargePromoFixtures(t, ctx, client) })
 
 	nowMs := time.Now().UnixMilli()
 
@@ -308,15 +320,14 @@ func TestE2ERechargePromotionStackMode(t *testing.T) {
 		t.Logf("✅ 互斥模式 bonus=%d（取高优先级）", r.Bonus)
 	})
 
-	cleanRechargePromoFixtures(t, ctx, client)
 }
 
 // TestE2ERechargePromotionCustomRatio 验证自定义金额按比例赠送的边界
 func TestE2ERechargePromotionCustomRatio(t *testing.T) {
 	ctx := context.Background()
 	client := newRechargePromoClient(t)
-	defer client.Close()
 	cleanRechargePromoFixtures(t, ctx, client)
+	t.Cleanup(func() { cleanRechargePromoFixtures(t, ctx, client) })
 
 	nowMs := time.Now().UnixMilli()
 	// 活动：无档位，仅自定义金额按 5%（500‱）赠送
@@ -364,15 +375,14 @@ func TestE2ERechargePromotionCustomRatio(t *testing.T) {
 		t.Logf("✅ 负金额 bonus=0")
 	})
 
-	cleanRechargePromoFixtures(t, ctx, client)
 }
 
 // TestE2ERechargePromotionDisabledAndTime 验证停用/未开始活动不命中
 func TestE2ERechargePromotionDisabledAndTime(t *testing.T) {
 	ctx := context.Background()
 	client := newRechargePromoClient(t)
-	defer client.Close()
 	cleanRechargePromoFixtures(t, ctx, client)
+	t.Cleanup(func() { cleanRechargePromoFixtures(t, ctx, client) })
 
 	nowMs := time.Now().UnixMilli()
 	futureMs := nowMs + 86400000 // +1天
@@ -429,5 +439,4 @@ func TestE2ERechargePromotionDisabledAndTime(t *testing.T) {
 	})
 
 	_ = normalID // 避免 unused 警告
-	cleanRechargePromoFixtures(t, ctx, client)
 }

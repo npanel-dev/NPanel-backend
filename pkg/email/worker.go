@@ -157,7 +157,7 @@ func (w *Worker) Start() {
 		}
 		count++
 		taskInfo.Current = count
-		if err := tx.Model(&Task{}).Where("`id` = ?", taskInfo.Id).Save(&taskInfo).Error; err != nil {
+		if err := tx.Model(&Task{}).Where("id = ?", taskInfo.Id).Save(&taskInfo).Error; err != nil {
 			logger.Error("Batch Send Email",
 				logger.Field("message", "Failed to update task progress"),
 				logger.Field("error", err.Error()),
@@ -175,7 +175,7 @@ func (w *Worker) Start() {
 	taskInfo.Status = 2 // 2 表示任务已完成
 	w.status = 2        // 设置状态为已完成
 
-	if err := tx.Model(&Task{}).Where("`id` = ?", taskInfo.Id).Save(&taskInfo).Error; err != nil {
+	if err := tx.Model(&Task{}).Where("id = ?", taskInfo.Id).Save(&taskInfo).Error; err != nil {
 		logger.Error("Batch Send Email",
 			logger.Field("message", "Failed to finalize task"),
 			logger.Field("error", err.Error()),

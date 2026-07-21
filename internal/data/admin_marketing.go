@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/hibiken/asynq"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxytask"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyuser"
@@ -18,8 +20,6 @@ import (
 	taskmodel "github.com/npanel-dev/NPanel-backend/internal/model/task"
 	queuetypes "github.com/npanel-dev/NPanel-backend/internal/queue/types"
 	"github.com/npanel-dev/NPanel-backend/pkg/tool"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/hibiken/asynq"
 )
 
 type adminMarketingRepo struct {
@@ -58,10 +58,10 @@ func (r *adminMarketingRepo) CreateBatchSendEmailTask(ctx context.Context, subje
 
 				// 注册时间范围过滤
 				if registerStartTime != 0 {
-					s.Where(sql.GTE(t.C(proxyuser.FieldCreatedAt), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", registerStartTime))))
+					s.Where(sql.GTE(t.C(proxyuser.FieldCreatedAt), time.UnixMilli(registerStartTime)))
 				}
 				if registerEndTime != 0 {
-					s.Where(sql.LTE(t.C(proxyuser.FieldCreatedAt), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", registerEndTime))))
+					s.Where(sql.LTE(t.C(proxyuser.FieldCreatedAt), time.UnixMilli(registerEndTime)))
 				}
 			})
 		return query
@@ -313,10 +313,10 @@ func (r *adminMarketingRepo) GetPreSendEmailCount(ctx context.Context, scope uin
 
 				// 注册时间范围过滤
 				if registerStartTime != 0 {
-					s.Where(sql.GTE(t.C(proxyuser.FieldCreatedAt), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", registerStartTime))))
+					s.Where(sql.GTE(t.C(proxyuser.FieldCreatedAt), time.UnixMilli(registerStartTime)))
 				}
 				if registerEndTime != 0 {
-					s.Where(sql.LTE(t.C(proxyuser.FieldCreatedAt), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", registerEndTime))))
+					s.Where(sql.LTE(t.C(proxyuser.FieldCreatedAt), time.UnixMilli(registerEndTime)))
 				}
 			})
 		return query
@@ -440,12 +440,12 @@ func (r *adminMarketingRepo) CreateQuotaTask(ctx context.Context, subscribers []
 
 			// 开始时间过滤：start_time <= ?
 			if startTime != 0 {
-				s.Where(sql.LTE(s.C(proxyusersubscribe.FieldStartTime), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", startTime))))
+				s.Where(sql.LTE(s.C(proxyusersubscribe.FieldStartTime), time.UnixMilli(startTime)))
 			}
 
 			// 结束时间过滤：expire_time >= ?
 			if endTime != 0 {
-				s.Where(sql.GTE(s.C(proxyusersubscribe.FieldExpireTime), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", endTime))))
+				s.Where(sql.GTE(s.C(proxyusersubscribe.FieldExpireTime), time.UnixMilli(endTime)))
 			}
 		})
 
@@ -549,12 +549,12 @@ func (r *adminMarketingRepo) QueryQuotaTaskPreCount(ctx context.Context, subscri
 
 			// 开始时间过滤：start_time <= ?
 			if startTime != 0 {
-				s.Where(sql.LTE(s.C(proxyusersubscribe.FieldStartTime), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", startTime))))
+				s.Where(sql.LTE(s.C(proxyusersubscribe.FieldStartTime), time.UnixMilli(startTime)))
 			}
 
 			// 结束时间过滤：expire_time >= ?
 			if endTime != 0 {
-				s.Where(sql.GTE(s.C(proxyusersubscribe.FieldExpireTime), sql.Raw(fmt.Sprintf("FROM_UNIXTIME(%d/1000)", endTime))))
+				s.Where(sql.GTE(s.C(proxyusersubscribe.FieldExpireTime), time.UnixMilli(endTime)))
 			}
 		})
 

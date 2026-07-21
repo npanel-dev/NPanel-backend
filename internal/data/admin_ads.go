@@ -33,8 +33,8 @@ func (r *adsRepo) GetAdsListByPage(ctx context.Context, page, size int, filter a
 	// 应用搜索过滤
 	if filter.Search != "" {
 		query = query.Where(proxyads.Or(
-			proxyads.TitleContains(filter.Search),
-			proxyads.ContentContains(filter.Search),
+			proxyads.TitleContainsFold(filter.Search),
+			proxyads.ContentContainsFold(filter.Search),
 		))
 	}
 

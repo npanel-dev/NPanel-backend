@@ -285,7 +285,7 @@ func (r *adminUserRepo) GetUserList(ctx context.Context, page, size int32, searc
 
 		authMethods, err := r.data.db.ProxyUserAuthMethod.Query().
 			Where(
-				proxyuserauthmethod.AuthIdentifierContains(search),
+				proxyuserauthmethod.AuthIdentifierContainsFold(search),
 			).
 			All(ctx)
 		if err != nil {
@@ -298,7 +298,7 @@ func (r *adminUserRepo) GetUserList(ctx context.Context, page, size int32, searc
 
 		referQuery := r.data.db.ProxyUser.Query().
 			Where(
-				proxyuser.ReferCodeContains(search),
+				proxyuser.ReferCodeContainsFold(search),
 			)
 		if !unscoped {
 			referQuery = referQuery.Where(
@@ -379,7 +379,7 @@ func (r *adminUserRepo) GetUserList(ctx context.Context, page, size int32, searc
 
 	if shortCode != "" {
 		devices, err := r.data.db.ProxyUserDevice.Query().
-			Where(proxyuserdevice.ShortCodeContains(shortCode)).
+			Where(proxyuserdevice.ShortCodeContainsFold(shortCode)).
 			All(ctx)
 		if err != nil {
 			return nil, 0, err

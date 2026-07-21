@@ -80,6 +80,9 @@ func main() {
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
 	}
+	if err := conf.ValidateBootstrap(&bc); err != nil {
+		panic(fmt.Errorf("validate config: %w", err))
+	}
 	conf.SetLegacyDebugMode(bc.GetDebug())
 
 	logConfig := bootstraplog.DefaultConfig(Name)

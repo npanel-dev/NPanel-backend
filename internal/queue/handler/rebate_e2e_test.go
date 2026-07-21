@@ -4,29 +4,49 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
-	_ "github.com/go-sql-driver/mysql" // register mysql driver for e2e test
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscribepriceoption"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysubscriberebateconfig"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystem"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
+	"github.com/npanel-dev/NPanel-backend/internal/database"
 	"github.com/redis/go-redis/v9"
 )
 
-// 本测试为 e2e 验证脚本：连接本地 docker 容器中的 npanel_e2e MySQL 库，
+// 本测试为 e2e 验证脚本：连接本地 Docker 容器中的 MySQL 或 PostgreSQL，
 // 直接测试 resolveRebateRate 的优先级与短路逻辑。
 //
 // 运行方式（需要先启动后端完成建表，且 DB 中已存在 schema_migrations 表）：
 //
+//	NPANEL_E2E_DATABASE_DRIVER=mysql \
 //	NPANEL_E2E_DSN="npanel:npanel_password@tcp(127.0.0.1:3307)/npanel_e2e?parseTime=True&loc=Local" \
+//	  go test ./internal/queue/handler/ -run TestE2ERebateRate -v -count=1
+//
+//	NPANEL_E2E_DATABASE_DRIVER=postgres \
+//	NPANEL_E2E_DSN="postgres://npanel:npanel_password@127.0.0.1:5433/npanel_e2e?sslmode=disable" \
 //	  go test ./internal/queue/handler/ -run TestE2ERebateRate -v -count=1
 //
 // 不设置 NPANEL_E2E_DSN 时跳过，避免污染普通单测流程。
 func e2eDSN() string { return os.Getenv("NPANEL_E2E_DSN") }
+
+func e2eDatabaseDriver(t *testing.T) database.Driver {
+	t.Helper()
+	value := strings.TrimSpace(os.Getenv("NPANEL_E2E_DATABASE_DRIVER"))
+	if value == "" {
+		value = "mysql"
+	}
+	driver, err := database.NormalizeDriver(value)
+	if err != nil {
+		t.Fatalf("invalid NPANEL_E2E_DATABASE_DRIVER: %v", err)
+	}
+	return driver
+}
 
 func newE2EClient(t *testing.T) *ent.Client {
 	t.Helper()
@@ -34,32 +54,78 @@ func newE2EClient(t *testing.T) *ent.Client {
 	if dsn == "" {
 		t.Skip("NPANEL_E2E_DSN not set; skipping e2e rebate test")
 	}
-	client, err := ent.Open("mysql", dsn)
+	client, err := database.OpenEnt(e2eDatabaseDriver(t), dsn)
 	if err != nil {
 		t.Fatalf("open ent client: %v", err)
 	}
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil {
+			t.Errorf("close ent client: %v", err)
+		}
+	})
 	return client
+}
+
+func cleanupE2E(t *testing.T, action string, err error) {
+	t.Helper()
+	if err != nil {
+		t.Errorf("cleanup %s: %v", action, err)
+	}
+}
+
+func snapshotInviteSettings(t *testing.T, ctx context.Context, client *ent.Client) []*ent.ProxySystem {
+	t.Helper()
+	settings, err := client.ProxySystem.Query().Where(proxysystem.CategoryEQ("invite")).All(ctx)
+	if err != nil {
+		t.Fatalf("snapshot invite settings: %v", err)
+	}
+	return settings
+}
+
+func restoreInviteSettings(t *testing.T, ctx context.Context, client *ent.Client, settings []*ent.ProxySystem) {
+	t.Helper()
+	_, err := client.ProxySystem.Delete().Where(proxysystem.CategoryEQ("invite")).Exec(ctx)
+	cleanupE2E(t, "current invite settings", err)
+	for _, setting := range settings {
+		_, err := client.ProxySystem.Create().
+			SetCategory(setting.Category).
+			SetKey(setting.Key).
+			SetValue(setting.Value).
+			SetType(setting.Type).
+			SetDesc(setting.Desc).
+			SetCreatedAt(setting.CreatedAt).
+			SetUpdatedAt(setting.UpdatedAt).
+			Save(ctx)
+		cleanupE2E(t, "restore invite setting "+setting.Key, err)
+	}
 }
 
 func cleanRebateE2EFixtures(t *testing.T, ctx context.Context, client *ent.Client, ids struct{ referer, buyer, subscribe, optionMonthly, optionQuarterly, optionYearly int64 }) {
 	t.Helper()
-	_, _ = client.ProxySubscribeRebateConfig.Delete().Exec(ctx)
+	_, err := client.ProxySubscribeRebateConfig.Delete().
+		Where(proxysubscriberebateconfig.SubscribeIDEQ(ids.subscribe)).Exec(ctx)
+	cleanupE2E(t, "rebate configs", err)
 	if ids.subscribe > 0 {
-		_, _ = client.ProxySubscribePriceOption.Delete().
+		_, err = client.ProxySubscribePriceOption.Delete().
 			Where(proxysubscribepriceoption.SubscribeIDEQ(ids.subscribe)).Exec(ctx)
-		_ = client.ProxySubscribe.DeleteOneID(ids.subscribe).Exec(ctx)
+		cleanupE2E(t, "subscribe price options", err)
+		cleanupE2E(t, "subscribe", client.ProxySubscribe.DeleteOneID(ids.subscribe).Exec(ctx))
 	}
 	if ids.buyer > 0 {
-		_, _ = client.ProxyOrder.Delete().Where(proxyorder.UserIDEQ(ids.buyer)).Exec(ctx)
+		_, err = client.ProxyOrder.Delete().Where(proxyorder.UserIDEQ(ids.buyer)).Exec(ctx)
+		cleanupE2E(t, "orders", err)
 	}
 	if ids.buyer > 0 {
-		_ = client.ProxyUser.DeleteOneID(ids.buyer).Exec(ctx)
+		cleanupE2E(t, "buyer", client.ProxyUser.DeleteOneID(ids.buyer).Exec(ctx))
 	}
 	if ids.referer > 0 {
-		_ = client.ProxyUser.DeleteOneID(ids.referer).Exec(ctx)
+		_, err = client.ProxySystemLog.Delete().Where(
+			proxysystemlog.ObjectIDEQ(ids.referer),
+			proxysystemlog.TypeEQ(int8(33)),
+		).Exec(ctx)
+		cleanupE2E(t, "commission logs", err)
+		cleanupE2E(t, "referer", client.ProxyUser.DeleteOneID(ids.referer).Exec(ctx))
 	}
-	// 清理 invite 全局配置
-	_, _ = client.ProxySystem.Delete().Where(proxysystem.CategoryEQ("invite")).Exec(ctx)
 }
 
 // setGlobalRebate 写入全局 invite 配置（ReferralPercentage / OnlyFirstPurchase）
@@ -90,7 +156,7 @@ func setupRebateFixtures(t *testing.T, ctx context.Context, client *ent.Client) 
 	t.Helper()
 	referer, err := client.ProxyUser.Create().
 		SetPassword("x").
-		SetReferCode("E2EREF").
+		SetReferCode(fmt.Sprintf("E2E%016x", uint64(time.Now().UnixNano()))).
 		SetIsAdmin(false).
 		Save(ctx)
 	if err != nil {
@@ -165,10 +231,13 @@ func makeOrder(t *testing.T, ctx context.Context, client *ent.Client, buyerID, s
 func TestE2ERebateRate(t *testing.T) {
 	ctx := context.Background()
 	client := newE2EClient(t)
-	defer client.Close()
+	inviteSettings := snapshotInviteSettings(t, ctx, client)
 
 	ids := setupRebateFixtures(t, ctx, client)
-	t.Cleanup(func() { cleanRebateE2EFixtures(t, ctx, client, ids) })
+	t.Cleanup(func() {
+		cleanRebateE2EFixtures(t, ctx, client, ids)
+		restoreInviteSettings(t, ctx, client, inviteSettings)
+	})
 
 	// 取 referer 实体（resolveRebateRate 需要 *ent.ProxyUser）
 	referer, err := client.ProxyUser.Get(ctx, ids.referer)
@@ -177,8 +246,8 @@ func TestE2ERebateRate(t *testing.T) {
 	}
 
 	h := &ActivateOrderHandler{
-		db:    client,
-		rdb:   redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"}),
+		db:     client,
+		rdb:    redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"}),
 		logger: log.NewHelper(log.DefaultLogger),
 	}
 

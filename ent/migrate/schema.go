@@ -363,6 +363,18 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "proxyredemptionrecord_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{RedemptionRecordColumns[7]},
+			},
+			{
+				Name:    "proxyredemptionrecord_redemption_code_id",
+				Unique:  false,
+				Columns: []*schema.Column{RedemptionRecordColumns[6]},
+			},
+		},
 	}
 	// RoutingDNSResolverColumns holds the columns for the "routing_dns_resolver" table.
 	RoutingDNSResolverColumns = []*schema.Column{
@@ -1013,6 +1025,13 @@ var (
 				Columns:    []*schema.Column{UserWithdrawalColumns[9]},
 				RefColumns: []*schema.Column{UserColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "proxyuserwithdrawal_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserWithdrawalColumns[9]},
 			},
 		},
 	}

@@ -19,7 +19,7 @@ Links:
 
 ## System Architecture
 
-NPanel Backend uses a layered Go architecture based on Kratos, Proto contracts, Ent ORM, MySQL, Redis, and asynchronous workers.
+NPanel Backend uses a layered Go architecture based on Kratos, Proto contracts, Ent ORM, MySQL/PostgreSQL, Redis, and asynchronous workers.
 
 ```text
 Admin / User / Node Clients
@@ -34,7 +34,7 @@ Admin / User / Node Clients
           |
  internal/data + ent
           |
-    MySQL + Redis
+    MySQL/PostgreSQL + Redis
 
 Async workers: internal/queue
 Shared packages: pkg/*
@@ -50,7 +50,7 @@ Core modules:
 - `internal/server`: HTTP/gRPC server registration, middleware, compatibility routes, and CORS.
 - `internal/service`: API service layer.
 - `internal/biz`: domain logic for users, subscriptions, orders, payments, tickets, announcements, marketing, nodes, and system settings.
-- `internal/data`: MySQL, Redis, Ent repositories, runtime config sync, and queue bootstrap.
+- `internal/data`: MySQL/PostgreSQL, Redis, Ent repositories, runtime config sync, and queue bootstrap.
 - `internal/queue`: scheduled and asynchronous jobs for email, SMS, traffic statistics, quota updates, order lifecycle, and subscription checks.
 - `pkg`: reusable packages for payment, email, SMS, JWT, cache, template rendering, tracing, adapters, and utilities.
 
@@ -66,7 +66,7 @@ Core modules:
 
 ## Quick Start With Docker Compose
 
-This is the recommended way to start NPanel Backend locally or on a small server. It builds the backend image and starts MySQL, Redis, and NPanel together.
+This is the recommended way to start NPanel Backend locally or on a small server. The default Compose file builds the backend image and starts MySQL, Redis, and NPanel together.
 
 Requirements:
 
@@ -77,6 +77,21 @@ Start:
 
 ```bash
 docker compose up -d --build
+```
+
+To use PostgreSQL 17:
+
+```bash
+docker compose -f docker-compose.postgres.yml up -d --build
+```
+
+In PostgreSQL mode, also pass `-f docker-compose.postgres.yml` to `ps`, `logs`, `restart`, and `down`.
+
+The Linux one-click installer also offers an interactive database choice. For non-interactive PostgreSQL installation:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/npanel-dev/NPanel-backend/dev/scripts/install.sh \
+  | sudo bash -s -- --mode docker --database postgres
 ```
 
 Check status:
@@ -121,6 +136,7 @@ docker compose down -v
 The Compose stack persists runtime data in Docker volumes:
 
 - `npanel_mysql`: MySQL data
+- `npanel_postgres`: PostgreSQL data (PostgreSQL Compose mode)
 - `npanel_redis`: Redis data
 - `npanel_logs`: backend logs
 
@@ -142,7 +158,7 @@ Edit `configs/config.docker.yaml` before production use:
 - Change `app.admin.email`
 - Change `app.admin.password`
 - Set `app.site.host` to your real domain
-- Review MySQL and Redis credentials in `docker-compose.yml`
+- Review database and Redis credentials in the selected Compose file
 
 After editing config, restart:
 
@@ -152,7 +168,7 @@ docker compose restart npanel
 
 ## Single Container Mode
 
-Use this only when you already have external MySQL and Redis.
+Use this only when you already have external MySQL/PostgreSQL and Redis. `data.database.driver` supports `mysql` and `postgres` (the `postgresql` alias is also accepted).
 
 Build the image:
 
@@ -200,7 +216,13 @@ For Compose deployments from source:
 ./scripts/docker-upgrade.sh
 ```
 
-The script runs `git pull --ff-only`, rebuilds the NPanel backend image, and recreates only the `npanel` container. It does not pull, upgrade, or recreate MySQL and Redis.
+For a PostgreSQL Compose deployment, select its Compose file explicitly:
+
+```bash
+NPANEL_COMPOSE_FILE=docker-compose.postgres.yml ./scripts/docker-upgrade.sh
+```
+
+The script runs `git pull --ff-only`, rebuilds the NPanel backend image, and recreates only the `npanel` container. It does not pull, upgrade, or recreate the database or Redis.
 
 If your deployment directory has local changes and you want to skip `git pull`, run:
 
@@ -223,7 +245,7 @@ docker rm npanel || true
 docker run -d --name npanel -p 8081:8081 -p 9012:9012 -v "$(pwd)/npanel-config:/data/conf:ro" npanel
 ```
 
-Always back up MySQL data and your config directory before upgrading production systems.
+Always back up the database and your config directory before upgrading production systems.
 
 ## Release Builds
 
@@ -246,7 +268,7 @@ To build the same packages locally:
 Requirements:
 
 - Go `1.25+`; this repository currently declares toolchain `go1.26.4`
-- MySQL and Redis
+- MySQL or PostgreSQL, plus Redis
 - `protoc` for Proto regeneration
 - Go code generation tools installed by `make init`
 
@@ -323,7 +345,7 @@ lsof -nP -iTCP:9012 -sTCP:LISTEN
 
 ### The container exits immediately.
 
-Check `docker compose logs npanel`. Common causes are invalid config, unreachable MySQL, unreachable Redis, or occupied host ports.
+Check `docker compose logs npanel`. Common causes are invalid config, an unreachable database, unreachable Redis, or occupied host ports.
 
 ### My config changes did not take effect.
 
@@ -343,11 +365,13 @@ NPANEL_HTTP_PORT=18081 NPANEL_GRPC_PORT=19012 docker compose up -d --build
 
 ### How do I back up the deployment?
 
-Back up MySQL data and the config file. With Compose, also keep a copy of:
+Back up the database and the config file. With Compose, also keep a copy of:
 
 ```text
 configs/config.docker.yaml
 docker-compose.yml
+configs/config.postgres.yaml
+docker-compose.postgres.yml
 ```
 
 ## License

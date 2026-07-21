@@ -174,7 +174,7 @@ func (r *adminRedemptionRepo) GetRedemptionCodeList(ctx context.Context, req *v1
 		query = query.Where(proxyredemptioncode.UnitTimeEQ(req.UnitTime))
 	}
 	if req.Code != "" {
-		query = query.Where(proxyredemptioncode.CodeContains(req.Code))
+		query = query.Where(proxyredemptioncode.CodeContainsFold(req.Code))
 	}
 	total, err := query.Count(ctx)
 	if err != nil {

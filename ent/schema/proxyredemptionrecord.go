@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // ProxyRedemptionRecord holds the schema definition for the ProxyRedemptionRecord entity.
@@ -39,5 +40,12 @@ func (ProxyRedemptionRecord) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("user", ProxyUser.Type).Ref("redemption_records").Field("user_id").Unique().Required(),
 		edge.From("redemption_code", ProxyRedemptionCode.Type).Ref("records").Field("redemption_code_id").Unique().Required(),
+	}
+}
+
+func (ProxyRedemptionRecord) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("user_id"),
+		index.Fields("redemption_code_id"),
 	}
 }

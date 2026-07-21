@@ -83,9 +83,8 @@ func (r *adminServerRepo) GetServerByID(ctx context.Context, id int) (*serverbiz
 func (r *adminServerRepo) FilterServerList(ctx context.Context, page, size int32, search string) (int32, []*serverbiz.Server, error) {
 	query := r.data.db.ProxyServer.Query()
 	if search != "" {
-		searchPattern := "%" + search + "%"
 		query = query.Where(func(s *sql.Selector) {
-			s.Where(sql.Or(sql.Like(s.C(proxyserver.FieldName), searchPattern), sql.Like(s.C(proxyserver.FieldServerAddr), searchPattern)))
+			s.Where(sql.Or(sql.ContainsFold(s.C(proxyserver.FieldName), search), sql.ContainsFold(s.C(proxyserver.FieldServerAddr), search)))
 		})
 	}
 	total, err := query.Count(ctx)

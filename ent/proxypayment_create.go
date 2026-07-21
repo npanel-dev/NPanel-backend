@@ -275,11 +275,6 @@ func (_c *ProxyPaymentCreate) check() error {
 	if _, ok := _c.mutation.Config(); !ok {
 		return &ValidationError{Name: "config", err: errors.New(`ent: missing required field "ProxyPayment.config"`)}
 	}
-	if v, ok := _c.mutation.Config(); ok {
-		if err := proxypayment.ConfigValidator(v); err != nil {
-			return &ValidationError{Name: "config", err: fmt.Errorf(`ent: validator failed for field "ProxyPayment.config": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.FeeMode(); !ok {
 		return &ValidationError{Name: "fee_mode", err: errors.New(`ent: missing required field "ProxyPayment.fee_mode"`)}
 	}

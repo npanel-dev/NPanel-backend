@@ -81,8 +81,6 @@ var (
 	DefaultDomain string
 	// DomainValidator is a validator for the "domain" field. It is called by the builders before save.
 	DomainValidator func(string) error
-	// ConfigValidator is a validator for the "config" field. It is called by the builders before save.
-	ConfigValidator func(string) error
 	// DefaultFeeMode holds the default value on creation for the "fee_mode" field.
 	DefaultFeeMode uint
 	// DefaultFeePercent holds the default value on creation for the "fee_percent" field.

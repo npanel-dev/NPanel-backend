@@ -31,7 +31,8 @@
 核心迁移器，包含以下功能：
 - `AutoMigrate()`: 仅数据库结构迁移
 - `AutoMigrateWithData()`: 完整迁移（结构+数据）
-- `InitBasicData()`: 初始化基础数据（legacy SQL + 邮件模板回填）
+- `InitBasicData()`: 初始化 MySQL legacy 基础数据（legacy SQL + 邮件模板回填）
+- portable baseline：MySQL/PostgreSQL 新库共用的 Ent 基础数据初始化
 - `ensureEmailAuthMethodTemplates()`: 邮件认证空模板幂等回填
 - `CreateDefaultAdminUser()`: 创建默认管理员
 
@@ -45,7 +46,7 @@
 
 ```go
 migrator := migrate.NewMigrator(client, logger, appConf, c.Database.Driver, c.Database.Source)
-// 新库: AutoMigrateWithData；已有 legacy 库: InitBasicData + CreateDefaultAdminUser
+// MySQL/PostgreSQL 新库: AutoMigrateWithData；已有 MySQL legacy 库: 兼容迁移 + InitBasicData
 ```
 
 ### 2. 手动迁移
@@ -64,7 +65,12 @@ make migrate   # 提示：新库首次启动时自动完成结构+数据迁移
 ```
 
 #### 迁移验证
-当前仓库未提供独立迁移测试命令。请启动服务并检查日志，或查询 `auth_method.config` 等表确认数据已写入。
+双方言迁移集成测试可通过 `NPANEL_TEST_MYSQL_DSN` 与 `NPANEL_TEST_POSTGRES_DSN` 启用：
+
+```bash
+NPANEL_TEST_MYSQL_DSN='...' NPANEL_TEST_POSTGRES_DSN='...' \
+  go test ./internal/migrate -run TestPortableBaselineAgainstDatabase -v -count=1
+```
 
 ## 默认数据详情
 
@@ -124,6 +130,15 @@ data:
     min_idle_conns: 5
 ```
 
+PostgreSQL 使用 `driver: postgres` 和标准连接 URL，例如：
+
+```yaml
+data:
+  database:
+    driver: postgres
+    source: postgres://npanel:password@127.0.0.1:5432/npanel?sslmode=disable
+```
+
 ## 生产环境注意事项
 
 ### 1. 安全配置
@@ -133,7 +148,7 @@ data:
 
 ### 2. 数据备份
 - 迁移前备份现有数据
-- 请使用数据库原生备份工具（如 `mysqldump`）备份重要配置
+- 请使用数据库原生备份工具（如 `mysqldump` 或 `pg_dump`）备份重要配置
 
 ### 3. 性能考虑
 - 大量数据迁移时建议分批执行

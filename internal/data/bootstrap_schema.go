@@ -2,8 +2,9 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+
+	"github.com/npanel-dev/NPanel-backend/internal/database"
 )
 
 func hasExistingLegacySchema(ctx context.Context, driverName, dataSourceName string) (bool, error) {
@@ -21,20 +22,19 @@ func hasExistingLegacySchema(ctx context.Context, driverName, dataSourceName str
 }
 
 func hasDatabaseTable(ctx context.Context, driverName, dataSourceName, tableName string) (bool, error) {
-	db, err := sql.Open(driverName, dataSourceName)
+	driver, err := database.NormalizeDriver(driverName)
+	if err != nil {
+		return false, err
+	}
+	db, err := database.OpenSQL(driver, dataSourceName)
 	if err != nil {
 		return false, fmt.Errorf("open sql db: %w", err)
 	}
 	defer db.Close()
 
-	var count int
-	if err := db.QueryRowContext(
-		ctx,
-		`SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?`,
-		tableName,
-	).Scan(&count); err != nil {
+	exists, err := database.TableExists(ctx, db, driver, tableName)
+	if err != nil {
 		return false, fmt.Errorf("query table %s existence failed: %w", tableName, err)
 	}
-
-	return count > 0, nil
+	return exists, nil
 }

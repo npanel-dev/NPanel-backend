@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxysystemlog"
 	logbiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/log"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type adminSystemLogRepo struct {
@@ -59,7 +59,7 @@ func (r *adminSystemLogRepo) FilterSystemLog(ctx context.Context, params *logbiz
 
 			// 搜索过滤（在content中搜索）
 			if params.Search != "" {
-				s.Where(sql.Contains(s.C(proxysystemlog.FieldContent), params.Search))
+				s.Where(sql.ContainsFold(s.C(proxysystemlog.FieldContent), params.Search))
 			}
 		})
 

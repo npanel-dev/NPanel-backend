@@ -68,8 +68,8 @@ func (r *publicTicketRepo) GetTicketList(ctx context.Context, userID int, page, 
 	if search != nil && *search != "" {
 		r.logger.Infof("[GetTicketList] 搜索关键字: %s", *search)
 		query = query.Where(proxyticket.Or(
-			proxyticket.TitleContains(*search),
-			proxyticket.DescriptionContains(*search),
+			proxyticket.TitleContainsFold(*search),
+			proxyticket.DescriptionContainsFold(*search),
 		))
 	}
 

@@ -18,11 +18,18 @@ ADMIN_EMAIL="${NPANEL_ADMIN_EMAIL:-admin@npanel.dev}"
 FORCE_CONFIG="${NPANEL_FORCE_CONFIG:-0}"
 BIN_NAME="npanel"
 
+DATABASE_DRIVER="${NPANEL_DATABASE_DRIVER:-mysql}"
+DATABASE_DRIVER_SET="${NPANEL_DATABASE_DRIVER:+1}"
 MYSQL_HOST="${NPANEL_MYSQL_HOST:-127.0.0.1}"
 MYSQL_PORT="${NPANEL_MYSQL_PORT:-3306}"
 MYSQL_DATABASE="${NPANEL_MYSQL_DATABASE:-npanel}"
 MYSQL_USER="${NPANEL_MYSQL_USER:-npanel}"
 MYSQL_PASSWORD="${NPANEL_MYSQL_PASSWORD:-}"
+POSTGRES_HOST="${NPANEL_POSTGRES_HOST:-127.0.0.1}"
+POSTGRES_PORT="${NPANEL_POSTGRES_PORT:-5432}"
+POSTGRES_DATABASE="${NPANEL_POSTGRES_DATABASE:-npanel}"
+POSTGRES_USER="${NPANEL_POSTGRES_USER:-npanel}"
+POSTGRES_PASSWORD="${NPANEL_POSTGRES_PASSWORD:-}"
 REDIS_HOST="${NPANEL_REDIS_HOST:-127.0.0.1}"
 REDIS_PORT="${NPANEL_REDIS_PORT:-6379}"
 REDIS_PASSWORD="${NPANEL_REDIS_PASSWORD:-}"
@@ -99,6 +106,10 @@ yaml_escape() {
     printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
+url_encode() {
+    jq -nr --arg value "$1" '$value | @uri'
+}
+
 usage() {
     cat <<EOF
 NPanel Backend one-click installer
@@ -110,12 +121,13 @@ Usage:
   bash install.sh --mode binary
 
 Interactive menu:
-  1) Docker all-in-one: installs Docker when needed, starts MySQL 8, Redis, and NPanel with Docker Compose.
-  2) Local binary: installs NPanel on this server and asks for external/local MySQL and Redis connection info.
+  1) Docker all-in-one: installs Docker when needed, starts MySQL 8 or PostgreSQL 17, Redis, and NPanel.
+  2) Local binary: installs NPanel and asks for external/local database and Redis connection info.
 
 Options:
   -v, --version VERSION       NPanel build version, default: latest GitHub release
       --mode MODE             docker or binary; omit it to show the interactive menu
+      --database DRIVER       mysql or postgres, default: ${DATABASE_DRIVER}
       --source-ref REF        Git branch/tag for Docker source checkout, default: ${SOURCE_REF}
       --http-port PORT        Host HTTP port, default: ${HTTP_PORT}
       --grpc-port PORT        Host gRPC port, default: ${GRPC_PORT}
@@ -130,11 +142,17 @@ Environment:
   NPANEL_INSTALL_DIR          Source/install directory, default: ${INSTALL_DIR}
   NPANEL_CONFIG_DIR           Runtime config directory, default: ${CONFIG_DIR}
   NPANEL_INSTALL_MODE         docker or binary
+  NPANEL_DATABASE_DRIVER      mysql or postgres, default: ${DATABASE_DRIVER}
   NPANEL_MYSQL_HOST           MySQL host for binary mode, default: ${MYSQL_HOST}
   NPANEL_MYSQL_PORT           MySQL port for binary mode, default: ${MYSQL_PORT}
   NPANEL_MYSQL_DATABASE       MySQL database for binary mode, default: ${MYSQL_DATABASE}
   NPANEL_MYSQL_USER           MySQL user for binary mode, default: ${MYSQL_USER}
   NPANEL_MYSQL_PASSWORD       MySQL password for binary mode
+  NPANEL_POSTGRES_HOST        PostgreSQL host for binary mode, default: ${POSTGRES_HOST}
+  NPANEL_POSTGRES_PORT        PostgreSQL port for binary mode, default: ${POSTGRES_PORT}
+  NPANEL_POSTGRES_DATABASE    PostgreSQL database for binary mode, default: ${POSTGRES_DATABASE}
+  NPANEL_POSTGRES_USER        PostgreSQL user for binary mode, default: ${POSTGRES_USER}
+  NPANEL_POSTGRES_PASSWORD    PostgreSQL password for binary mode
   NPANEL_REDIS_HOST           Redis host for binary mode, default: ${REDIS_HOST}
   NPANEL_REDIS_PORT           Redis port for binary mode, default: ${REDIS_PORT}
   NPANEL_REDIS_PASSWORD       Redis password for binary mode; empty is allowed
@@ -143,7 +161,80 @@ Examples:
   curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash
   curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- v1.0.9
   curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- --source-ref dev
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- --mode docker --database postgres
 EOF
+}
+
+normalized_database_driver_value() {
+    local value="${1:-}"
+    value="$(printf '%s' "${value}" | tr '[:upper:]' '[:lower:]')"
+    case "${value}" in
+        mysql)
+            printf 'mysql'
+            ;;
+        postgres | postgresql)
+            printf 'postgres'
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+normalize_database_driver() {
+    local normalized
+    if ! normalized="$(normalized_database_driver_value "${DATABASE_DRIVER}")"; then
+        error "数据库仅支持 mysql 或 postgres：${DATABASE_DRIVER}"
+    fi
+    DATABASE_DRIVER="${normalized}"
+}
+
+database_driver_from_env_file() {
+    local env_file="$1"
+    local value
+
+    value="$(sed -n 's/^NPANEL_DATABASE_DRIVER=//p' "${env_file}" | tail -n 1)"
+    if [[ -n "${value}" ]]; then
+        normalized_database_driver_value "${value}"
+        return
+    fi
+    if grep -q '^POSTGRES_\(DB\|USER\|PASSWORD\)=' "${env_file}"; then
+        printf 'postgres'
+    elif grep -q '^MYSQL_\(DATABASE\|USER\|PASSWORD\)=' "${env_file}"; then
+        printf 'mysql'
+    fi
+    return 0
+}
+
+env_file_value() {
+    local env_file="$1"
+    local key="$2"
+
+    sed -n "s/^${key}=//p" "${env_file}" | tail -n 1
+}
+
+database_driver_from_config_file() {
+    local config_file="$1"
+    local value
+
+    value="$(awk '$1 == "driver:" { print $2; exit }' "${config_file}")"
+    if [[ -n "${value}" ]]; then
+        normalized_database_driver_value "${value}"
+    fi
+}
+
+ensure_existing_config_driver_matches() {
+    local existing_driver
+
+    if [[ ! -f "${CONFIG_FILE}" ]]; then
+        return
+    fi
+    if ! existing_driver="$(database_driver_from_config_file "${CONFIG_FILE}")" || [[ -z "${existing_driver}" ]]; then
+        error "无法识别已有配置 ${CONFIG_FILE} 的 data.database.driver；请检查配置或使用 --force-config"
+    fi
+    if [[ "${existing_driver}" != "${DATABASE_DRIVER}" ]]; then
+        error "已有配置使用 ${existing_driver}，当前选择 ${DATABASE_DRIVER}；如需切换数据库请先备份，再使用 --force-config"
+    fi
 }
 
 require_root() {
@@ -257,6 +348,17 @@ parse_args() {
                 MODE="${1#*=}"
                 shift
                 ;;
+            --database | --database-driver)
+                [[ "$#" -ge 2 ]] || error "$1 需要 mysql 或 postgres"
+                DATABASE_DRIVER="$2"
+                DATABASE_DRIVER_SET=1
+                shift 2
+                ;;
+            --database=* | --database-driver=*)
+                DATABASE_DRIVER="${1#*=}"
+                DATABASE_DRIVER_SET=1
+                shift
+                ;;
             --source-ref)
                 [[ "$#" -ge 2 ]] || error "--source-ref 需要分支或标签"
                 SOURCE_REF="$2"
@@ -327,6 +429,8 @@ parse_args() {
         VERSION="v${VERSION}"
     fi
 
+    normalize_database_driver
+
     if [[ "${SITE_HOST}" == "localhost:8081" && "${HTTP_PORT}" != "8081" ]]; then
         SITE_HOST="localhost:${HTTP_PORT}"
     fi
@@ -346,8 +450,8 @@ prompt_install_mode() {
     cat >/dev/tty <<EOF
 
 请选择 NPanel Backend 部署方式：
-  1) Docker 一键部署（自动安装 Docker、MySQL 8、Redis、NPanel）
-  2) 本机安装 NPanel（二进制 + systemd，手动输入 MySQL/Redis 信息）
+  1) Docker 一键部署（自动安装 Docker、数据库、Redis、NPanel）
+  2) 本机安装 NPanel（二进制 + systemd，手动输入数据库/Redis 信息）
 
 EOF
     choice="$(prompt_read "请输入选项" "1")"
@@ -361,6 +465,33 @@ EOF
         *)
             error "无效选项：${choice}"
             ;;
+    esac
+}
+
+prompt_database_driver() {
+    local choice
+
+    if [[ -n "${DATABASE_DRIVER_SET}" ]]; then
+        normalize_database_driver
+        return
+    fi
+    if ! has_tty; then
+        normalize_database_driver
+        return
+    fi
+
+    cat >/dev/tty <<EOF
+
+请选择数据库：
+  1) MySQL 8（默认）
+  2) PostgreSQL 17
+
+EOF
+    choice="$(prompt_read "请输入选项" "1")"
+    case "${choice}" in
+        1 | mysql | MySQL | MYSQL) DATABASE_DRIVER="mysql" ;;
+        2 | postgres | postgresql | PostgreSQL | POSTGRESQL) DATABASE_DRIVER="postgres" ;;
+        *) error "无效数据库选项：${choice}" ;;
     esac
 }
 
@@ -423,33 +554,82 @@ checkout_source() {
 }
 
 write_runtime_env() {
+    local requested_driver="${DATABASE_DRIVER}"
+    local existing_driver=""
+
     mkdir -p "${CONFIG_DIR}"
 
     if [[ -f "${ENV_FILE}" && "${FORCE_CONFIG}" != "1" ]]; then
         info "保留已有运行环境变量：${ENV_FILE}"
+        if ! existing_driver="$(database_driver_from_env_file "${ENV_FILE}")"; then
+            error "无法识别已有环境变量 ${ENV_FILE} 的 NPANEL_DATABASE_DRIVER"
+        fi
+        if [[ -n "${existing_driver}" && -n "${DATABASE_DRIVER_SET}" && "${existing_driver}" != "${requested_driver}" ]]; then
+            error "已有环境变量使用 ${existing_driver}，当前选择 ${requested_driver}；如需切换数据库请先备份，再使用 --force-config"
+        fi
         # shellcheck disable=SC1090
         source "${ENV_FILE}"
         HTTP_PORT="${NPANEL_HTTP_PORT:-${HTTP_PORT}}"
         GRPC_PORT="${NPANEL_GRPC_PORT:-${GRPC_PORT}}"
+        DATABASE_DRIVER="${existing_driver:-${NPANEL_DATABASE_DRIVER:-${requested_driver}}}"
+        normalize_database_driver
         ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
         return
     fi
 
-    MYSQL_ROOT_PASSWORD="$(random_hex 24)"
-    MYSQL_PASSWORD="$(random_hex 24)"
-    REDIS_PASSWORD="$(random_hex 24)"
-    JWT_SECRET="$(random_hex 32)"
-    ADMIN_PASSWORD="$(random_hex 8)"
+    if [[ -f "${ENV_FILE}" ]]; then
+        if ! existing_driver="$(database_driver_from_env_file "${ENV_FILE}")"; then
+            error "无法识别已有环境变量 ${ENV_FILE} 的 NPANEL_DATABASE_DRIVER"
+        fi
+
+        # Rewriting configuration must not silently rotate credentials that
+        # still protect an existing database volume or running installation.
+        # Explicit NPANEL_* values loaded above continue to take precedence.
+        if [[ "${existing_driver}" == "${DATABASE_DRIVER}" ]]; then
+            if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+                MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$(env_file_value "${ENV_FILE}" MYSQL_ROOT_PASSWORD)}"
+                MYSQL_PASSWORD="${MYSQL_PASSWORD:-$(env_file_value "${ENV_FILE}" MYSQL_PASSWORD)}"
+            else
+                POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-$(env_file_value "${ENV_FILE}" POSTGRES_PASSWORD)}"
+            fi
+        fi
+        REDIS_PASSWORD="${REDIS_PASSWORD:-$(env_file_value "${ENV_FILE}" REDIS_PASSWORD)}"
+        JWT_SECRET="${JWT_SECRET:-$(env_file_value "${ENV_FILE}" JWT_SECRET)}"
+        ADMIN_PASSWORD="${ADMIN_PASSWORD:-$(env_file_value "${ENV_FILE}" ADMIN_PASSWORD)}"
+    fi
+
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$(random_hex 24)}"
+        MYSQL_PASSWORD="${MYSQL_PASSWORD:-$(random_hex 24)}"
+    else
+        POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-$(random_hex 24)}"
+    fi
+    REDIS_PASSWORD="${REDIS_PASSWORD:-$(random_hex 24)}"
+    JWT_SECRET="${JWT_SECRET:-$(random_hex 32)}"
+    ADMIN_PASSWORD="${ADMIN_PASSWORD:-$(random_hex 8)}"
 
     info "生成运行环境变量：${ENV_FILE}"
     cat >"${ENV_FILE}" <<EOF
 NPANEL_VERSION=${VERSION}
 NPANEL_HTTP_PORT=${HTTP_PORT}
 NPANEL_GRPC_PORT=${GRPC_PORT}
+NPANEL_DATABASE_DRIVER=${DATABASE_DRIVER}
+EOF
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        cat >>"${ENV_FILE}" <<EOF
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 MYSQL_DATABASE=npanel
 MYSQL_USER=npanel
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
+EOF
+    else
+        cat >>"${ENV_FILE}" <<EOF
+POSTGRES_DB=npanel
+POSTGRES_USER=npanel
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+EOF
+    fi
+    cat >>"${ENV_FILE}" <<EOF
 REDIS_PASSWORD=${REDIS_PASSWORD}
 ADMIN_EMAIL=${ADMIN_EMAIL}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
@@ -461,12 +641,21 @@ EOF
 }
 
 write_docker_config() {
+    local database_source
+
     if [[ -f "${CONFIG_FILE}" && "${FORCE_CONFIG}" != "1" ]]; then
+        ensure_existing_config_driver_matches
         info "保留已有配置：${CONFIG_FILE}"
         return
     fi
 
-    info "写入 NPanel 配置：${CONFIG_FILE}"
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        database_source="npanel:${MYSQL_PASSWORD}@tcp(mysql:3306)/npanel?parseTime=True&loc=Local"
+    else
+        database_source="postgres://npanel:${POSTGRES_PASSWORD}@postgres:5432/npanel?sslmode=disable"
+    fi
+
+    info "写入 NPanel 配置：${CONFIG_FILE}（${DATABASE_DRIVER}）"
     cat >"${CONFIG_FILE}" <<EOF
 server:
   http:
@@ -514,8 +703,8 @@ log:
 
 data:
   database:
-    driver: mysql
-    source: npanel:${MYSQL_PASSWORD}@tcp(mysql:3306)/npanel?parseTime=True&loc=Local
+    driver: ${DATABASE_DRIVER}
+    source: ${database_source}
   redis:
     addr: redis:6379
     password: "${REDIS_PASSWORD}"
@@ -585,8 +774,9 @@ EOF
 
 write_compose_file() {
     info "写入 Docker Compose 配置：${COMPOSE_FILE}"
-    cat >"${COMPOSE_FILE}" <<EOF
-services:
+    printf 'services:\n' >"${COMPOSE_FILE}"
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        cat >>"${COMPOSE_FILE}" <<EOF
   mysql:
     image: mysql:8.4
     restart: unless-stopped
@@ -606,6 +796,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+
+EOF
+    else
+        cat >>"${COMPOSE_FILE}" <<EOF
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: \${POSTGRES_DB}
+      POSTGRES_USER: \${POSTGRES_USER}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
+      TZ: UTC
+    volumes:
+      - npanel_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "\$\${POSTGRES_USER}" -d "\$\${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+EOF
+    fi
+    cat >>"${COMPOSE_FILE}" <<EOF
 
   redis:
     image: redis:7-alpine
@@ -627,7 +840,7 @@ services:
     image: npanel:latest
     restart: unless-stopped
     depends_on:
-      mysql:
+      ${DATABASE_DRIVER}:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -642,7 +855,7 @@ services:
       NPANEL_UPLOAD_DIR: \${NPANEL_UPLOAD_DIR:-/app/uploads}
 
 volumes:
-  npanel_mysql:
+  npanel_${DATABASE_DRIVER}:
   npanel_redis:
   npanel_logs:
   npanel_uploads:
@@ -747,15 +960,27 @@ collect_binary_config() {
         return
     fi
 
-    cat >/dev/tty <<EOF
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        cat >/dev/tty <<EOF
 
 请输入 MySQL 连接信息：
 EOF
-    MYSQL_HOST="$(prompt_read "MySQL 地址" "${MYSQL_HOST}")"
-    MYSQL_PORT="$(prompt_read "MySQL 端口" "${MYSQL_PORT}")"
-    MYSQL_DATABASE="$(prompt_read "MySQL 数据库名" "${MYSQL_DATABASE}")"
-    MYSQL_USER="$(prompt_read "MySQL 账号" "${MYSQL_USER}")"
-    MYSQL_PASSWORD="$(prompt_read "MySQL 密码" "${MYSQL_PASSWORD}" 1)"
+        MYSQL_HOST="$(prompt_read "MySQL 地址" "${MYSQL_HOST}")"
+        MYSQL_PORT="$(prompt_read "MySQL 端口" "${MYSQL_PORT}")"
+        MYSQL_DATABASE="$(prompt_read "MySQL 数据库名" "${MYSQL_DATABASE}")"
+        MYSQL_USER="$(prompt_read "MySQL 账号" "${MYSQL_USER}")"
+        MYSQL_PASSWORD="$(prompt_read "MySQL 密码" "${MYSQL_PASSWORD}" 1)"
+    else
+        cat >/dev/tty <<EOF
+
+请输入 PostgreSQL 连接信息：
+EOF
+        POSTGRES_HOST="$(prompt_read "PostgreSQL 地址" "${POSTGRES_HOST}")"
+        POSTGRES_PORT="$(prompt_read "PostgreSQL 端口" "${POSTGRES_PORT}")"
+        POSTGRES_DATABASE="$(prompt_read "PostgreSQL 数据库名" "${POSTGRES_DATABASE}")"
+        POSTGRES_USER="$(prompt_read "PostgreSQL 账号" "${POSTGRES_USER}")"
+        POSTGRES_PASSWORD="$(prompt_read "PostgreSQL 密码" "${POSTGRES_PASSWORD}" 1)"
+    fi
 
     cat >/dev/tty <<EOF
 
@@ -771,13 +996,14 @@ EOF
 }
 
 write_binary_config() {
-    local mysql_host mysql_port mysql_database mysql_user mysql_password
+    local database_source
     local redis_host redis_port redis_password jwt_secret admin_email admin_password site_host
 
     if [[ -f "${CONFIG_FILE}" && "${FORCE_CONFIG}" != "1" ]]; then
         if has_tty && prompt_yes_no "${CONFIG_FILE} 已存在，是否覆盖" "n"; then
             FORCE_CONFIG=1
         else
+            ensure_existing_config_driver_matches
             info "保留已有配置：${CONFIG_FILE}"
             return
         fi
@@ -785,11 +1011,12 @@ write_binary_config() {
 
     mkdir -p "${CONFIG_DIR}"
 
-    mysql_host="$(yaml_escape "${MYSQL_HOST}")"
-    mysql_port="$(yaml_escape "${MYSQL_PORT}")"
-    mysql_database="$(yaml_escape "${MYSQL_DATABASE}")"
-    mysql_user="$(yaml_escape "${MYSQL_USER}")"
-    mysql_password="$(yaml_escape "${MYSQL_PASSWORD}")"
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        database_source="${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=True&loc=Local"
+    else
+        database_source="postgres://$(url_encode "${POSTGRES_USER}"):$(url_encode "${POSTGRES_PASSWORD}")@${POSTGRES_HOST}:${POSTGRES_PORT}/$(url_encode "${POSTGRES_DATABASE}")?sslmode=disable"
+    fi
+    database_source="$(yaml_escape "${database_source}")"
     redis_host="$(yaml_escape "${REDIS_HOST}")"
     redis_port="$(yaml_escape "${REDIS_PORT}")"
     redis_password="$(yaml_escape "${REDIS_PASSWORD}")"
@@ -802,10 +1029,10 @@ write_binary_config() {
     cat >"${CONFIG_FILE}" <<EOF
 server:
   http:
-    addr: 0.0.0.0:8081
+    addr: 0.0.0.0:${HTTP_PORT}
     timeout: 55s
   grpc:
-    addr: 0.0.0.0:9012
+    addr: 0.0.0.0:${GRPC_PORT}
     timeout: 55s
   auth:
     enable_jwt: true
@@ -846,8 +1073,8 @@ log:
 
 data:
   database:
-    driver: mysql
-    source: "${mysql_user}:${mysql_password}@tcp(${mysql_host}:${mysql_port})/${mysql_database}?parseTime=True&loc=Local"
+    driver: ${DATABASE_DRIVER}
+    source: "${database_source}"
   redis:
     addr: "${redis_host}:${redis_port}"
     password: "${redis_password}"
@@ -990,6 +1217,12 @@ start_systemd_service() {
 }
 
 print_binary_summary() {
+    local database_summary
+    if [[ "${DATABASE_DRIVER}" == "mysql" ]]; then
+        database_summary="MySQL: ${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}"
+    else
+        database_summary="PostgreSQL: ${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}"
+    fi
     cat <<EOF
 
 ${green}NPanel Backend ${VERSION} 二进制模式安装完成${plain}
@@ -997,20 +1230,21 @@ ${green}NPanel Backend ${VERSION} 二进制模式安装完成${plain}
 安装目录: ${INSTALL_DIR}
 配置文件: ${CONFIG_FILE}
 服务名称: ${SERVICE_NAME}
-HTTP API: http://服务器IP:8081
-gRPC: 服务器IP:9012
+HTTP API: http://服务器IP:${HTTP_PORT}
+gRPC: 服务器IP:${GRPC_PORT}
 
 常用命令:
   systemctl status ${SERVICE_NAME}
   journalctl -u ${SERVICE_NAME} -f
   systemctl restart ${SERVICE_NAME}
 
-MySQL: ${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
+数据库: ${DATABASE_DRIVER}
+${database_summary}
 Redis: ${REDIS_HOST}:${REDIS_PORT}
 默认管理员: ${ADMIN_EMAIL}
 默认密码: ${ADMIN_PASSWORD}
 
-二进制模式不会安装 Docker，也不会安装 MySQL/Redis；请确认上面的数据库服务可从本机访问。
+二进制模式不会安装 Docker，也不会安装数据库/Redis；请确认上面的服务可从本机访问。
 EOF
 }
 
@@ -1031,6 +1265,7 @@ main() {
     detect_arch
     detect_pkg_manager
     prompt_install_mode
+    prompt_database_driver
     install_packages
     fetch_latest_version
 
@@ -1041,4 +1276,6 @@ main() {
     fi
 }
 
-main "$@"
+if [[ "${NPANEL_INSTALL_SOURCE_ONLY:-0}" != "1" ]]; then
+    main "$@"
+fi

@@ -187,9 +187,9 @@ func (r *orderRepo) GetOrderList(ctx context.Context, page, size, userID int, st
 	if search != "" {
 		query = query.Where(
 			proxyorder.Or(
-				proxyorder.OrderNoContains(search),
-				proxyorder.TradeNoContains(search),
-				proxyorder.CouponContains(search),
+				proxyorder.OrderNoContainsFold(search),
+				proxyorder.TradeNoContainsFold(search),
+				proxyorder.CouponContainsFold(search),
 			),
 		)
 	}

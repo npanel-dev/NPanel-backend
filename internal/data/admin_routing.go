@@ -83,10 +83,10 @@ func (r *adminRoutingRepo) ListProfiles(ctx context.Context, page, size int, sea
 	query := r.data.db.ProxyRoutingProfile.Query()
 	if search != "" {
 		query = query.Where(proxyroutingprofile.Or(
-			proxyroutingprofile.CodeContains(search),
-			proxyroutingprofile.NameContains(search),
-			proxyroutingprofile.ScopeTypeContains(search),
-			proxyroutingprofile.ScopeIDContains(search),
+			proxyroutingprofile.CodeContainsFold(search),
+			proxyroutingprofile.NameContainsFold(search),
+			proxyroutingprofile.ScopeTypeContainsFold(search),
+			proxyroutingprofile.ScopeIDContainsFold(search),
 		))
 	}
 	if enabled != nil {
@@ -165,7 +165,7 @@ func (r *adminRoutingRepo) ListRules(ctx context.Context, page, size int, profil
 		query = query.Where(proxyroutingrule.ProfileID(profileID))
 	}
 	if search != "" {
-		query = query.Where(proxyroutingrule.Or(proxyroutingrule.NameContains(search), proxyroutingrule.ServiceCodeContains(search)))
+		query = query.Where(proxyroutingrule.Or(proxyroutingrule.NameContainsFold(search), proxyroutingrule.ServiceCodeContainsFold(search)))
 	}
 	if enabled != nil {
 		query = query.Where(proxyroutingrule.Enabled(*enabled))
@@ -240,7 +240,7 @@ func (r *adminRoutingRepo) FindDNSResolverByID(ctx context.Context, id int64) (*
 func (r *adminRoutingRepo) ListDNSResolvers(ctx context.Context, page, size int, search string, enabled *bool) ([]*routingbiz.DNSResolver, int32, error) {
 	query := r.data.db.ProxyRoutingDNSResolver.Query()
 	if search != "" {
-		query = query.Where(proxyroutingdnsresolver.Or(proxyroutingdnsresolver.TagContains(search), proxyroutingdnsresolver.NameContains(search)))
+		query = query.Where(proxyroutingdnsresolver.Or(proxyroutingdnsresolver.TagContainsFold(search), proxyroutingdnsresolver.NameContainsFold(search)))
 	}
 	if enabled != nil {
 		query = query.Where(proxyroutingdnsresolver.Enabled(*enabled))
@@ -311,7 +311,7 @@ func (r *adminRoutingRepo) FindOutboundByID(ctx context.Context, id int64) (*rou
 func (r *adminRoutingRepo) ListOutbounds(ctx context.Context, page, size int, search string, enabled *bool) ([]*routingbiz.RouteOutbound, int32, error) {
 	query := r.data.db.ProxyRoutingOutbound.Query()
 	if search != "" {
-		query = query.Where(proxyroutingoutbound.Or(proxyroutingoutbound.TagContains(search), proxyroutingoutbound.NameContains(search)))
+		query = query.Where(proxyroutingoutbound.Or(proxyroutingoutbound.TagContainsFold(search), proxyroutingoutbound.NameContainsFold(search)))
 	}
 	if enabled != nil {
 		query = query.Where(proxyroutingoutbound.Enabled(*enabled))
@@ -380,7 +380,7 @@ func (r *adminRoutingRepo) FindUnlockServiceByID(ctx context.Context, id int64) 
 func (r *adminRoutingRepo) ListUnlockServices(ctx context.Context, page, size int, search string, enabled *bool) ([]*routingbiz.UnlockService, int32, error) {
 	query := r.data.db.ProxyRoutingUnlockService.Query()
 	if search != "" {
-		query = query.Where(proxyroutingunlockservice.Or(proxyroutingunlockservice.CodeContains(search), proxyroutingunlockservice.NameContains(search)))
+		query = query.Where(proxyroutingunlockservice.Or(proxyroutingunlockservice.CodeContainsFold(search), proxyroutingunlockservice.NameContainsFold(search)))
 	}
 	if enabled != nil {
 		query = query.Where(proxyroutingunlockservice.Enabled(*enabled))
@@ -457,7 +457,7 @@ func (r *adminRoutingRepo) ListHealthReports(ctx context.Context, page, size int
 		query = query.Where(proxyroutinghealthreport.SubjectTypeEQ(subjectType))
 	}
 	if subjectKey != "" {
-		query = query.Where(proxyroutinghealthreport.SubjectKeyContains(subjectKey))
+		query = query.Where(proxyroutinghealthreport.SubjectKeyContainsFold(subjectKey))
 	}
 	if reporterType != "" {
 		query = query.Where(proxyroutinghealthreport.ReporterTypeEQ(reporterType))
@@ -516,7 +516,7 @@ func (r *adminRoutingRepo) ListRouteEvents(ctx context.Context, page, size int, 
 		query = query.Where(proxyroutingrouteevent.EventTypeEQ(eventType))
 	}
 	if profileCode != "" {
-		query = query.Where(proxyroutingrouteevent.ProfileCodeContains(profileCode))
+		query = query.Where(proxyroutingrouteevent.ProfileCodeContainsFold(profileCode))
 	}
 	if reporterType != "" {
 		query = query.Where(proxyroutingrouteevent.ReporterTypeEQ(reporterType))
@@ -608,7 +608,7 @@ func (r *adminRoutingRepo) FindGrayReleaseByID(ctx context.Context, id int64) (*
 func (r *adminRoutingRepo) ListGrayReleases(ctx context.Context, page, size int, profileCode, status string) ([]*routingbiz.RoutingGrayRelease, int32, error) {
 	query := r.data.db.ProxyRoutingGrayRelease.Query()
 	if profileCode != "" {
-		query = query.Where(proxyroutinggrayrelease.ProfileCodeContains(profileCode))
+		query = query.Where(proxyroutinggrayrelease.ProfileCodeContainsFold(profileCode))
 	}
 	if status != "" {
 		query = query.Where(proxyroutinggrayrelease.StatusEQ(status))

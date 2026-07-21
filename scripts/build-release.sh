@@ -46,7 +46,7 @@ for target in $TARGETS; do
   fi
 
   cp README.md README.zh-CN.md LICENSE openapi.yaml "$workdir/"
-  cp configs/config.yaml configs/config.docker.yaml "$workdir/configs/"
+  cp configs/config.yaml configs/config.docker.yaml configs/config.postgres.yaml "$workdir/configs/"
 
   (
     cd "$DIST_DIR"
