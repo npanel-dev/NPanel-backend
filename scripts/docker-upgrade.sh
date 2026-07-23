@@ -12,13 +12,19 @@ if [ ! -f "$COMPOSE_FILE" ]; then
   exit 1
 fi
 
-if [ "${SKIP_GIT_PULL:-0}" != "1" ] && [ -d .git ]; then
-  echo "==> Updating source tree"
-  git pull --ff-only
+# Auto-detect whether the npanel service is built locally or pulled from a
+# registry. A `build:` block means local build; otherwise pull the image.
+if grep -Eq '^[[:space:]]*build:' "$COMPOSE_FILE"; then
+  if [ "${SKIP_GIT_PULL:-0}" != "1" ] && [ -d .git ]; then
+    echo "==> Updating source tree"
+    git pull --ff-only
+  fi
+  echo "==> Rebuilding NPanel backend image"
+  $COMPOSE -f "$COMPOSE_FILE" build npanel
+else
+  echo "==> Pulling NPanel backend image"
+  $COMPOSE -f "$COMPOSE_FILE" pull npanel
 fi
-
-echo "==> Rebuilding NPanel backend image"
-$COMPOSE -f "$COMPOSE_FILE" build npanel
 
 echo "==> Restarting NPanel backend container"
 $COMPOSE -f "$COMPOSE_FILE" up -d --no-deps --force-recreate npanel

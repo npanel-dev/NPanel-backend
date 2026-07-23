@@ -31,11 +31,14 @@ services:
       retries: 20
 
   npanel:
-    build:
-      context: .
-      args:
-        VERSION: ${NPANEL_VERSION:-v1.0.9}
-    image: npanel:latest
+    # Pull the published multi-arch image by default.
+    # Override with: NPANEL_IMAGE=... NPANEL_IMAGE_TAG=...
+    # To build locally instead, comment out `image` and uncomment `build`.
+    image: ${NPANEL_IMAGE:-ghcr.io/npanel-dev/npanel-backend}:${NPANEL_IMAGE_TAG:-latest}
+    # build:
+    #   context: .
+    #   args:
+    #     VERSION: ${NPANEL_VERSION:-v1.0.9}
     restart: unless-stopped
     depends_on:
       mysql:

@@ -16,6 +16,11 @@ GRPC_PORT="${NPANEL_GRPC_PORT:-9012}"
 SITE_HOST="${NPANEL_SITE_HOST:-localhost:${HTTP_PORT}}"
 ADMIN_EMAIL="${NPANEL_ADMIN_EMAIL:-admin@npanel.dev}"
 FORCE_CONFIG="${NPANEL_FORCE_CONFIG:-0}"
+# Container image (pulled by default). Override for self-hosted registries.
+IMAGE_NAME="${NPANEL_IMAGE:-ghcr.io/npanel-dev/npanel-backend}"
+IMAGE_TAG="${NPANEL_IMAGE_TAG:-}"
+# Build from source locally instead of pulling the published image.
+BUILD_LOCAL="${NPANEL_BUILD_LOCAL:-0}"
 BIN_NAME="npanel"
 
 DATABASE_DRIVER="${NPANEL_DATABASE_DRIVER:-mysql}"
@@ -128,7 +133,10 @@ Options:
   -v, --version VERSION       NPanel build version, default: latest GitHub release
       --mode MODE             docker or binary; omit it to show the interactive menu
       --database DRIVER       mysql or postgres, default: ${DATABASE_DRIVER}
-      --source-ref REF        Git branch/tag for Docker source checkout, default: ${SOURCE_REF}
+      --source-ref REF        Git branch/tag used only with --build, default: ${SOURCE_REF}
+      --image IMAGE           Container image to pull (docker mode), default: ${IMAGE_NAME}
+      --image-tag TAG         Image tag, default: latest
+      --build                 Build the image locally from source instead of pulling
       --http-port PORT        Host HTTP port, default: ${HTTP_PORT}
       --grpc-port PORT        Host gRPC port, default: ${GRPC_PORT}
       --site-host HOST        app.site.host value, default: ${SITE_HOST}
@@ -138,8 +146,11 @@ Options:
 
 Environment:
   NPANEL_REPO                 GitHub repo, default: ${REPO}
-  NPANEL_SOURCE_REF           Git branch/tag for Docker source checkout
-  NPANEL_INSTALL_DIR          Source/install directory, default: ${INSTALL_DIR}
+  NPANEL_SOURCE_REF           Git branch/tag used only with --build
+  NPANEL_IMAGE                Container image, default: ${IMAGE_NAME}
+  NPANEL_IMAGE_TAG            Container image tag, default: latest
+  NPANEL_BUILD_LOCAL          Set to 1 to build the image locally instead of pulling
+  NPANEL_INSTALL_DIR          Source/install directory (only used with --build), default: ${INSTALL_DIR}
   NPANEL_CONFIG_DIR           Runtime config directory, default: ${CONFIG_DIR}
   NPANEL_INSTALL_MODE         docker or binary
   NPANEL_DATABASE_DRIVER      mysql or postgres, default: ${DATABASE_DRIVER}
@@ -158,10 +169,10 @@ Environment:
   NPANEL_REDIS_PASSWORD       Redis password for binary mode; empty is allowed
 
 Examples:
-  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash
-  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- v1.0.9
-  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- --source-ref dev
-  curl -fsSL https://raw.githubusercontent.com/${REPO}/dev/scripts/install.sh | sudo bash -s -- --mode docker --database postgres
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/scripts/install.sh | sudo bash
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/scripts/install.sh | sudo bash -s -- v1.0.9
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/scripts/install.sh | sudo bash -s -- --mode docker --database postgres
+  curl -fsSL https://raw.githubusercontent.com/${REPO}/main/scripts/install.sh | sudo bash -s -- --build --source-ref dev
 EOF
 }
 
@@ -406,6 +417,29 @@ parse_args() {
                 ;;
             --force-config)
                 FORCE_CONFIG=1
+                shift
+                ;;
+            --build)
+                # Build the image locally from cloned source instead of pulling.
+                BUILD_LOCAL=1
+                shift
+                ;;
+            --image)
+                [[ "$#" -ge 2 ]] || error "--image 需要镜像名"
+                IMAGE_NAME="$2"
+                shift 2
+                ;;
+            --image=*)
+                IMAGE_NAME="${1#*=}"
+                shift
+                ;;
+            --image-tag)
+                [[ "$#" -ge 2 ]] || error "--image-tag 需要标签"
+                IMAGE_TAG="$2"
+                shift 2
+                ;;
+            --image-tag=*)
+                IMAGE_TAG="${1#*=}"
                 shift
                 ;;
             v* | [0-9]*)
@@ -833,11 +867,17 @@ EOF
       retries: 20
 
   npanel:
+    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
+EOF
+    if [[ "${BUILD_LOCAL}" == "1" ]]; then
+        cat >>"${COMPOSE_FILE}" <<EOF
     build:
       context: ${INSTALL_DIR}
       args:
         VERSION: \${NPANEL_VERSION:-${VERSION}}
-    image: npanel:latest
+EOF
+    fi
+    cat >>"${COMPOSE_FILE}" <<EOF
     restart: unless-stopped
     depends_on:
       ${DATABASE_DRIVER}:
@@ -897,8 +937,19 @@ case "\${1:-status}" in
         compose up -d
         ;;
     upgrade)
-        git -C "\${INSTALL_DIR}" pull --ff-only
+EOF
+    if [[ "${BUILD_LOCAL}" == "1" ]]; then
+        cat >>"${MANAGE_BIN}" <<'EOF'
+        git -C "${INSTALL_DIR}" pull --ff-only
         compose up -d --build
+EOF
+    else
+        cat >>"${MANAGE_BIN}" <<'EOF'
+        compose pull npanel
+        compose up -d --force-recreate npanel
+EOF
+    fi
+    cat >>"${MANAGE_BIN}" <<EOF
         ;;
     *)
         echo "Usage: npanel-backend {status|logs|restart|start|stop|upgrade}"
@@ -911,17 +962,25 @@ EOF
 
 start_docker_stack() {
     info "启动 NPanel Backend Docker Compose 服务"
-    docker_compose up -d --build
+    if [[ "${BUILD_LOCAL}" == "1" ]]; then
+        docker_compose up -d --build
+    else
+        docker_compose up -d
+    fi
     docker_compose ps
 }
 
 print_docker_summary() {
     local admin_password="${ADMIN_PASSWORD:-请查看 ${ENV_FILE}}"
+    local source_line=""
+    if [[ "${BUILD_LOCAL}" == "1" ]]; then
+        source_line=$'\n源码目录: '"${INSTALL_DIR}"
+    fi
     cat <<EOF
 
 ${green}NPanel Backend ${VERSION} Docker 模式安装完成${plain}
 
-源码目录: ${INSTALL_DIR}
+镜像: ${IMAGE_NAME}:${IMAGE_TAG:-latest}${source_line}
 运行配置: ${CONFIG_FILE}
 环境变量: ${ENV_FILE}
 Compose 文件: ${COMPOSE_FILE}
@@ -944,7 +1003,11 @@ EOF
 
 install_docker_mode() {
     install_docker
-    checkout_source
+    # Source checkout is only needed when building locally; pulling a
+    # published image does not require the repository.
+    if [[ "${BUILD_LOCAL}" == "1" ]]; then
+        checkout_source
+    fi
     write_runtime_env
     write_docker_config
     write_compose_file

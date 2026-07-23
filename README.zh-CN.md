@@ -66,7 +66,7 @@ Admin / User / Node Clients
 
 ## Docker Compose 快速上手
 
-这是本地或小型服务器部署的推荐方式。默认 Compose 会构建后端镜像，并同时启动 MySQL、Redis 与 NPanel Backend。
+这是本地或小型服务器部署的推荐方式。默认 Compose 会拉取已发布的多架构镜像（`ghcr.io/npanel-dev/npanel-backend:latest`，同时发布到 Docker Hub），并同时启动 MySQL、Redis 与 NPanel Backend。
 
 环境要求：
 
@@ -76,21 +76,32 @@ Admin / User / Node Clients
 启动：
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 使用 PostgreSQL 17：
 
 ```bash
-docker compose -f docker-compose.postgres.yml up -d --build
+docker compose -f docker-compose.postgres.yml up -d
 ```
 
 PostgreSQL 模式下的 `ps`、`logs`、`restart`、`down` 命令也应带上 `-f docker-compose.postgres.yml`。
 
+覆盖镜像版本或 registry：
+
+```bash
+# 指定版本
+NPANEL_IMAGE_TAG=v1.0.9 docker compose up -d
+# 使用 Docker Hub 镜像
+NPANEL_IMAGE=euforest/npanel-backend docker compose up -d
+```
+
+需要从源码本地构建（不拉取官方镜像）时，编辑 `docker-compose.yml` 把 npanel 服务的 `build:` 段取消注释、注释掉 `image:`，或在一键脚本中加 `--build`。
+
 Linux 一键安装脚本也可交互选择数据库，非交互模式可显式指定：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/npanel-dev/NPanel-backend/dev/scripts/install.sh \
+curl -fsSL https://raw.githubusercontent.com/npanel-dev/NPanel-backend/main/scripts/install.sh \
   | sudo bash -s -- --mode docker --database postgres
 ```
 
@@ -116,7 +127,7 @@ docker compose logs -f npanel
 如果宿主机端口已被占用：
 
 ```bash
-NPANEL_HTTP_PORT=18081 NPANEL_GRPC_PORT=19012 docker compose up -d --build
+NPANEL_HTTP_PORT=18081 NPANEL_GRPC_PORT=19012 docker compose up -d
 ```
 
 停止服务：
@@ -170,10 +181,10 @@ docker compose restart npanel
 
 仅在你已经有外部 MySQL/PostgreSQL 和 Redis 时使用。`data.database.driver` 支持 `mysql`、`postgres`（也接受 `postgresql` 别名）。
 
-构建镜像：
+拉取官方镜像（amd64 / arm64 均支持）：
 
 ```bash
-docker build -t npanel .
+docker pull ghcr.io/npanel-dev/npanel-backend:latest
 ```
 
 准备配置目录：
@@ -193,7 +204,7 @@ docker run -d \
   -p 8081:8081 \
   -p 9012:9012 \
   -v "$(pwd)/npanel-config:/data/conf:ro" \
-  npanel
+  ghcr.io/npanel-dev/npanel-backend:latest
 ```
 
 查看日志：
@@ -210,7 +221,7 @@ docker restart npanel
 
 ## 升级流程
 
-使用源码和 Compose 部署时：
+`docker-upgrade.sh` 会自动判断部署方式：如果 `docker-compose.yml` 中的 npanel 服务使用 `image:`（默认，拉取官方镜像），它会 `pull` 新镜像；如果配置了 `build:`（本地构建），它仍会 `git pull` 后重新构建。两种情况都只重建 `npanel` 后端容器，不会动数据库和 Redis。
 
 ```bash
 ./scripts/docker-upgrade.sh
@@ -222,27 +233,19 @@ PostgreSQL Compose 部署请指定对应文件：
 NPANEL_COMPOSE_FILE=docker-compose.postgres.yml ./scripts/docker-upgrade.sh
 ```
 
-脚本会执行 `git pull --ff-only`、重新构建 NPanel 后端镜像，并只重建 `npanel` 后端容器。它不会拉取、升级或重建数据库和 Redis。
-
-如果部署目录存在本地改动，不希望脚本执行 `git pull`，可以运行：
+本地构建模式下，如果部署目录存在本地改动、不希望脚本执行 `git pull`：
 
 ```bash
 SKIP_GIT_PULL=1 ./scripts/docker-upgrade.sh
 ```
 
-如果要指定本地构建的后端版本：
+使用单容器部署时（拉取官方镜像）：
 
 ```bash
-NPANEL_VERSION=v1.0.8 ./scripts/docker-upgrade.sh
-```
-
-使用单容器部署时：
-
-```bash
-docker build -t npanel .
+docker pull ghcr.io/npanel-dev/npanel-backend:latest
 docker stop npanel || true
 docker rm npanel || true
-docker run -d --name npanel -p 8081:8081 -p 9012:9012 -v "$(pwd)/npanel-config:/data/conf:ro" npanel
+docker run -d --name npanel -p 8081:8081 -p 9012:9012 -v "$(pwd)/npanel-config:/data/conf:ro" ghcr.io/npanel-dev/npanel-backend:latest
 ```
 
 生产环境升级前，请先备份数据库和配置文件。
