@@ -31,6 +31,12 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-latest
 
+    # Expose secret presence as a plain env var so it can be referenced in
+    # `if:` conditions and expressions. (The `secrets` context itself cannot
+    # be used directly in step `if:` conditions.)
+    env:
+      HAS_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,9 +61,7 @@ jobs:
           ghcr="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
           echo "ghcr_image=$ghcr" >> "$GITHUB_OUTPUT"
 
-          # Docker Hub image is already lowercase in DOCKERHUB_IMAGE below.
-          echo "dockerhub_image=${{ env.DOCKERHUB_IMAGE }}" >> "$GITHUB_OUTPUT"
-
+          echo "dockerhub_image=euforest/npanel-backend" >> "$GITHUB_OUTPUT"
           echo "Resolved: version=$v  ghcr=$ghcr"
         env:
           DOCKERHUB_IMAGE: euforest/npanel-backend
@@ -79,13 +83,12 @@ jobs:
         uses: docker/login-action@v3
         # Only push to Docker Hub when secrets are configured; otherwise skip
         # gracefully so ghcr.io-only setups still work.
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: env.HAS_DOCKERHUB == 'true'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
-        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -94,8 +97,8 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.ghcr_image }}:${{ steps.meta.outputs.version }}
             ${{ steps.meta.outputs.ghcr_image }}:latest
-            ${{ (secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '') && format('{0}:{1}', steps.meta.outputs.dockerhub_image, steps.meta.outputs.version) || '' }}
-            ${{ (secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '') && format('{0}:latest', steps.meta.outputs.dockerhub_image) || '' }}
+            ${{ env.HAS_DOCKERHUB == 'true' && format('{0}:{1}', steps.meta.outputs.dockerhub_image, steps.meta.outputs.version) || '' }}
+            ${{ env.HAS_DOCKERHUB == 'true' && format('{0}:latest', steps.meta.outputs.dockerhub_image) || '' }}
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
@@ -105,8 +108,6 @@ jobs:
           push: true
 
       - name: Summary
-        env:
-          HAS_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
         run: |
           {
             echo "### Published images"
