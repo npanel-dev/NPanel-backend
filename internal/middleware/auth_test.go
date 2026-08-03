@@ -71,6 +71,11 @@ func TestShouldSkipAuthLegacyAnonymousCoverage(t *testing.T) {
 			operation: "GET /v1/public/payment/methods",
 			want:      false,
 		},
+		{
+			name:      "protected public routing config path",
+			operation: "GET /v1/public/routing/config",
+			want:      false,
+		},
 	}
 
 	for _, tc := range tests {

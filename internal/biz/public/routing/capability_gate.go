@@ -7,26 +7,64 @@ import (
 
 func ApplyClientCapabilities(envelope Envelope, supportedFeatures []string) Envelope {
 	missing := MissingRequiredFeatures(envelope.CapabilityRequirements.RequiredFeatures, supportedFeatures)
-	if len(missing) == 0 {
-		return envelope
+	gated := envelope
+	if len(missing) != 0 {
+		missingSet := featureSet(missing)
+		gated.Mode = ModeObserve
+		gated.DNSResolvers = filterSupportedDNSResolvers(envelope.DNSResolvers, missingSet)
+		gated.Outbounds = filterSupportedOutbounds(envelope.Outbounds, missingSet)
+
+		resolverTags := resolverTagSet(gated.DNSResolvers)
+		outboundTags := outboundTagSet(gated.Outbounds)
+		gated.Profile.DefaultDNSResolverTag = supportedDNSResolverTag(gated.Profile.DefaultDNSResolverTag, resolverTags)
+		gated.Profile.DefaultAction = supportedRouteAction(gated.Profile.DefaultAction, resolverTags, outboundTags)
+		gated.Profile.DefaultFallbackPolicy = supportedFailPolicy(gated.Profile.DefaultFallbackPolicy, missingSet)
+		gated.UnlockServices = supportedUnlockServices(envelope.UnlockServices, resolverTags, outboundTags, missingSet)
+		gated.Rules = supportedRules(envelope.Rules, resolverTags, outboundTags)
+		gated.HealthSnapshot = filterHealthSnapshot(envelope.HealthSnapshot, resolverTags, outboundTags, serviceCodeSet(gated.UnlockServices))
 	}
 
-	missingSet := featureSet(missing)
-	gated := envelope
-	gated.Mode = ModeObserve
-	gated.DNSResolvers = filterSupportedDNSResolvers(envelope.DNSResolvers, missingSet)
-	gated.Outbounds = filterSupportedOutbounds(envelope.Outbounds, missingSet)
+	return normalizeClientEnvelope(gated)
+}
 
-	resolverTags := resolverTagSet(gated.DNSResolvers)
-	outboundTags := outboundTagSet(gated.Outbounds)
-	gated.Profile.DefaultDNSResolverTag = supportedDNSResolverTag(gated.Profile.DefaultDNSResolverTag, resolverTags)
-	gated.Profile.DefaultAction = supportedRouteAction(gated.Profile.DefaultAction, resolverTags, outboundTags)
-	gated.Profile.DefaultFallbackPolicy = supportedFailPolicy(gated.Profile.DefaultFallbackPolicy, missingSet)
-	gated.UnlockServices = supportedUnlockServices(envelope.UnlockServices, resolverTags, outboundTags, missingSet)
-	gated.Rules = supportedRules(envelope.Rules, resolverTags, outboundTags)
-	gated.HealthSnapshot = filterHealthSnapshot(envelope.HealthSnapshot, resolverTags, outboundTags, serviceCodeSet(gated.UnlockServices))
-	gated.RoutingHash = StableHash(gated)
-	return gated
+// normalizeClientEnvelope keeps all schema-declared sequences JSON-compatible
+// with strict clients. A nil Go slice is encoded as null, while Dart/Rust
+// clients deserialize these fields as arrays and expect [] when they are empty.
+func normalizeClientEnvelope(envelope Envelope) Envelope {
+	envelope.CapabilityRequirements.RequiredFeatures = cloneRoutingSlice(envelope.CapabilityRequirements.RequiredFeatures)
+	envelope.CapabilityRequirements.OptionalFeatures = cloneRoutingSlice(envelope.CapabilityRequirements.OptionalFeatures)
+	envelope.CapabilityRequirements.NodeRequiredFeatures = cloneRoutingSlice(envelope.CapabilityRequirements.NodeRequiredFeatures)
+
+	envelope.DNSResolvers = cloneRoutingSlice(envelope.DNSResolvers)
+	for i := range envelope.DNSResolvers {
+		envelope.DNSResolvers[i].Bootstrap = cloneRoutingSlice(envelope.DNSResolvers[i].Bootstrap)
+	}
+
+	envelope.Outbounds = cloneRoutingSlice(envelope.Outbounds)
+	for i := range envelope.Outbounds {
+		envelope.Outbounds[i].ServiceTags = cloneRoutingSlice(envelope.Outbounds[i].ServiceTags)
+		envelope.Outbounds[i].FallbackPoolTags = cloneRoutingSlice(envelope.Outbounds[i].FallbackPoolTags)
+	}
+
+	envelope.UnlockServices = cloneRoutingSlice(envelope.UnlockServices)
+	for i := range envelope.UnlockServices {
+		envelope.UnlockServices[i].Regions = cloneRoutingSlice(envelope.UnlockServices[i].Regions)
+	}
+
+	envelope.Rules = cloneRoutingSlice(envelope.Rules)
+	envelope.HealthSnapshot.Outbounds = cloneRoutingSlice(envelope.HealthSnapshot.Outbounds)
+	envelope.HealthSnapshot.DNSResolvers = cloneRoutingSlice(envelope.HealthSnapshot.DNSResolvers)
+	envelope.HealthSnapshot.Services = cloneRoutingSlice(envelope.HealthSnapshot.Services)
+	envelope.Compat.LegacyDNS = cloneRoutingSlice(envelope.Compat.LegacyDNS)
+	envelope.Compat.LegacyOutbound = cloneRoutingSlice(envelope.Compat.LegacyOutbound)
+	envelope.RoutingHash = StableHash(envelope)
+	return envelope
+}
+
+func cloneRoutingSlice[T any](items []T) []T {
+	result := make([]T, len(items))
+	copy(result, items)
+	return result
 }
 
 func featureSet(features []string) map[string]struct{} {

@@ -11,6 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	adminroutingbiz "github.com/npanel-dev/NPanel-backend/internal/biz/admin/routing"
 	publicrouting "github.com/npanel-dev/NPanel-backend/internal/biz/public/routing"
+	pkgmiddleware "github.com/npanel-dev/NPanel-backend/internal/pkg/middleware"
 	adminroutingservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/routing"
 )
 
@@ -119,6 +120,7 @@ func (r routingHandlerFakeRepo) DeleteGrayRelease(context.Context, int64) error 
 func TestRoutingConfigHeadersBlockUnsupportedDot(t *testing.T) {
 	handler, cache := routingConfigHandlerForTest()
 	req := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=10001", nil)
+	req = req.WithContext(pkgmiddleware.WithUserID(req.Context(), 10001))
 	req.Header.Set("X-Routing-Features", strings.Join(routingHandlerFeatures(), ","))
 	rec := httptest.NewRecorder()
 
@@ -146,6 +148,7 @@ func TestRoutingConfigCacheKeyIncludesSupportedFeatures(t *testing.T) {
 	routing := routingServiceForTest()
 	cache := &publicRoutingCache{}
 	blockedReq := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=10001", nil)
+	blockedReq = blockedReq.WithContext(pkgmiddleware.WithUserID(blockedReq.Context(), 10001))
 	blockedReq.Header.Set("X-Routing-Features", strings.Join(routingHandlerFeatures(), ","))
 	blockedRec := httptest.NewRecorder()
 
@@ -155,6 +158,7 @@ func TestRoutingConfigCacheKeyIncludesSupportedFeatures(t *testing.T) {
 	}
 
 	eligibleReq := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=10001", nil)
+	eligibleReq = eligibleReq.WithContext(pkgmiddleware.WithUserID(eligibleReq.Context(), 10001))
 	eligibleReq.Header.Set("X-Routing-Features", strings.Join(routingHandlerFeatures("dot"), ","))
 	eligibleRec := httptest.NewRecorder()
 	handleRoutingConfig(routing, cache).ServeHTTP(eligibleRec, eligibleReq)
@@ -175,12 +179,14 @@ func TestRoutingConfigIfNoneMatchUsesCapabilityGatedHash(t *testing.T) {
 	routing := routingServiceForTest()
 	cache := &publicRoutingCache{}
 	req := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=10001", nil)
+	req = req.WithContext(pkgmiddleware.WithUserID(req.Context(), 10001))
 	req.Header.Set("X-Routing-Features", strings.Join(routingHandlerFeatures("dot"), ","))
 	rec := httptest.NewRecorder()
 	handleRoutingConfig(routing, cache).ServeHTTP(rec, req)
 	cfg := routingConfigResponseData(t, rec)
 
 	notModifiedReq := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=10001", nil)
+	notModifiedReq = notModifiedReq.WithContext(pkgmiddleware.WithUserID(notModifiedReq.Context(), 10001))
 	notModifiedReq.Header.Set("X-Routing-Features", strings.Join(routingHandlerFeatures("dot"), ","))
 	notModifiedReq.Header.Set("If-None-Match", cfg.RoutingHash)
 	notModifiedRec := httptest.NewRecorder()
@@ -200,6 +206,7 @@ func TestRoutingConfigIfNoneMatchUsesCapabilityGatedHash(t *testing.T) {
 func TestRoutingPreviewHeadersExposeUnsupportedFeatures(t *testing.T) {
 	body := `{"domain":"openai.com","user_id":"10001","supported_features":["routing_profile_v1","route_dns_resolver","route_outbound","route_fail_policy","route_fallback","doh"]}`
 	req := httptest.NewRequest(http.MethodPost, "/v1/public/routing/preview", strings.NewReader(body))
+	req = req.WithContext(pkgmiddleware.WithUserID(req.Context(), 10001))
 	rec := httptest.NewRecorder()
 
 	handleRoutingPreview(routingServiceForTest(), &publicRoutingCache{}).ServeHTTP(rec, req)
@@ -225,6 +232,59 @@ func TestRoutingPreviewHeadersExposeUnsupportedFeatures(t *testing.T) {
 	}
 	if resp.Data.ExecutionEnabled {
 		t.Fatal("ExecutionEnabled = true, want false for unsupported features")
+	}
+}
+
+func TestRoutingAuthenticationRejectsSelfReportedScope(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=10001&node_id=7", nil)
+	rec := httptest.NewRecorder()
+	called := false
+
+	requireRoutingAuthentication(nil, func(http.ResponseWriter, *http.Request) {
+		called = true
+	}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d body=%s, want 401", rec.Code, rec.Body.String())
+	}
+	if called {
+		t.Fatal("unauthenticated self-reported scope reached routing handler")
+	}
+}
+
+func TestRoutingAuthenticationAcceptsSubscriptionTokenHeader(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config", nil)
+	req.Header.Set("X-Subscribe-Token", "legacy-subscription-token")
+	rec := httptest.NewRecorder()
+	called := false
+
+	requireRoutingAuthentication(nil, func(http.ResponseWriter, *http.Request) {
+		called = true
+	}).ServeHTTP(rec, req)
+
+	if !called {
+		t.Fatalf("subscription-token request was rejected: status=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRoutingConfigOptionsUseOnlyTrustedScope(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/public/routing/config?user_id=999&subscribe_id=888&node_id=777&token=query-token", nil)
+	req.Header.Set("token", "header-subscription-token")
+	req = req.WithContext(pkgmiddleware.WithUserID(req.Context(), 10001))
+
+	opts := routingConfigOptionsFromRequest(req, publicrouting.PreviewRequest{
+		UserID:          "999",
+		SubscribeID:     "888",
+		UserSubscribeID: "666",
+		SubscribeToken:  "body-token",
+		NodeID:          "777",
+	})
+
+	if opts.UserID != 10001 || opts.SubscribeToken != "header-subscription-token" {
+		t.Fatalf("trusted scope = %#v, want authenticated user and header token", opts)
+	}
+	if opts.SubscribeID != 0 || opts.UserSubscribeID != 0 || opts.NodeID != 0 {
+		t.Fatalf("self-reported scope leaked into options: %#v", opts)
 	}
 }
 

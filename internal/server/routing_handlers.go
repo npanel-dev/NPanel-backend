@@ -1,16 +1,18 @@
 package server
 
 import (
+	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	nethttp "net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
 	publicrouting "github.com/npanel-dev/NPanel-backend/internal/biz/public/routing"
+	appmiddleware "github.com/npanel-dev/NPanel-backend/internal/middleware"
 	"github.com/npanel-dev/NPanel-backend/internal/pkg/middleware"
 	adminroutingservice "github.com/npanel-dev/NPanel-backend/internal/service/admin/routing"
 )
@@ -25,12 +27,12 @@ type publicRoutingCacheItem struct {
 	expiresAt time.Time
 }
 
-func registerRoutingPreviewRoutes(srv *http.Server, routing *adminroutingservice.RoutingService) {
+func registerRoutingPreviewRoutes(srv *http.Server, routing *adminroutingservice.RoutingService, authMiddleware *appmiddleware.ServiceContext) {
 	cache := &publicRoutingCache{}
-	srv.HandleFunc("/v1/public/routing/config", handleRoutingConfig(routing, cache))
-	srv.HandleFunc("/v1/public/routing/preview", handleRoutingPreview(routing, cache))
-	srv.HandleFunc("/v1/public/routing/health_report", handleRoutingHealthReport(routing))
-	srv.HandleFunc("/v1/public/routing/route_event", handleRoutingRouteEvent(routing))
+	srv.HandleFunc("/v1/public/routing/config", requireRoutingAuthentication(authMiddleware, handleRoutingConfig(routing, cache)))
+	srv.HandleFunc("/v1/public/routing/preview", requireRoutingAuthentication(authMiddleware, handleRoutingPreview(routing, cache)))
+	srv.HandleFunc("/v1/public/routing/health_report", requireRoutingAuthentication(authMiddleware, handleRoutingHealthReport(routing)))
+	srv.HandleFunc("/v1/public/routing/route_event", requireRoutingAuthentication(authMiddleware, handleRoutingRouteEvent(routing)))
 }
 
 func handleRoutingConfig(routing *adminroutingservice.RoutingService, cache *publicRoutingCache) nethttp.HandlerFunc {
@@ -76,7 +78,6 @@ func handleRoutingPreview(routing *adminroutingservice.RoutingService, cache *pu
 			return
 		}
 
-		fillPreviewScopeFromRequest(r, &req)
 		cfg, fallback, unsupported := loadPublicRoutingConfig(routing, cache, r, req)
 		if fallback != "" {
 			w.Header().Set("X-Routing-Fallback", fallback)
@@ -177,44 +178,17 @@ func loadPublicRoutingConfig(routing *adminroutingservice.RoutingService, cache 
 }
 
 func routingConfigOptionsFromRequest(r *nethttp.Request, req publicrouting.PreviewRequest) publicrouting.ConfigOptions {
-	query := r.URL.Query()
-	token := firstNonEmptyString(req.SubscribeToken, r.Header.Get("token"), r.Header.Get("X-Subscribe-Token"), query.Get("subscribe_token"), query.Get("token"))
-	userID := firstNonZeroInt64(parseInt64String(req.UserID), parseInt64String(query.Get("user_id")), middleware.GetUserID(r.Context()))
+	token := firstNonEmptyString(r.Header.Get("token"), r.Header.Get("X-Subscribe-Token"))
 	return publicrouting.ConfigOptions{
-		UserID:            userID,
-		SubscribeID:       firstNonZeroInt64(parseInt64String(req.SubscribeID), parseInt64String(query.Get("subscribe_id"))),
-		UserSubscribeID:   firstNonZeroInt64(parseInt64String(req.UserSubscribeID), parseInt64String(query.Get("user_subscribe_id"))),
+		UserID:            middleware.GetUserID(r.Context()),
 		SubscribeToken:    token,
-		NodeID:            firstNonZeroInt64(parseInt64String(req.NodeID), parseInt64String(query.Get("node_id"))),
 		SupportedFeatures: req.SupportedFeatures,
 	}
 }
 
-func fillPreviewScopeFromRequest(r *nethttp.Request, req *publicrouting.PreviewRequest) {
-	query := r.URL.Query()
-	req.SubscribeToken = firstNonEmptyString(req.SubscribeToken, r.Header.Get("token"), r.Header.Get("X-Subscribe-Token"), query.Get("subscribe_token"), query.Get("token"))
-	req.UserID = firstNonEmptyString(req.UserID, query.Get("user_id"))
-	req.SubscribeID = firstNonEmptyString(req.SubscribeID, query.Get("subscribe_id"))
-	req.UserSubscribeID = firstNonEmptyString(req.UserSubscribeID, query.Get("user_subscribe_id"))
-	req.NodeID = firstNonEmptyString(req.NodeID, query.Get("node_id"))
-}
-
 func publicRoutingCacheKey(opts publicrouting.ConfigOptions) string {
-	return fmt.Sprintf("u:%d|s:%d|us:%d|n:%d|t:%s|f:%s", opts.UserID, opts.SubscribeID, opts.UserSubscribeID, opts.NodeID, opts.SubscribeToken, strings.Join(opts.SupportedFeatures, ","))
-}
-
-func parseInt64String(value string) int64 {
-	parsed, _ := strconv.ParseInt(strings.TrimSpace(value), 10, 64)
-	return parsed
-}
-
-func firstNonZeroInt64(values ...int64) int64 {
-	for _, value := range values {
-		if value != 0 {
-			return value
-		}
-	}
-	return 0
+	tokenHash := sha256.Sum256([]byte(opts.SubscribeToken))
+	return fmt.Sprintf("u:%d|s:%d|us:%d|n:%d|t:%x|f:%s", opts.UserID, opts.SubscribeID, opts.UserSubscribeID, opts.NodeID, tokenHash[:8], strings.Join(opts.SupportedFeatures, ","))
 }
 
 func firstNonEmptyString(values ...string) string {
@@ -233,6 +207,39 @@ func writeRoutingCapabilityHeaders(w nethttp.ResponseWriter, unsupported []strin
 	}
 	w.Header().Set("X-Routing-Execution", "blocked")
 	w.Header().Set("X-Routing-Unsupported-Features", strings.Join(unsupported, ","))
+}
+
+func requireRoutingAuthentication(authMiddleware *appmiddleware.ServiceContext, next nethttp.HandlerFunc) nethttp.HandlerFunc {
+	return func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		authenticatedRequest, ok := authenticateRoutingRequest(authMiddleware, r)
+		if !ok {
+			writeRoutingError(w, nethttp.StatusUnauthorized, 401, "routing authentication required")
+			return
+		}
+		next(w, authenticatedRequest)
+	}
+}
+
+// authenticateRoutingRequest supports subscription-token clients and the
+// OwlClient account JWT carried in Authorization. These routes are registered
+// with HandleFunc, so the shared Kratos middleware must be invoked explicitly.
+func authenticateRoutingRequest(authMiddleware *appmiddleware.ServiceContext, r *nethttp.Request) (*nethttp.Request, bool) {
+	if firstNonEmptyString(r.Header.Get("token"), r.Header.Get("X-Subscribe-Token")) != "" {
+		return r, true
+	}
+	if authMiddleware == nil {
+		return r, false
+	}
+
+	var authenticatedContext context.Context
+	authenticate := authMiddleware.Auth()(func(ctx context.Context, _ interface{}) (interface{}, error) {
+		authenticatedContext = ctx
+		return nil, nil
+	})
+	if _, err := authenticate(r.Context(), nil); err != nil || middleware.GetUserID(authenticatedContext) <= 0 {
+		return r, false
+	}
+	return r.WithContext(authenticatedContext), true
 }
 
 func (c *publicRoutingCache) get(key string, now time.Time) (publicrouting.Envelope, bool) {

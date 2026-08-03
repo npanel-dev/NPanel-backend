@@ -194,7 +194,7 @@ func PreviewRouteConfig(envelope Envelope, req PreviewRequest) PreviewResult {
 		Action:           envelope.Profile.DefaultAction,
 		DNSResolverTag:   envelope.Profile.DefaultDNSResolverTag,
 		FallbackPolicy:   envelope.Profile.DefaultFallbackPolicy,
-		Unsupported:      unsupported,
+		Unsupported:      cloneRoutingSlice(unsupported),
 		EffectiveMode:    envelope.Mode,
 		ExecutionEnabled: envelope.Mode == "enforce" && envelope.Profile.Scope.Type != "" && envelope.Profile.Scope.Type != "global" && len(unsupported) == 0 && healthSnapshotOK(envelope.HealthSnapshot),
 	}
