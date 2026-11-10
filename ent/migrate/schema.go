@@ -875,7 +875,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "用户ID"},
 		{Name: "password", Type: field.TypeString, Size: 100, Comment: "用户密码"},
 		{Name: "algo", Type: field.TypeString, Size: 20, Comment: "加密算法", Default: "default"},
-		{Name: "salt", Type: field.TypeString, Nullable: true, Size: 20, Comment: "密码盐值"},
+		{Name: "salt", Type: field.TypeString, Nullable: true, Size: 128, Comment: "密码盐值"},
 		{Name: "source_panel", Type: field.TypeString, Size: 64, Comment: "账号来源面板", Default: "npanel"},
 		{Name: "avatar", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "用户头像"},
 		{Name: "balance", Type: field.TypeInt64, Nullable: true, Comment: "用户余额", Default: 0},

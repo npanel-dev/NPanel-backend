@@ -27,7 +27,8 @@ func (ProxyUser) Fields() []ent.Field {
 		field.Int64("id").Positive().Comment("用户ID"),
 		field.String("password").MaxLen(100).NotEmpty().Comment("用户密码"),
 		field.String("algo").MaxLen(20).Default("default").Comment("加密算法"),
-		field.String("salt").MaxLen(20).Optional().Nillable().Comment("密码盐值"),
+		// 迁移兼容：ss-panel v3 等旧面板的全局密码 salt 是配置字符串，可能超过 20 字符。
+		field.String("salt").MaxLen(128).Optional().Nillable().Comment("密码盐值"),
 		field.String("source_panel").MaxLen(64).Default("npanel").Comment("账号来源面板"),
 		field.Text("avatar").Optional().Nillable().Comment("用户头像"),
 		field.Int64("balance").Optional().Nillable().Default(0).Comment("用户余额"),
