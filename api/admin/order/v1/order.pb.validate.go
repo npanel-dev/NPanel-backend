@@ -485,6 +485,214 @@ var _ interface {
 	ErrorName() string
 } = UpdateOrderStatusReplyValidationError{}
 
+// Validate checks the field values on DeleteOrderRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteOrderRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteOrderRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteOrderRequestMultiError, or nil if none found.
+func (m *DeleteOrderRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteOrderRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return DeleteOrderRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteOrderRequestMultiError is an error wrapping multiple validation errors
+// returned by DeleteOrderRequest.ValidateAll() if the designated constraints
+// aren't met.
+type DeleteOrderRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteOrderRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteOrderRequestMultiError) AllErrors() []error { return m }
+
+// DeleteOrderRequestValidationError is the validation error returned by
+// DeleteOrderRequest.Validate if the designated constraints aren't met.
+type DeleteOrderRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteOrderRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteOrderRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteOrderRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteOrderRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteOrderRequestValidationError) ErrorName() string {
+	return "DeleteOrderRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteOrderRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteOrderRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteOrderRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteOrderRequestValidationError{}
+
+// Validate checks the field values on DeleteOrderReply with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *DeleteOrderReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteOrderReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteOrderReplyMultiError, or nil if none found.
+func (m *DeleteOrderReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteOrderReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	// no validation rules for DeletedCount
+
+	if len(errors) > 0 {
+		return DeleteOrderReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteOrderReplyMultiError is an error wrapping multiple validation errors
+// returned by DeleteOrderReply.ValidateAll() if the designated constraints
+// aren't met.
+type DeleteOrderReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteOrderReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteOrderReplyMultiError) AllErrors() []error { return m }
+
+// DeleteOrderReplyValidationError is the validation error returned by
+// DeleteOrderReply.Validate if the designated constraints aren't met.
+type DeleteOrderReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteOrderReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteOrderReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteOrderReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteOrderReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteOrderReplyValidationError) ErrorName() string { return "DeleteOrderReplyValidationError" }
+
+// Error satisfies the builtin error interface
+func (e DeleteOrderReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteOrderReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteOrderReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteOrderReplyValidationError{}
+
 // Validate checks the field values on GetOrderListRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.

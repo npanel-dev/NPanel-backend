@@ -119,6 +119,25 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, req *v1.UpdateOrde
 	}, nil
 }
 
+// DeleteOrder 删除订单（不影响用户套餐与流量）
+func (s *OrderService) DeleteOrder(ctx context.Context, req *v1.DeleteOrderRequest) (*v1.DeleteOrderReply, error) {
+	if len(req.Ids) == 0 {
+		return nil, responsecode.ErrOrderIDRequired()
+	}
+
+	deleted, err := s.uc.DeleteOrders(ctx, req.Ids)
+	if err != nil {
+		s.log.Errorw("msg", "delete orders failed", "error", err)
+		return nil, err
+	}
+
+	return &v1.DeleteOrderReply{
+		Code:         int32(responsecode.AdminDeleteOrderSuccess),
+		Message:      responsecode.CodeMessages[responsecode.AdminDeleteOrderSuccess],
+		DeletedCount: int64(deleted),
+	}, nil
+}
+
 // GetOrderList 获取订单列表
 func (s *OrderService) GetOrderList(ctx context.Context, req *v1.GetOrderListRequest) (*v1.GetOrderListReply, error) {
 	// 设置默认分页参数

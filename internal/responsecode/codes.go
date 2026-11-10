@@ -178,6 +178,7 @@ const (
 	AdminCreateOrderSuccess       = 200 // 创建订单成功
 	AdminGetOrderListSuccess      = 200 // 获取订单列表成功
 	AdminUpdateOrderStatusSuccess = 200 // 更新订单状态成功
+	AdminDeleteOrderSuccess       = 200 // 删除订单成功
 
 	// Admin Console 相关 (2006149-2006152)
 	QueryRevenueStatisticsSuccess = 200 // 查询营收统计成功

@@ -7,6 +7,7 @@ import (
 	"github.com/npanel-dev/NPanel-backend/ent"
 	"github.com/npanel-dev/NPanel-backend/ent/proxyorder"
 	"github.com/npanel-dev/NPanel-backend/ent/proxypayment"
+	"github.com/npanel-dev/NPanel-backend/ent/proxyusersubscribe"
 	"github.com/npanel-dev/NPanel-backend/internal/biz/admin/order"
 	"github.com/npanel-dev/NPanel-backend/internal/queue/types"
 	"github.com/npanel-dev/NPanel-backend/internal/responsecode"
@@ -208,4 +209,60 @@ func (r *orderRepo) GetOrderList(ctx context.Context, page, size, userID int, st
 		All(ctx)
 
 	return list, int32(total), err
+}
+
+// DeleteOrders 删除订单（issue #29，不影响用户套餐与流量）：
+// 1. 待支付订单先执行关单回滚（恢复套餐/档位库存、退回赠金，复用 closeOrderRollback，幂等）
+// 2. 事务内：物理删除订单，并把指向这些订单的 user_subscribe.order_id 置零
+//    （与手工创建订阅同款的合法状态；重置 token/退订折算等回查已有 order_id==0 兜底）
+// 已生效的订阅、余额、佣金与流量记录全部保留。
+func (r *orderRepo) DeleteOrders(ctx context.Context, ids []int64) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	orders, err := r.data.db.ProxyOrder.Query().
+		Where(proxyorder.IDIn(ids...)).
+		All(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if len(orders) == 0 {
+		return 0, nil
+	}
+
+	existingIDs := make([]int64, 0, len(orders))
+	for _, item := range orders {
+		// 待支付订单：先回滚库存/赠金（幂等，失败则跳过该单保留现场，不影响其他订单删除）
+		if item.Status == 1 {
+			if err := closeOrderRollback(ctx, r.data.db, r.log, item.OrderNo); err != nil {
+				r.log.Errorf("[%s] rollback pending order before delete failed: %v, orderNo: %s", orderModule, err, item.OrderNo)
+				continue
+			}
+		}
+		existingIDs = append(existingIDs, item.ID)
+	}
+	if len(existingIDs) == 0 {
+		return 0, nil
+	}
+
+	deleted := 0
+	err = withTx(ctx, r.data.db, func(tx *ent.Tx) error {
+		// 悬挂引用置零：用户订阅上的订单引用（订阅有效期/流量不受影响）
+		if err := tx.ProxyUserSubscribe.Update().
+			Where(proxyusersubscribe.OrderIDIn(existingIDs...)).
+			SetOrderID(0).
+			Exec(ctx); err != nil {
+			return err
+		}
+		// 物理删除订单
+		deleted, err = tx.ProxyOrder.Delete().
+			Where(proxyorder.IDIn(existingIDs...)).
+			Exec(ctx)
+		return err
+	})
+	if err != nil {
+		return 0, err
+	}
+	return deleted, nil
 }

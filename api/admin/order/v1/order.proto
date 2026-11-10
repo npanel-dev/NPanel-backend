@@ -31,6 +31,15 @@ service OrderService {
       body: "*"
     };
   }
+
+  // DeleteOrder 删除订单（不影响用户套餐与流量：已生效的订阅/余额/佣金保留，
+  // user_subscribe.order_id 置零；待支付订单先自动执行关单回滚再删除）
+  rpc DeleteOrder (DeleteOrderRequest) returns (DeleteOrderReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/order/delete"
+      body: "*"
+    };
+  }
 }
 
 // CreateOrderRequest 创建订单请求
@@ -69,6 +78,18 @@ message UpdateOrderStatusRequest {
 message UpdateOrderStatusReply {
   int32 code = 1;     // 状态码
   string message = 2; // 消息内容
+}
+
+// DeleteOrderRequest 删除订单请求（支持批量）
+message DeleteOrderRequest {
+  repeated int64 ids = 1;  // 订单ID列表
+}
+
+// DeleteOrderReply 删除订单响应
+message DeleteOrderReply {
+  int32 code = 1;           // 状态码
+  string message = 2;       // 消息内容
+  int64 deleted_count = 3;  // 实际删除数量
 }
 
 // GetOrderListRequest 获取订单列表请求

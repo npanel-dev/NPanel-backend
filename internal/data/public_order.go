@@ -219,42 +219,48 @@ func decrementDurationPriceOptionInventory(ctx context.Context, tx *ent.Tx, subs
 
 // CloseOrder 关闭订单，包含完整的业务逻辑（含赠金退回）
 func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo string) error {
+	return closeOrderRollback(ctx, r.data.db, r.logger, orderNo)
+}
+
+// closeOrderRollback 待支付订单的关单回滚（幂等）：恢复套餐/档位库存、退回赠金。
+// 包级函数以便 admin 删除订单复用（issue #29：删除待支付订单前先回滚，避免库存/赠金泄漏）。
+func closeOrderRollback(ctx context.Context, db *ent.Client, logger *log.Helper, orderNo string) error {
 	// 通过订单号查找订单信息
-	orderInfo, err := r.data.db.ProxyOrder.Query().
+	orderInfo, err := db.ProxyOrder.Query().
 		Where(
 			proxyorder.OrderNoEQ(orderNo),
 		).
 		Only(ctx)
 	if err != nil {
-		r.logger.Errorf("[CloseOrder] 查找订单信息失败: %v, orderNo: %s", err, orderNo)
+		logger.Errorf("[CloseOrder] 查找订单信息失败: %v, orderNo: %s", err, orderNo)
 		return nil
 	}
 
 	// 如果订单状态不是1，说明订单已关闭或已支付
 	if orderInfo.Status != 1 {
-		r.logger.Infof("[CloseOrder] Order status is not 1, orderNo: %s, status: %d", orderNo, orderInfo.Status)
+		logger.Infof("[CloseOrder] Order status is not 1, orderNo: %s, status: %d", orderNo, orderInfo.Status)
 		return nil
 	}
 
-	subscribeInfo, err := r.data.db.ProxySubscribe.Query().
+	subscribeInfo, err := db.ProxySubscribe.Query().
 		Where(
 			proxysubscribe.IDEQ(orderInfo.SubscribeID),
 		).
 		Only(ctx)
 	if err != nil {
-		r.logger.Errorf("[CloseOrder] 查找订阅信息失败: %v, subscribeID: %d, orderNo: %s", err, orderInfo.SubscribeID, orderNo)
+		logger.Errorf("[CloseOrder] 查找订阅信息失败: %v, subscribeID: %d, orderNo: %s", err, orderInfo.SubscribeID, orderNo)
 		return nil
 	}
 
 	// 使用TX辅助函数执行事务
-	return r.data.db.TX(ctx, func(tx *ent.Tx) error {
+	return db.TX(ctx, func(tx *ent.Tx) error {
 		// 更新订单状态为已关闭(3)
 		err := tx.ProxyOrder.UpdateOneID(orderInfo.ID).
 			SetStatus(3).
 			SetUpdatedAt(time.Now()).
 			Exec(ctx)
 		if err != nil {
-			r.logger.Errorf("[CloseOrder] Update order status failed: %v, orderNo: %s", err, orderNo)
+			logger.Errorf("[CloseOrder] Update order status failed: %v, orderNo: %s", err, orderNo)
 			return errors.InternalServer("ORDER_UPDATE_FAILED", "关闭订单失败")
 		}
 
@@ -263,7 +269,7 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 				AddInventory(1).
 				Exec(ctx)
 			if err != nil {
-				r.logger.Errorf("[CloseOrder] Restore subscribe inventory failed: %v, subscribeID: %d", err, subscribeInfo.ID)
+				logger.Errorf("[CloseOrder] Restore subscribe inventory failed: %v, subscribeID: %d", err, subscribeInfo.ID)
 				return err
 			}
 		}
@@ -276,7 +282,7 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 				if err := tx.ProxySubscribePriceOption.UpdateOneID(optionInfo.ID).
 					AddInventory(1).
 					Exec(ctx); err != nil {
-					r.logger.Errorf("[CloseOrder] Restore price option inventory failed: %v, optionID: %d", err, optionInfo.ID)
+					logger.Errorf("[CloseOrder] Restore price option inventory failed: %v, optionID: %d", err, optionInfo.ID)
 					return err
 				}
 			}
@@ -286,7 +292,7 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 		if orderInfo.UserID == 0 {
 			err = tx.ProxyOrder.DeleteOneID(orderInfo.ID).Exec(ctx)
 			if err != nil {
-				r.logger.Errorf("[CloseOrder] Delete order failed: %v, orderNo: %s", err, orderNo)
+				logger.Errorf("[CloseOrder] Delete order failed: %v, orderNo: %s", err, orderNo)
 				return errors.InternalServer("ORDER_DELETE_FAILED", "删除订单失败")
 			}
 			return nil
@@ -300,7 +306,7 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 				).
 				Only(ctx)
 			if err != nil {
-				r.logger.Errorf("[CloseOrder] 查找用户 info failed: %v, userID: %d", err, orderInfo.UserID)
+				logger.Errorf("[CloseOrder] 查找用户 info failed: %v, userID: %d", err, orderInfo.UserID)
 				return errors.InternalServer("USER_NOT_FOUND", "用户不存在")
 			}
 
@@ -316,7 +322,7 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 				SetGiftAmount(newGiftAmount).
 				Exec(ctx)
 			if err != nil {
-				r.logger.Errorf("[CloseOrder] Refund gift amount failed: %v, userID: %d, giftAmount: %d", err, orderInfo.UserID, orderInfo.GiftAmount)
+				logger.Errorf("[CloseOrder] Refund gift amount failed: %v, userID: %d, giftAmount: %d", err, orderInfo.UserID, orderInfo.GiftAmount)
 				return errors.InternalServer("GIFT_REFUND_FAILED", "退回赠金失败")
 			}
 
@@ -331,11 +337,11 @@ func (r *publicOrderRepo) CloseOrder(ctx context.Context, userID int, orderNo st
 				SetContent(giftLogContent).
 				Save(ctx)
 			if err != nil {
-				r.logger.Errorf("[CloseOrder] Create gift refund log failed: %v", err)
+				logger.Errorf("[CloseOrder] Create gift refund log failed: %v", err)
 				return errors.InternalServer("GIFT_REFUND_LOG_FAILED", "记录赠金退款日志失败")
 			}
 
-			r.logger.Infof("[CloseOrder] Refunded gift amount: %d to user: %d, new balance: %d", orderInfo.GiftAmount, orderInfo.UserID, newGiftAmount)
+			logger.Infof("[CloseOrder] Refunded gift amount: %d to user: %d, new balance: %d", orderInfo.GiftAmount, orderInfo.UserID, newGiftAmount)
 			return nil
 		}
 

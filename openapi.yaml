@@ -1671,6 +1671,27 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.order.v1.CreateOrderReply'
+    /v1/admin/order/delete:
+        post:
+            tags:
+                - OrderService
+            description: |-
+                DeleteOrder 删除订单（不影响用户套餐与流量：已生效的订阅/余额/佣金保留，
+                 user_subscribe.order_id 置零；待支付订单先自动执行关单回滚再删除）
+            operationId: OrderService_DeleteOrder
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.order.v1.DeleteOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.order.v1.DeleteOrderReply'
     /v1/admin/order/list:
         get:
             tags:
@@ -9307,6 +9328,25 @@ components:
                 subscribeId:
                     type: string
             description: CreateOrderRequest 创建订单请求
+        api.admin.order.v1.DeleteOrderReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                deletedCount:
+                    type: string
+            description: DeleteOrderReply 删除订单响应
+        api.admin.order.v1.DeleteOrderRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+            description: DeleteOrderRequest 删除订单请求（支持批量）
         api.admin.order.v1.GetOrderListData:
             type: object
             properties:
@@ -18519,8 +18559,8 @@ tags:
     - name: AnnouncementService
       description: 公告服务
     - name: Auth
-    - name: Auth
       description: Auth service for user authentication
+    - name: Auth
     - name: AuthMethodService
       description: 认证方法服务
     - name: Common
@@ -18573,8 +18613,8 @@ tags:
          订阅配置服务 - 生成客户端配置
     - name: SystemService
     - name: Ticket
-      description: Ticket service for users
     - name: Ticket
+      description: Ticket service for users
     - name: Tool
     - name: UserAuthMethodService
       description: UserAuthMethodService 用户认证方法管理服务
