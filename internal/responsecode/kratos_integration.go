@@ -161,6 +161,10 @@ func getKratosReason(code int) string {
 		return "NODE_GROUP_EXIST"
 	case 30005:
 		return "NODE_GROUP_NOT_EMPTY"
+	case 30006:
+		return "PROTOCOL_PORT_OCCUPIED"
+	case 30007:
+		return "PROTOCOL_INSTANCE_SHARED"
 	case 10001:
 		return "DATABASE_QUERY_FAILED"
 	case 10002:

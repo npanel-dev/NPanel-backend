@@ -67,6 +67,7 @@ type Node struct {
 	NodeGroupIDs []int64
 	CreatedAt    int64
 	UpdatedAt    int64
+	Ratio        float64 // 链路倍率（landing=自身实例倍率，front=目标落地链路倍率）
 }
 
 type SortItem struct {
@@ -115,6 +116,9 @@ type NodeRepo interface {
 	GetServerProtocols(ctx context.Context, id int) ([]*server.Protocol, error)
 	GetNodeByID(ctx context.Context, id int64) (*Node, error)
 	CountFrontNodesByTarget(ctx context.Context, targetNodeID int64) (int, error)
+	CreateRelayEntry(ctx context.Context, entry *RelayEntry) (*Node, error)
+	CountLandingNodesByInstance(ctx context.Context, serverID int64, protocol string, port uint16) (int, error)
+	UpdateProtocolRatio(ctx context.Context, serverID int64, protocol string, port uint16, ratio float64) error
 }
 
 type MigrationRepo interface {

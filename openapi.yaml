@@ -3193,6 +3193,46 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.admin.server.v1.FilterNodeListReply'
+    /v1/admin/server/node/ratio/update:
+        post:
+            tags:
+                - ServerService
+            description: 修改节点链路倍率（front 节点沿落地目标解析到协议实例后修改；共享实例拒绝修改）
+            operationId: ServerService_UpdateNodeRatio
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.server.v1.UpdateNodeRatioRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.server.v1.UpdateNodeRatioReply'
+    /v1/admin/server/node/relay-entry/create:
+        post:
+            tags:
+                - ServerService
+            description: |-
+                中转入口链路：复制源落地节点的协议实例（新服务端口+倍率），
+                 创建隐藏的中间落地节点和 front 中转入口节点（连接端口/服务端口分离、差异化倍率）
+            operationId: ServerService_CreateRelayEntry
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.admin.server.v1.CreateRelayEntryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.admin.server.v1.CreateRelayEntryReply'
     /v1/admin/server/node/sort:
         post:
             tags:
@@ -11360,6 +11400,47 @@ components:
                 targetNodeId:
                     type: string
             description: Node Requests/Replies
+        api.admin.server.v1.CreateRelayEntryData:
+            type: object
+            properties:
+                node:
+                    $ref: '#/components/schemas/api.admin.server.v1.Node'
+        api.admin.server.v1.CreateRelayEntryReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/api.admin.server.v1.CreateRelayEntryData'
+        api.admin.server.v1.CreateRelayEntryRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                address:
+                    type: string
+                port:
+                    type: integer
+                    format: uint32
+                sourceNodeId:
+                    type: string
+                servicePort:
+                    type: integer
+                    format: uint32
+                ratio:
+                    type: number
+                    format: double
+                tags:
+                    type: array
+                    items:
+                        type: string
+                nodeGroupIds:
+                    type: array
+                    items:
+                        type: string
         api.admin.server.v1.CreateServerData:
             type: object
             properties:
@@ -11567,6 +11648,9 @@ components:
                     type: string
                 targetNodeId:
                     type: string
+                ratio:
+                    type: number
+                    format: double
         api.admin.server.v1.Protocol:
             type: object
             properties:
@@ -12046,6 +12130,22 @@ components:
             properties:
                 node:
                     $ref: '#/components/schemas/api.admin.server.v1.Node'
+        api.admin.server.v1.UpdateNodeRatioReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
+        api.admin.server.v1.UpdateNodeRatioRequest:
+            type: object
+            properties:
+                nodeId:
+                    type: string
+                ratio:
+                    type: number
+                    format: double
         api.admin.server.v1.UpdateNodeReply:
             type: object
             properties:
@@ -18473,8 +18573,8 @@ tags:
          订阅配置服务 - 生成客户端配置
     - name: SystemService
     - name: Ticket
-    - name: Ticket
       description: Ticket service for users
+    - name: Ticket
     - name: Tool
     - name: UserAuthMethodService
       description: UserAuthMethodService 用户认证方法管理服务

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-kratos/kratos/v2/log"
 	v1 "github.com/npanel-dev/NPanel-backend/api/admin/server/v1"
@@ -137,6 +138,47 @@ func (s *ServerService) QueryNodeTag(ctx context.Context, req *v1.QueryNodeTagRe
 	return &v1.QueryNodeTagReply{Code: responsecode.AdminQueryNodeTagSuccess, Message: responsecode.CodeMessages[responsecode.AdminQueryNodeTagSuccess], Data: &v1.QueryNodeTagData{Tags: tags}}, nil
 }
 
+func (s *ServerService) CreateRelayEntry(ctx context.Context, req *v1.CreateRelayEntryRequest) (*v1.CreateRelayEntryReply, error) {
+	node, err := s.nodeUc.CreateRelayEntry(ctx, &serverbiz.RelayEntryParams{
+		Name:         req.Name,
+		Address:      req.Address,
+		Port:         uint16(req.Port),
+		SourceNodeID: req.SourceNodeId,
+		ServicePort:  uint16(req.ServicePort),
+		Ratio:        req.Ratio,
+		Tags:         req.Tags,
+		NodeGroupIDs: req.NodeGroupIds,
+	})
+	if err != nil {
+		return nil, relayEntryError(err)
+	}
+	return &v1.CreateRelayEntryReply{Code: responsecode.AdminCreateRelayEntrySuccess, Message: responsecode.CodeMessages[responsecode.AdminCreateRelayEntrySuccess], Data: &v1.CreateRelayEntryData{Node: nodeToProto(node)}}, nil
+}
+
+func (s *ServerService) UpdateNodeRatio(ctx context.Context, req *v1.UpdateNodeRatioRequest) (*v1.UpdateNodeRatioReply, error) {
+	if req.NodeId <= 0 {
+		return nil, responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	if err := s.nodeUc.UpdateNodeRatio(ctx, req.NodeId, req.Ratio); err != nil {
+		return nil, relayEntryError(err)
+	}
+	return &v1.UpdateNodeRatioReply{Code: responsecode.AdminUpdateNodeRatioSuccess, Message: responsecode.CodeMessages[responsecode.AdminUpdateNodeRatioSuccess]}, nil
+}
+
+// relayEntryError 将中转链路校验的 model 错误映射为带业务码的 Kratos 错误，
+// 避免未包装错误以 500 形式返回（前端只能看到通用服务器错误）。
+func relayEntryError(err error) error {
+	switch {
+	case errors.Is(err, servermodel.ErrDuplicateProtocolPort):
+		return responsecode.NewKratosError(responsecode.ErrProtocolPortOccupied)
+	case errors.Is(err, servermodel.ErrSharedProtocolInstance):
+		return responsecode.NewKratosError(responsecode.ErrProtocolInstanceShared)
+	case errors.Is(err, servermodel.ErrInvalidProtocolConfig):
+		return responsecode.NewKratosError(responsecode.ErrInvalidParameter)
+	}
+	return err
+}
+
 func (s *ServerService) HasMigrateServerNode(ctx context.Context, req *v1.HasMigrateServerNodeRequest) (*v1.HasMigrateServerNodeReply, error) {
 	hasMigrate, err := s.migrationUc.HasMigrateServerNode(ctx)
 	if err != nil {
@@ -204,7 +246,7 @@ func nodeToProto(n *serverbiz.Node) *v1.Node {
 	if n == nil {
 		return nil
 	}
-	return &v1.Node{Id: n.ID, Name: n.Name, Tags: n.Tags, Port: uint32(n.Port), Address: n.Address, ServerId: n.ServerID, Protocol: n.Protocol, Enabled: n.Enabled, Sort: int32(n.Sort), NodeGroupId: n.NodeGroupID, NodeGroupIds: n.NodeGroupIDs, NodeType: n.NodeType, IsHidden: n.IsHidden, CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt, TargetNodeId: n.TargetNodeID}
+	return &v1.Node{Id: n.ID, Name: n.Name, Tags: n.Tags, Port: uint32(n.Port), Address: n.Address, ServerId: n.ServerID, Protocol: n.Protocol, Enabled: n.Enabled, Sort: int32(n.Sort), NodeGroupId: n.NodeGroupID, NodeGroupIds: n.NodeGroupIDs, NodeType: n.NodeType, IsHidden: n.IsHidden, CreatedAt: n.CreatedAt, UpdatedAt: n.UpdatedAt, TargetNodeId: n.TargetNodeID, Ratio: n.Ratio}
 }
 
 func protosToModelProtocols(protos []*v1.Protocol) []*servermodel.Protocol {

@@ -139,6 +139,7 @@ func (r *adminNodeRepo) FilterNodeList(ctx context.Context, page, size int32, se
 	for _, item := range list {
 		nodes = append(nodes, adminNodeToBiz(item))
 	}
+	r.attachNodeRatios(ctx, list, nodes)
 	return int32(total), nodes, nil
 }
 

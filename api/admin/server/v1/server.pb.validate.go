@@ -1130,6 +1130,8 @@ func (m *Node) validate(all bool) error {
 
 	// no validation rules for UpdatedAt
 
+	// no validation rules for Ratio
+
 	if m.Enabled != nil {
 		// no validation rules for Enabled
 	}
@@ -3915,6 +3917,598 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateNodeReplyValidationError{}
+
+// Validate checks the field values on CreateRelayEntryRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateRelayEntryRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateRelayEntryRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateRelayEntryRequestMultiError, or nil if none found.
+func (m *CreateRelayEntryRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateRelayEntryRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Address
+
+	// no validation rules for Port
+
+	// no validation rules for SourceNodeId
+
+	// no validation rules for ServicePort
+
+	// no validation rules for Ratio
+
+	if len(errors) > 0 {
+		return CreateRelayEntryRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateRelayEntryRequestMultiError is an error wrapping multiple validation
+// errors returned by CreateRelayEntryRequest.ValidateAll() if the designated
+// constraints aren't met.
+type CreateRelayEntryRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateRelayEntryRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateRelayEntryRequestMultiError) AllErrors() []error { return m }
+
+// CreateRelayEntryRequestValidationError is the validation error returned by
+// CreateRelayEntryRequest.Validate if the designated constraints aren't met.
+type CreateRelayEntryRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateRelayEntryRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateRelayEntryRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateRelayEntryRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateRelayEntryRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateRelayEntryRequestValidationError) ErrorName() string {
+	return "CreateRelayEntryRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateRelayEntryRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateRelayEntryRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateRelayEntryRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateRelayEntryRequestValidationError{}
+
+// Validate checks the field values on CreateRelayEntryData with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateRelayEntryData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateRelayEntryData with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateRelayEntryDataMultiError, or nil if none found.
+func (m *CreateRelayEntryData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateRelayEntryData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetNode()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateRelayEntryDataValidationError{
+					field:  "Node",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateRelayEntryDataValidationError{
+					field:  "Node",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetNode()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateRelayEntryDataValidationError{
+				field:  "Node",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateRelayEntryDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateRelayEntryDataMultiError is an error wrapping multiple validation
+// errors returned by CreateRelayEntryData.ValidateAll() if the designated
+// constraints aren't met.
+type CreateRelayEntryDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateRelayEntryDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateRelayEntryDataMultiError) AllErrors() []error { return m }
+
+// CreateRelayEntryDataValidationError is the validation error returned by
+// CreateRelayEntryData.Validate if the designated constraints aren't met.
+type CreateRelayEntryDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateRelayEntryDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateRelayEntryDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateRelayEntryDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateRelayEntryDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateRelayEntryDataValidationError) ErrorName() string {
+	return "CreateRelayEntryDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateRelayEntryDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateRelayEntryData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateRelayEntryDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateRelayEntryDataValidationError{}
+
+// Validate checks the field values on CreateRelayEntryReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateRelayEntryReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateRelayEntryReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateRelayEntryReplyMultiError, or nil if none found.
+func (m *CreateRelayEntryReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateRelayEntryReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateRelayEntryReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateRelayEntryReplyValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateRelayEntryReplyValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateRelayEntryReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateRelayEntryReplyMultiError is an error wrapping multiple validation
+// errors returned by CreateRelayEntryReply.ValidateAll() if the designated
+// constraints aren't met.
+type CreateRelayEntryReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateRelayEntryReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateRelayEntryReplyMultiError) AllErrors() []error { return m }
+
+// CreateRelayEntryReplyValidationError is the validation error returned by
+// CreateRelayEntryReply.Validate if the designated constraints aren't met.
+type CreateRelayEntryReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateRelayEntryReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateRelayEntryReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateRelayEntryReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateRelayEntryReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateRelayEntryReplyValidationError) ErrorName() string {
+	return "CreateRelayEntryReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateRelayEntryReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateRelayEntryReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateRelayEntryReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateRelayEntryReplyValidationError{}
+
+// Validate checks the field values on UpdateNodeRatioRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateNodeRatioRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateNodeRatioRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateNodeRatioRequestMultiError, or nil if none found.
+func (m *UpdateNodeRatioRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateNodeRatioRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for NodeId
+
+	// no validation rules for Ratio
+
+	if len(errors) > 0 {
+		return UpdateNodeRatioRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateNodeRatioRequestMultiError is an error wrapping multiple validation
+// errors returned by UpdateNodeRatioRequest.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateNodeRatioRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateNodeRatioRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateNodeRatioRequestMultiError) AllErrors() []error { return m }
+
+// UpdateNodeRatioRequestValidationError is the validation error returned by
+// UpdateNodeRatioRequest.Validate if the designated constraints aren't met.
+type UpdateNodeRatioRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateNodeRatioRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateNodeRatioRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateNodeRatioRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateNodeRatioRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateNodeRatioRequestValidationError) ErrorName() string {
+	return "UpdateNodeRatioRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateNodeRatioRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateNodeRatioRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateNodeRatioRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateNodeRatioRequestValidationError{}
+
+// Validate checks the field values on UpdateNodeRatioReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateNodeRatioReply) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateNodeRatioReply with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateNodeRatioReplyMultiError, or nil if none found.
+func (m *UpdateNodeRatioReply) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateNodeRatioReply) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	if len(errors) > 0 {
+		return UpdateNodeRatioReplyMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateNodeRatioReplyMultiError is an error wrapping multiple validation
+// errors returned by UpdateNodeRatioReply.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateNodeRatioReplyMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateNodeRatioReplyMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateNodeRatioReplyMultiError) AllErrors() []error { return m }
+
+// UpdateNodeRatioReplyValidationError is the validation error returned by
+// UpdateNodeRatioReply.Validate if the designated constraints aren't met.
+type UpdateNodeRatioReplyValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateNodeRatioReplyValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateNodeRatioReplyValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateNodeRatioReplyValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateNodeRatioReplyValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateNodeRatioReplyValidationError) ErrorName() string {
+	return "UpdateNodeRatioReplyValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateNodeRatioReplyValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateNodeRatioReply.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateNodeRatioReplyValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateNodeRatioReplyValidationError{}
 
 // Validate checks the field values on DeleteNodeRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

@@ -84,6 +84,23 @@ service ServerService {
     };
   }
 
+  // 中转入口链路：复制源落地节点的协议实例（新服务端口+倍率），
+  // 创建隐藏的中间落地节点和 front 中转入口节点（连接端口/服务端口分离、差异化倍率）
+  rpc CreateRelayEntry (CreateRelayEntryRequest) returns (CreateRelayEntryReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/server/node/relay-entry/create"
+      body: "*"
+    };
+  }
+
+  // 修改节点链路倍率（front 节点沿落地目标解析到协议实例后修改；共享实例拒绝修改）
+  rpc UpdateNodeRatio (UpdateNodeRatioRequest) returns (UpdateNodeRatioReply) {
+    option (google.api.http) = {
+      post: "/v1/admin/server/node/ratio/update"
+      body: "*"
+    };
+  }
+
   // Migration
   rpc HasMigrateServerNode (HasMigrateServerNodeRequest) returns (HasMigrateServerNodeReply) {
     option (google.api.http) = {
@@ -332,6 +349,7 @@ message Node {
   int64 created_at = 15;
   int64 updated_at = 16;
   optional int64 target_node_id = 17;
+  double ratio = 18;  // 链路倍率（landing=自身协议实例倍率，front=目标落地链路倍率；仅输出，修改走 UpdateNodeRatio）
 }
 
 // Server Requests/Replies
@@ -467,6 +485,41 @@ message UpdateNodeReply {
   int32 code = 1;        // 状态码
   string message = 2;    // 消息内容
   UpdateNodeData data = 3; // 响应数据
+}
+
+// ===== CreateRelayEntry（中转入口链路向导）=====
+
+message CreateRelayEntryRequest {
+  string name = 1;              // 中转入口名称
+  string address = 2;           // 中转商地址（用户连接的地址）
+  uint32 port = 3;              // 连接端口（用户连接中转商的端口）
+  int64 source_node_id = 4;     // 源落地节点（复制其协议实例配置）
+  uint32 service_port = 5;      // 服务端口（中转商转发到落地 VPS 的端口，即新协议实例端口）
+  double ratio = 6;             // 链路倍率（写入复制出的协议实例）
+  repeated string tags = 7;     // 标签（写入 front 节点）
+  repeated int64 node_group_ids = 8;  // 节点组（写入 front 节点）
+}
+
+message CreateRelayEntryData {
+  Node node = 1;                // 创建的 front 中转入口节点
+}
+
+message CreateRelayEntryReply {
+  int32 code = 1;        // 状态码
+  string message = 2;    // 消息内容
+  CreateRelayEntryData data = 3; // 响应数据
+}
+
+// ===== UpdateNodeRatio（修改链路倍率）=====
+
+message UpdateNodeRatioRequest {
+  int64 node_id = 1;     // 节点ID（front 或 landing）
+  double ratio = 2;      // 新倍率（> 0）
+}
+
+message UpdateNodeRatioReply {
+  int32 code = 1;        // 状态码
+  string message = 2;    // 消息内容
 }
 
 message DeleteNodeRequest {

@@ -301,6 +301,8 @@ const (
 	AdminMigrateServerNodeSuccess    = 200 // 迁移服务器节点成功
 	AdminResetSortWithServerSuccess  = 200 // 重置服务器排序成功
 	AdminResetSortWithNodeSuccess    = 200 // 重置节点排序成功
+	AdminCreateRelayEntrySuccess     = 200 // 创建中转入口链路成功
+	AdminUpdateNodeRatioSuccess      = 200 // 修改节点链路倍率成功
 
 	// Admin User 相关 (2006235-2006243)
 	AdminCreateUserSuccess               = 200 // 创建用户成功
@@ -462,6 +464,8 @@ const (
 	ErrRegisterIPLimit                    = 20011 // 注册 IP 限制
 	ErrNodeGroupExist                     = 30003 // 节点组已存在
 	ErrNodeGroupNotEmpty                  = 30005 // 节点组不为空
+	ErrProtocolPortOccupied               = 30006 // 协议端口已被占用
+	ErrProtocolInstanceShared             = 30007 // 协议实例被多个节点共享
 	ErrTooManyRequests                    = 401   // 请求过于频繁
 	ErrInvalidCiphertext                  = 40006 // 无效密文
 	ErrSecretIsEmpty                      = 40007 // Secret 为空
@@ -601,6 +605,10 @@ func getCodeMessage(code int) string {
 		return "Node group does not exist"
 	case 30005:
 		return "Node group is not empty"
+	case 30006:
+		return "Protocol port is already in use"
+	case 30007:
+		return "Protocol instance is shared by multiple nodes"
 	case 400:
 		return "Param Error"
 	case 401:

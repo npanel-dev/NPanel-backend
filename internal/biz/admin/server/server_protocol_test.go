@@ -211,8 +211,11 @@ func TestAdminCreateNodeRequiresEnabledProtocolPortInstance(t *testing.T) {
 }
 
 type adminNodeRepoStub struct {
-	protocols []*servermodel.Protocol
-	nodes     map[int64]*Node
+	protocols     []*servermodel.Protocol
+	nodes         map[int64]*Node
+	createdRelay  *RelayEntry
+	landingCount  int
+	updatedRatio  updatedRatioCall
 }
 
 func (r *adminNodeRepoStub) CreateNode(ctx context.Context, node *Node) (*Node, error) {
@@ -260,6 +263,27 @@ func (r *adminNodeRepoStub) GetNodeByID(ctx context.Context, id int64) (*Node, e
 
 func (r *adminNodeRepoStub) CountFrontNodesByTarget(ctx context.Context, targetNodeID int64) (int, error) {
 	return 0, nil
+}
+
+func (r *adminNodeRepoStub) CreateRelayEntry(ctx context.Context, entry *RelayEntry) (*Node, error) {
+	r.createdRelay = entry
+	return &Node{Name: entry.Params.Name, NodeType: NodeTypeFront}, nil
+}
+
+func (r *adminNodeRepoStub) CountLandingNodesByInstance(ctx context.Context, serverID int64, protocol string, port uint16) (int, error) {
+	return r.landingCount, nil
+}
+
+func (r *adminNodeRepoStub) UpdateProtocolRatio(ctx context.Context, serverID int64, protocol string, port uint16, ratio float64) error {
+	r.updatedRatio = updatedRatioCall{serverID: serverID, protocol: protocol, port: port, ratio: ratio}
+	return nil
+}
+
+type updatedRatioCall struct {
+	serverID int64
+	protocol string
+	port     uint16
+	ratio    float64
 }
 
 func TestAdminCreateFrontNodeUsesTargetLandingProtocolValidation(t *testing.T) {
