@@ -27615,6 +27615,7 @@ type ProxySubscribeApplicationMutation struct {
 	description        *string
 	scheme             *string
 	user_agent         *string
+	enabled            *bool
 	is_default         *bool
 	subscribe_template *string
 	output_format      *string
@@ -27937,6 +27938,42 @@ func (m *ProxySubscribeApplicationMutation) ResetUserAgent() {
 	m.user_agent = nil
 }
 
+// SetEnabled sets the "enabled" field.
+func (m *ProxySubscribeApplicationMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *ProxySubscribeApplicationMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the ProxySubscribeApplication entity.
+// If the ProxySubscribeApplication object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProxySubscribeApplicationMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *ProxySubscribeApplicationMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
 // SetIsDefault sets the "is_default" field.
 func (m *ProxySubscribeApplicationMutation) SetIsDefault(b bool) {
 	m.is_default = &b
@@ -28226,7 +28263,7 @@ func (m *ProxySubscribeApplicationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProxySubscribeApplicationMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.name != nil {
 		fields = append(fields, proxysubscribeapplication.FieldName)
 	}
@@ -28241,6 +28278,9 @@ func (m *ProxySubscribeApplicationMutation) Fields() []string {
 	}
 	if m.user_agent != nil {
 		fields = append(fields, proxysubscribeapplication.FieldUserAgent)
+	}
+	if m.enabled != nil {
+		fields = append(fields, proxysubscribeapplication.FieldEnabled)
 	}
 	if m.is_default != nil {
 		fields = append(fields, proxysubscribeapplication.FieldIsDefault)
@@ -28278,6 +28318,8 @@ func (m *ProxySubscribeApplicationMutation) Field(name string) (ent.Value, bool)
 		return m.Scheme()
 	case proxysubscribeapplication.FieldUserAgent:
 		return m.UserAgent()
+	case proxysubscribeapplication.FieldEnabled:
+		return m.Enabled()
 	case proxysubscribeapplication.FieldIsDefault:
 		return m.IsDefault()
 	case proxysubscribeapplication.FieldSubscribeTemplate:
@@ -28309,6 +28351,8 @@ func (m *ProxySubscribeApplicationMutation) OldField(ctx context.Context, name s
 		return m.OldScheme(ctx)
 	case proxysubscribeapplication.FieldUserAgent:
 		return m.OldUserAgent(ctx)
+	case proxysubscribeapplication.FieldEnabled:
+		return m.OldEnabled(ctx)
 	case proxysubscribeapplication.FieldIsDefault:
 		return m.OldIsDefault(ctx)
 	case proxysubscribeapplication.FieldSubscribeTemplate:
@@ -28364,6 +28408,13 @@ func (m *ProxySubscribeApplicationMutation) SetField(name string, value ent.Valu
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUserAgent(v)
+		return nil
+	case proxysubscribeapplication.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
 		return nil
 	case proxysubscribeapplication.FieldIsDefault:
 		v, ok := value.(bool)
@@ -28503,6 +28554,9 @@ func (m *ProxySubscribeApplicationMutation) ResetField(name string) error {
 		return nil
 	case proxysubscribeapplication.FieldUserAgent:
 		m.ResetUserAgent()
+		return nil
+	case proxysubscribeapplication.FieldEnabled:
+		m.ResetEnabled()
 		return nil
 	case proxysubscribeapplication.FieldIsDefault:
 		m.ResetIsDefault()

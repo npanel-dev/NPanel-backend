@@ -1824,22 +1824,26 @@ func init() {
 			return nil
 		}
 	}()
+	// proxysubscribeapplicationDescEnabled is the schema descriptor for enabled field.
+	proxysubscribeapplicationDescEnabled := proxysubscribeapplicationFields[6].Descriptor()
+	// proxysubscribeapplication.DefaultEnabled holds the default value on creation for the enabled field.
+	proxysubscribeapplication.DefaultEnabled = proxysubscribeapplicationDescEnabled.Default.(bool)
 	// proxysubscribeapplicationDescIsDefault is the schema descriptor for is_default field.
-	proxysubscribeapplicationDescIsDefault := proxysubscribeapplicationFields[6].Descriptor()
+	proxysubscribeapplicationDescIsDefault := proxysubscribeapplicationFields[7].Descriptor()
 	// proxysubscribeapplication.DefaultIsDefault holds the default value on creation for the is_default field.
 	proxysubscribeapplication.DefaultIsDefault = proxysubscribeapplicationDescIsDefault.Default.(bool)
 	// proxysubscribeapplicationDescOutputFormat is the schema descriptor for output_format field.
-	proxysubscribeapplicationDescOutputFormat := proxysubscribeapplicationFields[8].Descriptor()
+	proxysubscribeapplicationDescOutputFormat := proxysubscribeapplicationFields[9].Descriptor()
 	// proxysubscribeapplication.DefaultOutputFormat holds the default value on creation for the output_format field.
 	proxysubscribeapplication.DefaultOutputFormat = proxysubscribeapplicationDescOutputFormat.Default.(string)
 	// proxysubscribeapplication.OutputFormatValidator is a validator for the "output_format" field. It is called by the builders before save.
 	proxysubscribeapplication.OutputFormatValidator = proxysubscribeapplicationDescOutputFormat.Validators[0].(func(string) error)
 	// proxysubscribeapplicationDescCreatedAt is the schema descriptor for created_at field.
-	proxysubscribeapplicationDescCreatedAt := proxysubscribeapplicationFields[10].Descriptor()
+	proxysubscribeapplicationDescCreatedAt := proxysubscribeapplicationFields[11].Descriptor()
 	// proxysubscribeapplication.DefaultCreatedAt holds the default value on creation for the created_at field.
 	proxysubscribeapplication.DefaultCreatedAt = proxysubscribeapplicationDescCreatedAt.Default.(func() time.Time)
 	// proxysubscribeapplicationDescUpdatedAt is the schema descriptor for updated_at field.
-	proxysubscribeapplicationDescUpdatedAt := proxysubscribeapplicationFields[11].Descriptor()
+	proxysubscribeapplicationDescUpdatedAt := proxysubscribeapplicationFields[12].Descriptor()
 	// proxysubscribeapplication.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	proxysubscribeapplication.DefaultUpdatedAt = proxysubscribeapplicationDescUpdatedAt.Default.(func() time.Time)
 	// proxysubscribeapplication.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

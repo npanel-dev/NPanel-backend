@@ -48,6 +48,7 @@ type SubscribeApplication struct {
 	Description       *string
 	Scheme            string
 	UserAgent         string
+	Enabled           bool
 	IsDefault         bool
 	SubscribeTemplate *string
 	OutputFormat      string

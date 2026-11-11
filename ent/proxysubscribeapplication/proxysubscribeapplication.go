@@ -23,6 +23,8 @@ const (
 	FieldScheme = "scheme"
 	// FieldUserAgent holds the string denoting the user_agent field in the database.
 	FieldUserAgent = "user_agent"
+	// FieldEnabled holds the string denoting the enabled field in the database.
+	FieldEnabled = "enabled"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
 	FieldIsDefault = "is_default"
 	// FieldSubscribeTemplate holds the string denoting the subscribe_template field in the database.
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldScheme,
 	FieldUserAgent,
+	FieldEnabled,
 	FieldIsDefault,
 	FieldSubscribeTemplate,
 	FieldOutputFormat,
@@ -80,6 +83,8 @@ var (
 	DefaultUserAgent string
 	// UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	UserAgentValidator func(string) error
+	// DefaultEnabled holds the default value on creation for the "enabled" field.
+	DefaultEnabled bool
 	// DefaultIsDefault holds the default value on creation for the "is_default" field.
 	DefaultIsDefault bool
 	// DefaultOutputFormat holds the default value on creation for the "output_format" field.
@@ -127,6 +132,11 @@ func ByScheme(opts ...sql.OrderTermOption) OrderOption {
 // ByUserAgent orders the results by the user_agent field.
 func ByUserAgent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserAgent, opts...).ToFunc()
+}
+
+// ByEnabled orders the results by the enabled field.
+func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
 }
 
 // ByIsDefault orders the results by the is_default field.

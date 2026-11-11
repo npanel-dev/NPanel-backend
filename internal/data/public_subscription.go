@@ -426,7 +426,9 @@ func getInt64Value(p *int64) int64 {
 
 // GetSubscribeApplications 获取所有订阅应用配置
 func (r *publicSubscriptionRepo) GetSubscribeApplications(ctx context.Context) ([]*subscriptionbiz.SubscribeApplication, error) {
+	// 只取启用中的应用：禁用的模板不参与 UA 匹配分发（issue #37）
 	apps, err := r.data.db.ProxySubscribeApplication.Query().
+		Where(proxysubscribeapplication.EnabledEQ(true)).
 		Order(ent.Asc(proxysubscribeapplication.FieldID)).
 		All(ctx)
 
@@ -444,6 +446,7 @@ func (r *publicSubscriptionRepo) GetSubscribeApplications(ctx context.Context) (
 			Description:       getStringValue(app.Description),
 			Scheme:            app.Scheme,
 			UserAgent:         app.UserAgent,
+			Enabled:           app.Enabled,
 			IsDefault:         app.IsDefault,
 			SubscribeTemplate: getStringValue(app.SubscribeTemplate),
 			OutputFormat:      app.OutputFormat,

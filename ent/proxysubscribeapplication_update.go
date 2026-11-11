@@ -110,6 +110,20 @@ func (_u *ProxySubscribeApplicationUpdate) SetNillableUserAgent(v *string) *Prox
 	return _u
 }
 
+// SetEnabled sets the "enabled" field.
+func (_u *ProxySubscribeApplicationUpdate) SetEnabled(v bool) *ProxySubscribeApplicationUpdate {
+	_u.mutation.SetEnabled(v)
+	return _u
+}
+
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (_u *ProxySubscribeApplicationUpdate) SetNillableEnabled(v *bool) *ProxySubscribeApplicationUpdate {
+	if v != nil {
+		_u.SetEnabled(*v)
+	}
+	return _u
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_u *ProxySubscribeApplicationUpdate) SetIsDefault(v bool) *ProxySubscribeApplicationUpdate {
 	_u.mutation.SetIsDefault(v)
@@ -288,6 +302,9 @@ func (_u *ProxySubscribeApplicationUpdate) sqlSave(ctx context.Context) (_node i
 	if value, ok := _u.mutation.UserAgent(); ok {
 		_spec.SetField(proxysubscribeapplication.FieldUserAgent, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Enabled(); ok {
+		_spec.SetField(proxysubscribeapplication.FieldEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(proxysubscribeapplication.FieldIsDefault, field.TypeBool, value)
 	}
@@ -410,6 +427,20 @@ func (_u *ProxySubscribeApplicationUpdateOne) SetUserAgent(v string) *ProxySubsc
 func (_u *ProxySubscribeApplicationUpdateOne) SetNillableUserAgent(v *string) *ProxySubscribeApplicationUpdateOne {
 	if v != nil {
 		_u.SetUserAgent(*v)
+	}
+	return _u
+}
+
+// SetEnabled sets the "enabled" field.
+func (_u *ProxySubscribeApplicationUpdateOne) SetEnabled(v bool) *ProxySubscribeApplicationUpdateOne {
+	_u.mutation.SetEnabled(v)
+	return _u
+}
+
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (_u *ProxySubscribeApplicationUpdateOne) SetNillableEnabled(v *bool) *ProxySubscribeApplicationUpdateOne {
+	if v != nil {
+		_u.SetEnabled(*v)
 	}
 	return _u
 }
@@ -621,6 +652,9 @@ func (_u *ProxySubscribeApplicationUpdateOne) sqlSave(ctx context.Context) (_nod
 	}
 	if value, ok := _u.mutation.UserAgent(); ok {
 		_spec.SetField(proxysubscribeapplication.FieldUserAgent, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Enabled(); ok {
+		_spec.SetField(proxysubscribeapplication.FieldEnabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.IsDefault(); ok {
 		_spec.SetField(proxysubscribeapplication.FieldIsDefault, field.TypeBool, value)

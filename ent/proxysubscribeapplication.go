@@ -28,6 +28,8 @@ type ProxySubscribeApplication struct {
 	Scheme string `json:"scheme,omitempty"`
 	// User Agent
 	UserAgent string `json:"user_agent,omitempty"`
+	// 是否启用（参与客户端 UA 匹配分发；禁用后不参与分发且 UA 不进白名单）
+	Enabled bool `json:"enabled,omitempty"`
 	// 是否默认应用
 	IsDefault bool `json:"is_default,omitempty"`
 	// 订阅模板
@@ -48,7 +50,7 @@ func (*ProxySubscribeApplication) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case proxysubscribeapplication.FieldIsDefault:
+		case proxysubscribeapplication.FieldEnabled, proxysubscribeapplication.FieldIsDefault:
 			values[i] = new(sql.NullBool)
 		case proxysubscribeapplication.FieldID:
 			values[i] = new(sql.NullInt64)
@@ -108,6 +110,12 @@ func (_m *ProxySubscribeApplication) assignValues(columns []string, values []any
 				return fmt.Errorf("unexpected type %T for field user_agent", values[i])
 			} else if value.Valid {
 				_m.UserAgent = value.String
+			}
+		case proxysubscribeapplication.FieldEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field enabled", values[i])
+			} else if value.Valid {
+				_m.Enabled = value.Bool
 			}
 		case proxysubscribeapplication.FieldIsDefault:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -200,6 +208,9 @@ func (_m *ProxySubscribeApplication) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_agent=")
 	builder.WriteString(_m.UserAgent)
+	builder.WriteString(", ")
+	builder.WriteString("enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
 	builder.WriteString(", ")
 	builder.WriteString("is_default=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))

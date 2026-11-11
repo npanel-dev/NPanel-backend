@@ -79,6 +79,11 @@ func UserAgent(v string) predicate.ProxySubscribeApplication {
 	return predicate.ProxySubscribeApplication(sql.FieldEQ(FieldUserAgent, v))
 }
 
+// Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
+func Enabled(v bool) predicate.ProxySubscribeApplication {
+	return predicate.ProxySubscribeApplication(sql.FieldEQ(FieldEnabled, v))
+}
+
 // IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
 func IsDefault(v bool) predicate.ProxySubscribeApplication {
 	return predicate.ProxySubscribeApplication(sql.FieldEQ(FieldIsDefault, v))
@@ -452,6 +457,16 @@ func UserAgentEqualFold(v string) predicate.ProxySubscribeApplication {
 // UserAgentContainsFold applies the ContainsFold predicate on the "user_agent" field.
 func UserAgentContainsFold(v string) predicate.ProxySubscribeApplication {
 	return predicate.ProxySubscribeApplication(sql.FieldContainsFold(FieldUserAgent, v))
+}
+
+// EnabledEQ applies the EQ predicate on the "enabled" field.
+func EnabledEQ(v bool) predicate.ProxySubscribeApplication {
+	return predicate.ProxySubscribeApplication(sql.FieldEQ(FieldEnabled, v))
+}
+
+// EnabledNEQ applies the NEQ predicate on the "enabled" field.
+func EnabledNEQ(v bool) predicate.ProxySubscribeApplication {
+	return predicate.ProxySubscribeApplication(sql.FieldNEQ(FieldEnabled, v))
 }
 
 // IsDefaultEQ applies the EQ predicate on the "is_default" field.

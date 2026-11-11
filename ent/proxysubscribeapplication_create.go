@@ -90,6 +90,20 @@ func (_c *ProxySubscribeApplicationCreate) SetNillableUserAgent(v *string) *Prox
 	return _c
 }
 
+// SetEnabled sets the "enabled" field.
+func (_c *ProxySubscribeApplicationCreate) SetEnabled(v bool) *ProxySubscribeApplicationCreate {
+	_c.mutation.SetEnabled(v)
+	return _c
+}
+
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (_c *ProxySubscribeApplicationCreate) SetNillableEnabled(v *bool) *ProxySubscribeApplicationCreate {
+	if v != nil {
+		_c.SetEnabled(*v)
+	}
+	return _c
+}
+
 // SetIsDefault sets the "is_default" field.
 func (_c *ProxySubscribeApplicationCreate) SetIsDefault(v bool) *ProxySubscribeApplicationCreate {
 	_c.mutation.SetIsDefault(v)
@@ -219,6 +233,10 @@ func (_c *ProxySubscribeApplicationCreate) defaults() {
 		v := proxysubscribeapplication.DefaultUserAgent
 		_c.mutation.SetUserAgent(v)
 	}
+	if _, ok := _c.mutation.Enabled(); !ok {
+		v := proxysubscribeapplication.DefaultEnabled
+		_c.mutation.SetEnabled(v)
+	}
 	if _, ok := _c.mutation.IsDefault(); !ok {
 		v := proxysubscribeapplication.DefaultIsDefault
 		_c.mutation.SetIsDefault(v)
@@ -267,6 +285,9 @@ func (_c *ProxySubscribeApplicationCreate) check() error {
 		if err := proxysubscribeapplication.UserAgentValidator(v); err != nil {
 			return &ValidationError{Name: "user_agent", err: fmt.Errorf(`ent: validator failed for field "ProxySubscribeApplication.user_agent": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Enabled(); !ok {
+		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "ProxySubscribeApplication.enabled"`)}
 	}
 	if _, ok := _c.mutation.IsDefault(); !ok {
 		return &ValidationError{Name: "is_default", err: errors.New(`ent: missing required field "ProxySubscribeApplication.is_default"`)}
@@ -338,6 +359,10 @@ func (_c *ProxySubscribeApplicationCreate) createSpec() (*ProxySubscribeApplicat
 	if value, ok := _c.mutation.UserAgent(); ok {
 		_spec.SetField(proxysubscribeapplication.FieldUserAgent, field.TypeString, value)
 		_node.UserAgent = value
+	}
+	if value, ok := _c.mutation.Enabled(); ok {
+		_spec.SetField(proxysubscribeapplication.FieldEnabled, field.TypeBool, value)
+		_node.Enabled = value
 	}
 	if value, ok := _c.mutation.IsDefault(); ok {
 		_spec.SetField(proxysubscribeapplication.FieldIsDefault, field.TypeBool, value)

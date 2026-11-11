@@ -645,6 +645,7 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 255, Comment: "应用描述"},
 		{Name: "scheme", Type: field.TypeString, Size: 255, Comment: "应用Scheme", Default: ""},
 		{Name: "user_agent", Type: field.TypeString, Size: 255, Comment: "User Agent", Default: ""},
+		{Name: "enabled", Type: field.TypeBool, Comment: "是否启用（参与客户端 UA 匹配分发；禁用后不参与分发且 UA 不进白名单）", Default: true},
 		{Name: "is_default", Type: field.TypeBool, Comment: "是否默认应用", Default: false},
 		{Name: "subscribe_template", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "订阅模板", SchemaType: map[string]string{"mysql": "mediumtext"}},
 		{Name: "output_format", Type: field.TypeString, Size: 50, Comment: "输出格式", Default: "yaml"},

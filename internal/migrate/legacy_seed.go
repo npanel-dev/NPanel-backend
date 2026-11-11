@@ -60,6 +60,7 @@ var legacySQLMigrations = []legacySQLMigration{
 	{version: 2154, path: "legacy_sql/02154_node_target_node_id.up.sql"},
 		{version: 2155, path: "legacy_sql/02155_subscribe_rebate_config.up.sql"},
 		{version: 2156, path: "legacy_sql/02156_recharge_promotion.up.sql"},
+		{version: 2157, path: "legacy_sql/02157_subscribe_application_enabled.up.sql"},
 	}
 
 var legacyCompatibilityMigrationVersions = map[int64]struct{}{
@@ -430,11 +431,13 @@ func shouldIgnoreLegacySQLError(path, stmt string, err error) bool {
 			path == "legacy_sql/02136_add_node_type_is_hidden.up.sql" ||
 			path == "legacy_sql/02137_payment_sort.up.sql" ||
 			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql" ||
-			path == "legacy_sql/02154_node_target_node_id.up.sql"
+			path == "legacy_sql/02154_node_target_node_id.up.sql" ||
+			path == "legacy_sql/02157_subscribe_application_enabled.up.sql"
 	case 1061:
 		return path == "legacy_sql/02133_add_expired_node_group.up.sql" ||
 			path == "legacy_sql/02143_subscribe_defaults_and_language_normalization.up.sql" ||
-			path == "legacy_sql/02154_node_target_node_id.up.sql"
+			path == "legacy_sql/02154_node_target_node_id.up.sql" ||
+			path == "legacy_sql/02157_subscribe_application_enabled.up.sql"
 	case 1091:
 		return path == "legacy_sql/02137_payment_sort.up.sql"
 	}

@@ -74,6 +74,7 @@ message SubscribeApplication {
   DownloadLink download_link = 10;
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
+  optional bool enabled = 13;  // 是否启用（参与客户端 UA 匹配分发；缺省视为 true）
 }
 
 // 创建订阅应用配置请求
@@ -87,6 +88,7 @@ message CreateSubscribeApplicationRequest {
   string subscribe_template = 7 [json_name = "template"]; // 与老项目保持一致
   string output_format = 8;
   DownloadLink download_link = 9;
+  optional bool enabled = 10;  // 是否启用（缺省视为 true）
 }
 
 // 更新订阅应用配置请求
@@ -101,6 +103,7 @@ message UpdateSubscribeApplicationRequest {
   string subscribe_template = 8 [json_name = "template"]; // 与老项目保持一致
   string output_format = 9;
   DownloadLink download_link = 10;
+  optional bool enabled = 11;  // 是否启用
 }
 
 // 删除订阅应用配置请求

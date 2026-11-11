@@ -271,6 +271,10 @@ func (m *SubscribeApplication) validate(all bool) error {
 		}
 	}
 
+	if m.Enabled != nil {
+		// no validation rules for Enabled
+	}
+
 	if len(errors) > 0 {
 		return SubscribeApplicationMultiError(errors)
 	}
@@ -417,6 +421,10 @@ func (m *CreateSubscribeApplicationRequest) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	if m.Enabled != nil {
+		// no validation rules for Enabled
 	}
 
 	if len(errors) > 0 {
@@ -569,6 +577,10 @@ func (m *UpdateSubscribeApplicationRequest) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	if m.Enabled != nil {
+		// no validation rules for Enabled
 	}
 
 	if len(errors) > 0 {

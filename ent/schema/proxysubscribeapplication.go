@@ -30,6 +30,7 @@ func (ProxySubscribeApplication) Fields() []ent.Field {
 		field.String("description").MaxLen(255).Optional().Nillable().Comment("应用描述"),
 		field.String("scheme").MaxLen(255).Default("").Comment("应用Scheme"),
 		field.String("user_agent").MaxLen(255).NotEmpty().Default("").Comment("User Agent"),
+		field.Bool("enabled").Default(true).Comment("是否启用（参与客户端 UA 匹配分发；禁用后不参与分发且 UA 不进白名单）"),
 		field.Bool("is_default").Default(false).Comment("是否默认应用"),
 		field.Text("subscribe_template").SchemaType(map[string]string{dialect.MySQL: "mediumtext"}).Optional().Nillable().Comment("订阅模板"),
 		field.String("output_format").MaxLen(50).Default("yaml").Comment("输出格式"),

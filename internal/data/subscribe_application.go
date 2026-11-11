@@ -59,6 +59,7 @@ func (r *subscribeApplicationRepo) Create(ctx context.Context, app *applicationb
 		SetScheme(app.Scheme).
 		SetUserAgent(app.UserAgent).
 		SetIsDefault(app.IsDefault).
+		SetEnabled(app.Enabled).
 		SetNillableSubscribeTemplate(app.SubscribeTemplate).
 		SetOutputFormat(app.OutputFormat).
 		SetDownloadLink(app.DownloadLink).
@@ -120,6 +121,7 @@ func (r *subscribeApplicationRepo) Update(ctx context.Context, app *applicationb
 		SetScheme(app.Scheme).
 		SetUserAgent(app.UserAgent).
 		SetIsDefault(app.IsDefault).
+		SetEnabled(app.Enabled).
 		SetOutputFormat(app.OutputFormat).
 		SetDownloadLink(app.DownloadLink).
 		SetNillableIcon(app.Icon).
@@ -276,6 +278,7 @@ func (r *subscribeApplicationRepo) convertToModel(po *ent.ProxySubscribeApplicat
 		Description:       po.Description,
 		Scheme:            po.Scheme,
 		UserAgent:         po.UserAgent,
+		Enabled:           po.Enabled,
 		IsDefault:         po.IsDefault,
 		SubscribeTemplate: po.SubscribeTemplate,
 		OutputFormat:      po.OutputFormat,
