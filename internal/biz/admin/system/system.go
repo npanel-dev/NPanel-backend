@@ -370,6 +370,12 @@ func (uc *SystemUsecase) GetSiteConfig(ctx context.Context) (*SiteConfig, error)
 
 // UpdateSiteConfig 更新站点配置
 func (uc *SystemUsecase) UpdateSiteConfig(ctx context.Context, config *SiteConfig) error {
+	if config == nil {
+		return invalidUpdateConfig("site", "configuration is required")
+	}
+	if err := validateAppUpdates(config.CustomData); err != nil {
+		return err
+	}
 	// Use reflection to convert struct to map
 	v := reflect.ValueOf(*config)
 	t := v.Type()
